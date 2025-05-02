@@ -21,15 +21,19 @@ def get_weather():
             f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}&units=metric"
         )
         data = resp.json()
+
+        # Convert Celsius to Fahrenheit
+        def c_to_f(c):
+            return c * 9.0 / 5.0 + 32
         _WEATHER_CACHE.update(
             {
                 "timestamp": now,
                 "data": {
-                    "temp": data["main"]["temp"],
+                    "temp": c_to_f(data["main"]["temp"]),
                     "icon": data["weather"][0]["icon"],
                     "description": data["weather"][0]["description"],
-                    "low": data["main"]["temp_min"],
-                    "high": data["main"]["temp_max"],
+                    "low": c_to_f(data["main"]["temp_min"]),
+                    "high": c_to_f(data["main"]["temp_max"]),
                 },
             }
         )

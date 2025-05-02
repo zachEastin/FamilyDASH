@@ -82,6 +82,13 @@ If you have 2FA enabled on your iCloud account, you will need to generate an app
 3. Enter a label for the password (e.g., "FamilyDASH") and click "Create".
 4. Copy the generated password and use it as your `ICLOUD_PASSWORD` in the `.env` file.
 
+## iCloud Development Stub Mode
+To bypass authentication and return dummy iCloud data for local debugging, set the following in your `.env`:
+```dotenv
+ICLOUD_DEV_MODE=true
+```
+This will return stubbed user, calendars, events, and reminders without requiring Apple credentials or 2FA.
+
 ## Systemd Service
 A `familydash.service` file is provided; copy it to `/etc/systemd/system/`, then:
 ```bash

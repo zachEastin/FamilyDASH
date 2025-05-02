@@ -38,14 +38,15 @@ function updateWeather(data) {
       data.icon
     }@2x.png" alt="Weather icon">
     <div class="description">${data.description}</div>
-    <div>${data.temp.toFixed(1)}°C</div>
+    <div>${data.temp.toFixed(1)}°F</div>
     <div>L:${data.low.toFixed(1)}° H:${data.high.toFixed(1)}°</div>
   `;
 }
 
 function updateTime(data) {
   const c = document.getElementById("clock");
-  c.innerHTML = `<div class="date">${data.date}</div><div class="time">${data.time}</div>`;
+  // c.innerHTML = `<div class="date">${data.date}</div><div class="time">${data.time}</div>`;
+  c.innerHTML = `<div class="time">${data.time}</div>`;
 }
 
 function updateNetwork(data) {
@@ -79,7 +80,7 @@ function updateSunTheme(data) {
 function updateIcloud(data) {
   if (!data || typeof data !== "object") {
     document.getElementById("calendar").innerHTML =
-      "<em>No iCloud data available.</em>";
+      "<em>iCloud data unavailable.</em>";
     return;
   }
   const cal = document.getElementById("calendar");

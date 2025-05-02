@@ -25,7 +25,7 @@ LOGS_DIR = Path(__file__).parent / "logs"
 LOGS_DIR.mkdir(exist_ok=True)
 ERROR_LOG = LOGS_DIR / "error.log"
 
-logging.basicConfig(filename=str(ERROR_LOG), level=logging.ERROR, format="%(asctime)s %(levelname)s: %(message)s")
+logging.basicConfig(filename=str(ERROR_LOG), level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
 
 # Initialize Flask and SocketIO
 app = Flask(__name__, static_folder="static")

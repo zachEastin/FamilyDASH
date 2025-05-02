@@ -1,6 +1,7 @@
 Flask
 Flask-SocketIO
 pyicloud
+pyicloud-ipd
 requests
 astral
 RPi.GPIO; sys_platform == "linux"
