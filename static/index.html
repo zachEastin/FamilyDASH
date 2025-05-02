@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FamilyVista Dashboard</title>
+  <link rel="stylesheet" href="main.css">
+  <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
+</head>
+<body>
+  <div id="dashboard" class="grid">
+    <div id="calendar" class="widget">Loading calendar...</div>
+    <div id="reminders" class="widget">Loading reminders...</div>
+    <div id="weather" class="widget">Loading weather...</div>
+    <div id="clock" class="widget">Loading time...</div>
+    <div id="network-status" class="widget">Checking network...</div>
+    <div id="offline-indicator" class="widget hidden">Offline</div>
+    <div id="photo" class="widget"><img id="shared-photo" src="" alt="Family Photo"></div>
+  </div>
+  <script src="main.js"></script>
+</body>
+</html>

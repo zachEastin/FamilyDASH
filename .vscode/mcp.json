@@ -1,0 +1,54 @@
+{
+    "modules": [
+        {
+            "name": "filesystem",
+            "transport": "stdio",
+            "command": "npx @modelcontextprotocol/server-filesystem ."
+        },
+        {
+            "name": "icloud",
+            "transport": "stdio",
+            "command": "python mcp_servers/icloud_mcp_server.py"
+        },
+        {
+            "name": "weather",
+            "transport": "stdio",
+            "command": "python mcp_servers/weather_mcp_server.py"
+        },
+        {
+            "name": "sun",
+            "transport": "stdio",
+            "command": "python mcp_servers/sun_mcp_server.py"
+        },
+        {
+            "name": "ambientLight",
+            "transport": "stdio",
+            "command": "python mcp_servers/ambientLight_mcp_server.py"
+        },
+        {
+            "name": "backlight",
+            "transport": "stdio",
+            "command": "python mcp_servers/backlight_mcp_server.py"
+        },
+        {
+            "name": "network",
+            "transport": "stdio",
+            "command": "python mcp_servers/network_mcp_server.py"
+        },
+        {
+            "name": "logging",
+            "transport": "stdio",
+            "command": "python mcp_servers/logging_mcp_server.py"
+        }
+    ],
+    "servers": {
+        "my-mcp-server-3eb89fd8": {
+            "type": "stdio",
+            "command": "npx",
+            "args": [
+                "@modelcontextprotocol/server-filesystem",
+                "."
+            ]
+        }
+    }
+}

@@ -1,0 +1,8 @@
+Flask
+Flask-SocketIO
+pyicloud
+requests
+astral
+RPi.GPIO; sys_platform == "linux"
+adafruit-circuitpython-tsl2561
+python-dotenv

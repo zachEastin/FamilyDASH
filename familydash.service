@@ -1,0 +1,12 @@
+[Unit]
+Description=FamilyVista Dashboard Service
+After=network.target
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/FamilyDASH
+ExecStart=/home/pi/FamilyDASH/venv/bin/python /home/pi/FamilyDASH/app.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
