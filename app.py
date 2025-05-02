@@ -12,8 +12,13 @@ from modules.network_module import network_bp, get_network
 from modules.lighting_module import lighting_bp, get_lighting
 from modules.sun_module import sun_bp, get_sun
 
+import os
+
 # Load environment variables
 load_dotenv()
+
+print("iCloud username:", os.getenv("ICLOUD_USERNAME"))
+print("iCloud password:", os.getenv("ICLOUD_PASSWORD"))
 
 # Setup logging directory
 LOGS_DIR = Path(__file__).parent / "logs"
@@ -24,6 +29,9 @@ logging.basicConfig(filename=str(ERROR_LOG), level=logging.ERROR, format="%(asct
 
 # Initialize Flask and SocketIO
 app = Flask(__name__, static_folder="static")
+# Disable caching of static files
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
+app.config["TEMPLATES_AUTO_RELOAD"] = True
 socketio = SocketIO(app)
 
 # Register data source blueprints

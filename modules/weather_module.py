@@ -27,6 +27,7 @@ def get_weather():
                 "data": {
                     "temp": data["main"]["temp"],
                     "icon": data["weather"][0]["icon"],
+                    "description": data["weather"][0]["description"],
                     "low": data["main"]["temp_min"],
                     "high": data["main"]["temp_max"],
                 },

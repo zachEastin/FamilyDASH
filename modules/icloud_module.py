@@ -78,8 +78,30 @@ def get_icloud_data():
                     urls = [p.get("downloadUrl") for p in photos]
                     if urls:
                         photo_url = random.choice(urls)
+            # Determine signed-in user and calendar names
+            user = getattr(_ICLOUD_API, "username", None)
+            calendars = []
+            try:
+                for cal in _ICLOUD_API.calendar.calendars():
+                    logging.info(f"iCloud calendar object: {cal}")
+                    name = cal.get("Title") or cal.get("title") or cal.get("name")
+                    if not name:
+                        name = str(cal)
+                    calendars.append(name)
+            except Exception as e:
+                logging.exception("Error extracting calendar names")
+            # Update cache with new fields
             _ICLOUD_CACHE.update(
-                {"timestamp": now, "data": {"events": events, "reminders": reminders, "photo": photo_url}}
+                {
+                    "timestamp": now,
+                    "data": {
+                        "user": user,
+                        "calendars": calendars,
+                        "events": events,
+                        "reminders": reminders,
+                        "photo": photo_url,
+                    },
+                }
             )
         data = _ICLOUD_CACHE["data"]
     except Exception:

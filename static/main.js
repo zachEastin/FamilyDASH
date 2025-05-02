@@ -37,6 +37,7 @@ function updateWeather(data) {
     <img src="https://openweathermap.org/img/wn/${
       data.icon
     }@2x.png" alt="Weather icon">
+    <div class="description">${data.description}</div>
     <div>${data.temp.toFixed(1)}°C</div>
     <div>L:${data.low.toFixed(1)}° H:${data.high.toFixed(1)}°</div>
   `;
@@ -44,7 +45,7 @@ function updateWeather(data) {
 
 function updateTime(data) {
   const c = document.getElementById("clock");
-  c.textContent = data.time;
+  c.innerHTML = `<div class="date">${data.date}</div><div class="time">${data.time}</div>`;
 }
 
 function updateNetwork(data) {
@@ -76,34 +77,50 @@ function updateSunTheme(data) {
 }
 
 function updateIcloud(data) {
+  if (!data || typeof data !== "object") {
+    document.getElementById("calendar").innerHTML =
+      "<em>No iCloud data available.</em>";
+    return;
+  }
   const cal = document.getElementById("calendar");
+  const user = data.user || "<em>Unknown user</em>";
+  const calendars =
+    Array.isArray(data.calendars) && data.calendars.length > 0
+      ? data.calendars.join(", ")
+      : "<em>No calendars found</em>";
   cal.innerHTML =
+    `<h4>Signed in as ${user}</h4>` +
+    `<h5>Calendars: ${calendars}</h5>` +
     "<h3>Events</h3>" +
     "<ul>" +
-    data.events
-      .slice(0, 5)
-      .map(
-        (e) => `
-      <li><strong>${new Date(e.start).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      })}</strong> ${e.title}</li>`
-      )
-      .join("") +
+    (Array.isArray(data.events)
+      ? data.events
+          .slice(0, 5)
+          .map(
+            (e) =>
+              `\n      <li><strong>${new Date(e.start).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}</strong> ${e.title}</li>`
+          )
+          .join("")
+      : "") +
     "</ul>";
   const rem = document.getElementById("reminders");
   rem.innerHTML =
     "<h3>Reminders</h3>" +
     "<ul>" +
-    data.reminders
-      .slice(0, 5)
-      .map(
-        (r) => `
-      <li>${r.title}${
-          r.due ? " (" + new Date(r.due).toLocaleDateString() + ")" : ""
-        }</li>`
-      )
-      .join("") +
+    (Array.isArray(data.reminders)
+      ? data.reminders
+          .slice(0, 5)
+          .map(
+            (r) =>
+              `\n      <li>${r.title}${
+                r.due ? " (" + new Date(r.due).toLocaleDateString() + ")" : ""
+              }</li>`
+          )
+          .join("")
+      : "") +
     "</ul>";
   const img = document.getElementById("shared-photo");
   if (data.photo) img.src = data.photo;
