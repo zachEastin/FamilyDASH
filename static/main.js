@@ -129,15 +129,35 @@ function updateWeather(data) {
 
 function updateTime(data) {
   const c = document.getElementById("clock");
-  // c.innerHTML = `<div class="date">${data.date}</div><div class="time">${data.time}</div>`;
-  c.innerHTML = `<div class="time">${data.time}</div>`;
+  // Build the AM/PM label (vertical, only show the correct one)
+  let ampmHtml = `<div class="ampm-label"><span class="ampm${
+    data.ampm === "AM" ? "" : " hidden"
+  }">AM</span><span class="ampm${
+    data.ampm === "PM" ? "" : " hidden"
+  }">PM</span></div>`;
+  // Main time (HH:MM)
+  let timeHtml = `<span class="main-time">${data.time}</span>`;
+  // Seconds (smaller, greyed out)
+  let secondsHtml = `<span class="seconds">${String(data.second).padStart(
+    2,
+    "0"
+  )}</span>`;
+  c.innerHTML = `<div class="clock-flex">${ampmHtml}${timeHtml}${secondsHtml}</div>`;
 }
 
 function updateNetwork(data) {
   const n = document.getElementById("network-status");
-  n.textContent = data.network;
+  const isOnline = data.network === "online";
+  const iconClass = isOnline
+    ? "network-icon network-online"
+    : "network-icon network-offline";
+  const label = isOnline ? "Online" : "Offline";
+  n.innerHTML =
+    `<span class="${iconClass}">` +
+    (isOnline ? "&#9679;" : "&#10006;") +
+    `</span><span class="network-label">${label}</span>`;
   const offline = document.getElementById("offline-indicator");
-  if (data.network === "offline") {
+  if (!isOnline) {
     offline.classList.remove("hidden");
   } else {
     offline.classList.add("hidden");

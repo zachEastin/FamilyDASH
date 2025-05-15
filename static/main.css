@@ -625,15 +625,83 @@ body.dark-mode .high-temp{
 #clock .time {
   font-size: 1.5em;
 }
+#clock .clock-flex {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+#clock .ampm-label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-right: 8px;
+  font-size: 0.7em;
+  line-height: 2;
+  height: 100%;
+}
+#clock .ampm {
+  color: #888;
+  opacity: 0.7;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+#clock .ampm.hidden {
+  display: flex;
+  opacity: 0;
+}
+#clock .main-time {
+  font-size: 3.2em;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+}
+#clock .seconds {
+  font-size: 1em;
+  color: #aaa;
+  opacity: 0.7;
+  position: relative;
+  top: 0.8em;
+  margin-left: 2px;
+}
 #network-status {
   position: static !important;
   width: auto;
   min-width: 90px;
   font-size: 1em;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+}
+.network-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 6px;
+  font-size: 1.1em;
+  box-shadow: 0 0 4px rgba(0,0,0,0.10);
+}
+.network-online {
+  background: #43a047;
+  color: #fff;
+  border: 2px solid #388e3c;
+}
+.network-offline {
+  background: #e53935;
+  color: #fff;
+  border: 2px solid #b71c1c;
+}
+#network-status .network-label {
+  font-weight: 600;
+  color: #333;
+}
+body.dark-mode #network-status .network-label {
+  color: #eee;
 }
 #offline-indicator {
   position: absolute;
@@ -651,7 +719,7 @@ body.dark-mode .high-temp{
   left: 0;
   right: 0;
   bottom: 0;
-  width: calc(100vw - 24px);
+  width: calc(100vw - 44px);
   background: var(--widget-bg);
   display: flex;
   flex-direction: row;
@@ -661,9 +729,8 @@ body.dark-mode .high-temp{
   z-index: 10;
   box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
   height: 40px;
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
-  margin-top: 0;
+  border-radius: 8px;
+  margin: 0 10px 10px 10px;
 }
 .footer .widget {
   background: none;
