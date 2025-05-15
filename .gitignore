@@ -1,1 +1,5 @@
 .env
+cookies/jc_4_mehotmailcom
+cookies/jc_4_mehotmailcom.session
+logs/error.log
+*.pyc

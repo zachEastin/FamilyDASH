@@ -23,6 +23,8 @@ _TRUSTED_DEVICES = []
 
 # Development stub mode (bypass real iCloud)
 DEV_MODE = os.getenv("ICLOUD_DEV_MODE", "false").lower() == "true"
+if DEV_MODE:
+    print("iCloud dev mode: stub enabled")
 
 # Global stub override
 DEV_STUB = False
@@ -103,12 +105,135 @@ def verify_icloud():
 def get_icloud_data():
     global _ICLOUD_API, DEV_STUB
     if DEV_MODE or DEV_STUB:
-        # Return stubbed data for development
+        # Generate stub events for the current week
+        from datetime import datetime, timedelta
+
+        today = datetime.now()
+        week_start = today - timedelta(days=today.weekday() + 1 if today.weekday() < 6 else 0)
+        week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+        import random
+
+        # Use a nice palette of distinct hues
+        calendar_names = ["Work", "Family", "Birthdays", "Personal", "School", "Sports"]
+        palette = [
+            "#1976d2",  # blue
+            "#43a047",  # green
+            "#fbc02d",  # yellow
+            "#e64a19",  # orange
+            "#8e24aa",  # purple
+            "#00838f",  # teal
+            "#c2185b",  # pink
+            "#6d4c41",  # brown
+        ]
+        # Assign a random color to each calendar
+        random.shuffle(palette)
+        calendar_colors = {name: palette[i % len(palette)] for i, name in enumerate(calendar_names)}
+        stub_events = []
+        for i in range(7):
+            day = week_start + timedelta(days=i)
+            num_events = random.randint(3, 5)
+            event_slots = []  # Track (start, end) for overlap
+            for e in range(num_events):
+                cal_idx = random.randint(0, len(calendar_names) - 1)
+                cal_name = calendar_names[cal_idx]
+                color = calendar_colors[cal_name]
+                # Random start between 7am and 17pm
+                start_hour = random.randint(7, 17)
+                start_minute = random.choice([0, 15, 30, 45])
+                duration = random.choice([30, 45, 60, 90])
+                start_dt = day + timedelta(hours=start_hour, minutes=start_minute)
+                end_dt = start_dt + timedelta(minutes=duration)
+                # Overlap: 1 in 2 events will overlap with a previous slot
+                if event_slots and random.random() < 0.5:
+                    overlap_with = random.choice(event_slots)
+                    overlap_start = overlap_with[0] + timedelta(minutes=random.choice([10, 20, 30]))
+                    overlap_end = overlap_start + timedelta(minutes=random.choice([30, 45, 60]))
+                    start_dt, end_dt = overlap_start, overlap_end
+                event_slots.append((start_dt, end_dt))
+                # Add more detailed stub data
+                attendees_list = []
+                if random.random() < 0.7:  # 70% chance of having attendees
+                    num_attendees = random.randint(1, 4)
+                    possible_attendees = [
+                        {"name": "Alice Wonderland", "email": "alice@example.com"},
+                        {"name": "Bob The Builder", "email": "bob@example.com"},
+                        {"name": "Charlie Brown", "email": "charlie@example.com"},
+                        {"name": "Diana Prince", "email": "diana@example.com"},
+                        {"name": "Edward Scissorhands", "email": "edward@example.com"},
+                    ]
+                    statuses = ["accepted", "declined", "tentative", "no-reply"]
+                    selected_attendees = random.sample(possible_attendees, min(num_attendees, len(possible_attendees)))
+                    for att in selected_attendees:
+                        attendees_list.append(
+                            {"name": att["name"], "email": att["email"], "status": random.choice(statuses)}
+                        )
+
+                stub_events.append(
+                    {
+                        "uid": f"stub-event-{i}-{e}-{random.randint(1000, 9999)}",  # Unique ID
+                        "title": f"{cal_name} Event {i + 1}-{e + 1}",
+                        "start": start_dt.isoformat(),
+                        "end": end_dt.isoformat(),
+                        "calendar": cal_name,
+                        "color": color,
+                        "creator": random.choice(["John Doe", "Jane Smith", "System Generated"]),
+                        "notes": random.choice(
+                            [
+                                "Remember to bring the presentation.",
+                                "Discuss Q3 budget.",
+                                "Pick up dry cleaning on the way.",
+                                "",
+                                "This is a longer note that might contain multiple sentences. It's important to test how multi-line notes are displayed in the UI. Ensure that the layout handles this gracefully without breaking.",
+                            ]
+                        ),
+                        "location": random.choice(
+                            ["Conference Room A", "Online Meeting", "Client's Office", "", "123 Main St, Anytown"]
+                        ),
+                        "attendees": attendees_list,
+                    }
+                )
         stub_data = {
             "user": os.getenv("ICLOUD_USERNAME", "dev_user"),
-            "calendars": ["Work", "Family", "Birthdays"],
-            "events": [{"title": "Test Event", "start": "2025-05-02T10:00:00", "end": "2025-05-02T11:00:00"}],
-            "reminders": [{"title": "Test Reminder", "due": "2025-05-03"}],
+            "calendars": [{"name": name, "color": calendar_colors[name]} for name in calendar_names],
+            "events": stub_events,
+            "reminders": [
+                {
+                    "title": "Book flight to Bali",
+                    "due": (today + timedelta(days=1)).date().isoformat(),
+                    "priority": "high",
+                    "done": False,
+                },
+                {
+                    "title": "Call Mom for her birthday",
+                    "due": (today + timedelta(days=2)).date().isoformat(),
+                    "priority": "medium",
+                    "done": False,
+                },
+                {
+                    "title": "Buy groceries for the week",
+                    "due": (today + timedelta(days=0)).date().isoformat(),
+                    "priority": "high",
+                    "done": False,
+                },
+                {
+                    "title": "Finish project proposal",
+                    "due": (today + timedelta(days=3)).date().isoformat(),
+                    "priority": "high",
+                    "done": False,
+                },
+                {
+                    "title": "Schedule dentist appointment",
+                    "due": (today + timedelta(days=5)).date().isoformat(),
+                    "priority": "low",
+                    "done": True,
+                },
+                {
+                    "title": "Pay credit card bill",
+                    "due": (today - timedelta(days=1)).date().isoformat(),
+                    "priority": "medium",
+                    "done": True,
+                },
+            ],
             "photo": None,
         }
         return jsonify({"status": "ok", "data": stub_data})
