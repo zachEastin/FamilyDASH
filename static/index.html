@@ -9,7 +9,19 @@
 </head>
 <body>
   <div id="dashboard" class="grid">
-    <div id="calendar" class="widget">Loading calendar...</div>
+    <div id="calendar" class="widget">
+      <div class="calendar-tabs">
+        <button id="week-tab" class="calendar-tab active">Week</button>
+        <button id="month-tab" class="calendar-tab">Month</button>
+      </div>
+      <div id="week-view-container">
+        <!-- Existing week view will be rendered here by JS -->
+        Loading calendar...
+      </div>
+      <div id="month-view-container" class="hidden">
+        <!-- Month view will be rendered here by JS -->
+      </div>
+    </div>
     <div id="reminders" class="widget">Loading reminders...</div>
     <div id="weather" class="widget">Loading weather...</div>
     <div id="clock" class="widget">Loading time...</div>

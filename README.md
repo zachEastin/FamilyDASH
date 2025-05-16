@@ -47,6 +47,8 @@ FamilyVista (aka FamilyDASH) is a passive, glance-only smart family dashboard op
    OPENWEATHER_API_KEY=your_openweather_key
    LATITUDE=xx.xxxxxx
    LONGITUDE=yy.yyyyyy
+   ICLOUD_SKIP_2FA=false
+   ICLOUD_DEV_MODE=false
    ```
 
 ## Cross-platform Note

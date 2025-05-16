@@ -105,13 +105,18 @@ def verify_icloud():
 def get_icloud_data():
     global _ICLOUD_API, DEV_STUB
     if DEV_MODE or DEV_STUB:
-        # Generate stub events for the current week
+        # Generate stub events for the entire current month (6x7 grid)
         from datetime import datetime, timedelta
 
         today = datetime.now()
-        week_start = today - timedelta(days=today.weekday() + 1 if today.weekday() < 6 else 0)
-        week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
-        import random
+        # First day of the month
+        first_of_month = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        # Find the Sunday before or on the 1st
+        first_weekday = first_of_month.weekday()  # Monday=0, Sunday=6
+        days_to_sunday = (first_of_month.weekday() + 1) % 7
+        grid_start = first_of_month - timedelta(days=days_to_sunday)
+        # 42 days for 6x7 grid
+        days_in_grid = [grid_start + timedelta(days=i) for i in range(42)]
 
         # Use a nice palette of distinct hues
         calendar_names = ["Work", "Family", "Birthdays", "Personal", "School", "Sports"]
@@ -125,34 +130,35 @@ def get_icloud_data():
             "#c2185b",  # pink
             "#6d4c41",  # brown
         ]
-        # Assign a random color to each calendar
         random.shuffle(palette)
         calendar_colors = {name: palette[i % len(palette)] for i, name in enumerate(calendar_names)}
         stub_events = []
-        for i in range(7):
-            day = week_start + timedelta(days=i)
-            num_events = random.randint(3, 5)
+        for day in days_in_grid:
+            num_events = random.randint(2, 5)
             event_slots = []  # Track (start, end) for overlap
             for e in range(num_events):
                 cal_idx = random.randint(0, len(calendar_names) - 1)
                 cal_name = calendar_names[cal_idx]
                 color = calendar_colors[cal_name]
-                # Random start between 7am and 17pm
-                start_hour = random.randint(7, 17)
-                start_minute = random.choice([0, 15, 30, 45])
-                duration = random.choice([30, 45, 60, 90])
-                start_dt = day + timedelta(hours=start_hour, minutes=start_minute)
-                end_dt = start_dt + timedelta(minutes=duration)
-                # Overlap: 1 in 2 events will overlap with a previous slot
-                if event_slots and random.random() < 0.5:
-                    overlap_with = random.choice(event_slots)
-                    overlap_start = overlap_with[0] + timedelta(minutes=random.choice([10, 20, 30]))
-                    overlap_end = overlap_start + timedelta(minutes=random.choice([30, 45, 60]))
-                    start_dt, end_dt = overlap_start, overlap_end
+                # 30% chance all-day event
+                if random.random() < 0.3:
+                    start_dt = day.replace(hour=0, minute=0, second=0, microsecond=0)
+                    end_dt = start_dt + timedelta(days=1)
+                else:
+                    start_hour = random.randint(7, 17)
+                    start_minute = random.choice([0, 15, 30, 45])
+                    duration = random.choice([30, 45, 60, 90])
+                    start_dt = day.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(hours=start_hour, minutes=start_minute)
+                    end_dt = start_dt + timedelta(minutes=duration)
+                    # Overlap: 1 in 2 events will overlap with a previous slot
+                    if event_slots and random.random() < 0.5:
+                        overlap_with = random.choice(event_slots)
+                        overlap_start = overlap_with[0] + timedelta(minutes=random.choice([10, 20, 30]))
+                        overlap_end = overlap_start + timedelta(minutes=random.choice([30, 45, 60]))
+                        start_dt, end_dt = overlap_start, overlap_end
                 event_slots.append((start_dt, end_dt))
-                # Add more detailed stub data
                 attendees_list = []
-                if random.random() < 0.7:  # 70% chance of having attendees
+                if random.random() < 0.7:
                     num_attendees = random.randint(1, 4)
                     possible_attendees = [
                         {"name": "Alice Wonderland", "email": "alice@example.com"},
@@ -167,28 +173,29 @@ def get_icloud_data():
                         attendees_list.append(
                             {"name": att["name"], "email": att["email"], "status": random.choice(statuses)}
                         )
-
                 stub_events.append(
                     {
-                        "uid": f"stub-event-{i}-{e}-{random.randint(1000, 9999)}",  # Unique ID
-                        "title": f"{cal_name} Event {i + 1}-{e + 1}",
+                        "uid": f"stub-event-{day.strftime('%Y%m%d')}-{e}-{random.randint(1000, 9999)}",
+                        "title": f"{cal_name} Event {day.day}-{e + 1}",
                         "start": start_dt.isoformat(),
                         "end": end_dt.isoformat(),
                         "calendar": cal_name,
                         "color": color,
                         "creator": random.choice(["John Doe", "Jane Smith", "System Generated"]),
-                        "notes": random.choice(
-                            [
-                                "Remember to bring the presentation.",
-                                "Discuss Q3 budget.",
-                                "Pick up dry cleaning on the way.",
-                                "",
-                                "This is a longer note that might contain multiple sentences. It's important to test how multi-line notes are displayed in the UI. Ensure that the layout handles this gracefully without breaking.",
-                            ]
-                        ),
-                        "location": random.choice(
-                            ["Conference Room A", "Online Meeting", "Client's Office", "", "123 Main St, Anytown"]
-                        ),
+                        "notes": random.choice([
+                            "Remember to bring the presentation.",
+                            "Discuss Q3 budget.",
+                            "Pick up dry cleaning on the way.",
+                            "",
+                            "This is a longer note that might contain multiple sentences. It's important to test how multi-line notes are displayed in the UI. Ensure that the layout handles this gracefully without breaking.",
+                        ]),
+                        "location": random.choice([
+                            "Conference Room A",
+                            "Online Meeting",
+                            "Client's Office",
+                            "",
+                            "123 Main St, Anytown"
+                        ]),
                         "attendees": attendees_list,
                     }
                 )

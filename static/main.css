@@ -71,6 +71,248 @@ body {
   overflow: hidden;
   min-width: 500px;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-tabs {
+  display: flex;
+  border-bottom: 1px solid #ccc;
+  flex-shrink: 0;
+}
+
+body.dark-mode .calendar-tabs {
+  border-bottom: 1px solid #555;
+}
+
+.calendar-tab {
+  padding: 8px 16px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-size: 1em;
+  color: var(--text-color);
+  opacity: 0.7;
+}
+
+.calendar-tab.active {
+  font-weight: bold;
+  border-bottom: 2px solid #2196f3;
+  opacity: 1;
+}
+
+body.dark-mode .calendar-tab.active {
+  border-bottom: 2px solid #2196f3;
+}
+
+#week-view-container, #month-view-container {
+  flex-grow: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+#month-view-container.hidden,
+#week-view-container.hidden {
+  display: none;
+}
+
+#month-view-container {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+}
+
+.month-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.month-header h2 {
+  margin: 0;
+  font-size: 1.5em;
+}
+
+.month-grid-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-weight: bold;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #ccc;
+  margin-bottom: 1px;
+}
+
+body.dark-mode .month-grid-header {
+  border-bottom: 1px solid #555;
+}
+
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: minmax(100px, auto);
+  gap: 1px;
+  background-color: #ccc;
+  border: 1px solid #ccc;
+  flex-grow: 1;
+  overflow: auto;
+}
+
+body.dark-mode .month-grid {
+  background-color: #555;
+  border: 1px solid #555;
+}
+
+.month-day-cell {
+  background-color: var(--widget-bg);
+  padding: 4px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.month-day-cell .day-number {
+  font-size: 0.8em;
+  font-weight: bold;
+  text-align: right;
+  margin-bottom: 4px;
+}
+
+.month-day-cell.other-month .day-number {
+  color: #aaa;
+  opacity: 0.6;
+}
+
+body.dark-mode .month-day-cell.other-month .day-number {
+  color: #666;
+}
+
+.month-day-cell.today {
+  box-shadow: 0 0 0 2px #2196f3 inset;
+}
+
+.month-day-cell-events {
+  flex-grow: 1;
+  overflow-y: auto;
+  font-size: 0.7em;
+}
+
+.month-event-item {
+  padding: 2px 3px;
+  margin-top: 2px;
+  border-radius: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  background-color: #e0e0e0;
+  color: #333;
+}
+
+body.dark-mode .month-event-item {
+  background-color: #424242;
+  color: #eee;
+}
+
+.day-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.day-modal-overlay.open {
+  display: flex;
+}
+
+.day-modal-content {
+  background: var(--bg-color);
+  padding: 20px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 450px;
+  max-height: 85vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.day-modal-content h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+body.dark-mode .day-modal-content h3 {
+  border-bottom: 1px solid #444;
+}
+
+.day-modal-event {
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+body.dark-mode .day-modal-event {
+  border-bottom: 1px solid #3a3a3a;
+}
+
+.day-modal-event:last-child {
+  border-bottom: none;
+}
+
+.day-modal-event-title {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 3px;
+}
+
+.day-modal-event-time {
+  font-size: 0.9em;
+  color: #555;
+}
+
+body.dark-mode .day-modal-event-time {
+  color: #bbb;
+}
+
+.day-modal-event.all-day .day-modal-event-time {
+  font-style: italic;
+}
+
+.day-modal-no-events {
+  color: #777;
+  font-style: italic;
+}
+
+body.dark-mode .day-modal-no-events {
+  color: #aaa;
+}
+
+.day-modal-close-button {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 1.8em;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--text-color);
+  opacity: 0.7;
+}
+
+.day-modal-close-button:hover {
+  opacity: 1;
 }
 
 .week-calendar {
@@ -122,7 +364,6 @@ body.dark-mode .day-header {
   background: none;
   padding: 0;
   overflow: hidden;
-  vertical-align: top;
   display: block;
 }
 .day-cell.today {
@@ -175,9 +416,9 @@ body.dark-mode .week-calendar .no-events {
 .event-block {
   background: #1976d2;
   color: #fff;
-  border-radius: 4px;
-  margin: 2px 0;
-  padding: 2px 4px;
+  border-radius: 8px;
+  margin: 8px 4px;
+  padding: 10px 14px;
   font-size: 0.92em;
   overflow: hidden;
   white-space: nowrap;
@@ -196,11 +437,12 @@ body.dark-mode .event-block {
   flex-direction: column;
   justify-content: space-between;
   align-items: stretch;
-  padding: 4px 6px;
+  padding: 10px 14px;
   box-sizing: border-box;
   min-height: 18px;
   font-size: 0.92em;
   z-index: 1;
+  border-radius: 8px;
 }
 .event-block .event-time {
   font-size: 0.85em;
@@ -214,7 +456,8 @@ body.dark-mode .event-block {
   text-align: center;
   font-weight: 500;
   flex: 1 1 auto;
-  margin: 2px 0;
+  margin: 8px 0;
+  padding: 0 2px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -238,18 +481,19 @@ body.dark-mode .event-block {
 .reminders-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 14px;
   margin-bottom: 16px;
 }
 
 .reminder-item {
   display: flex;
   align-items: center;
-  padding: 8px; /* Ensure padding is explicit for animation */
-  border-radius: 6px;
+  padding: 16px 16px;
+  border-radius: 12px;
   background-color: rgba(0, 0, 0, 0.05);
   transition: background-color 0.2s ease;
   overflow: hidden; /* Added for animation */
+  margin: 4px 0;
 }
 
 body.dark-mode .reminder-item {
@@ -389,8 +633,8 @@ body.dark-mode .done-reminders h4 {
 .event-details-modal-content {
   background-color: var(--bg-color);
   color: var(--text-color);
-  padding: 25px;
-  border-radius: 10px;
+  padding: 36px 32px;
+  border-radius: 16px;
   box-shadow: 0 5px 20px rgba(0,0,0,0.2);
   width: 90%;
   max-width: 550px;

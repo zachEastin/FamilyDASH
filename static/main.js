@@ -19,7 +19,10 @@ document.addEventListener("DOMContentLoaded", () => {
   socket.on("network_update", (data) => updateNetwork(data));
   socket.on("lighting_update", (data) => updateLighting(data));
   socket.on("sun_update", (data) => updateSunTheme(data));
-  socket.on("icloud_update", (data) => updateIcloud(data));
+  socket.on("icloud_update", (data) => {
+    updateIcloudWeekView(data);
+    updateIcloudMonthView(data);
+  });
 
   // Initial fetch in case events arrived before socket connected
   fetch("/api/weather/data")
@@ -39,9 +42,14 @@ document.addEventListener("DOMContentLoaded", () => {
     .then((r) => updateSunTheme(r.data));
   fetch("/api/icloud/data")
     .then((r) => r.json())
-    .then((r) => updateIcloud(r.data));
+    .then((r) => {
+      updateIcloudWeekView(r.data);
+      updateIcloudMonthView(r.data);
+    });
 
   addTouchHandlers();
+  setupCalendarTabs();
+  createDayModal();
 
   // Move widgets to footer after DOM is loaded
   moveWidgetsToFooter();
@@ -70,6 +78,114 @@ document.addEventListener("DOMContentLoaded", () => {
     items.forEach((item) => pendingList.appendChild(item));
   }
 });
+
+function setupCalendarTabs() {
+  const weekTab = document.getElementById("week-tab");
+  const monthTab = document.getElementById("month-tab");
+  const weekViewContainer = document.getElementById("week-view-container");
+  const monthViewContainer = document.getElementById("month-view-container");
+
+  weekTab.addEventListener("click", () => {
+    weekTab.classList.add("active");
+    monthTab.classList.remove("active");
+    weekViewContainer.classList.remove("hidden");
+    monthViewContainer.classList.add("hidden");
+  });
+
+  monthTab.addEventListener("click", () => {
+    monthTab.classList.add("active");
+    weekTab.classList.remove("active");
+    monthViewContainer.classList.remove("hidden");
+    weekViewContainer.classList.add("hidden");
+  });
+}
+
+function createDayModal() {
+  const modalOverlay = document.createElement("div");
+  modalOverlay.className = "day-modal-overlay";
+  modalOverlay.id = "day-details-modal-overlay";
+  modalOverlay.innerHTML = `
+    <div class="day-modal-content">
+      <button class="day-modal-close-button">&times;</button>
+      <h3 id="day-modal-title"></h3>
+      <div id="day-modal-events"></div>
+    </div>
+  `;
+  document.body.appendChild(modalOverlay);
+
+  modalOverlay.addEventListener("click", (e) => {
+    if (e.target === modalOverlay) {
+      modalOverlay.classList.remove("open");
+    }
+  });
+  modalOverlay
+    .querySelector(".day-modal-close-button")
+    .addEventListener("click", () => {
+      modalOverlay.classList.remove("open");
+    });
+}
+
+function showDayDetailsModal(date, events) {
+  const modalOverlay = document.getElementById("day-details-modal-overlay");
+  const modalTitle = document.getElementById("day-modal-title");
+  const modalEventsContainer = document.getElementById("day-modal-events");
+
+  modalTitle.textContent = date.toLocaleDateString(undefined, {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  modalEventsContainer.innerHTML = "";
+
+  if (events.length === 0) {
+    modalEventsContainer.innerHTML =
+      '<p class="day-modal-no-events">No events scheduled for this day.</p>';
+  } else {
+    // Sort events: all-day first, then by start time
+    events.sort((a, b) => {
+      if (a.isAllDay && !b.isAllDay) return -1;
+      if (!a.isAllDay && b.isAllDay) return 1;
+      if (a.isAllDay && b.isAllDay) return a.title.localeCompare(b.title); // Sort all-day by title
+      return new Date(a.startDate) - new Date(b.startDate);
+    });
+
+    events.forEach((event) => {
+      const eventDiv = document.createElement("div");
+      eventDiv.className =
+        "day-modal-event" + (event.isAllDay ? " all-day" : "");
+
+      const titleSpan = document.createElement("span");
+      titleSpan.className = "day-modal-event-title";
+      titleSpan.textContent = event.title;
+      if (event.calendarColor) {
+        titleSpan.style.color = event.calendarColor;
+      }
+      eventDiv.appendChild(titleSpan);
+
+      const timeSpan = document.createElement("span");
+      timeSpan.className = "day-modal-event-time";
+      if (event.isAllDay) {
+        timeSpan.textContent = "All-day";
+      } else {
+        const startTime = new Date(event.startDate).toLocaleTimeString([], {
+          hour: "numeric",
+          minute: "2-digit",
+        });
+        const endTime = event.endDate
+          ? new Date(event.endDate).toLocaleTimeString([], {
+              hour: "numeric",
+              minute: "2-digit",
+            })
+          : "";
+        timeSpan.textContent = endTime ? `${startTime} - ${endTime}` : startTime;
+      }
+      eventDiv.appendChild(timeSpan);
+      modalEventsContainer.appendChild(eventDiv);
+    });
+  }
+  modalOverlay.classList.add("open");
+}
 
 function moveWidgetsToFooter() {
   let footer = document.querySelector(".footer");
@@ -215,9 +331,10 @@ function generateStubWeekEvents() {
   return stubEvents;
 }
 
-function updateIcloud(data) {
+// Renamed from updateIcloud to updateIcloudWeekView
+function updateIcloudWeekView(data) {
   if (!data || typeof data !== "object") {
-    document.getElementById("calendar").innerHTML =
+    document.getElementById("week-view-container").innerHTML =
       "<em>iCloud data unavailable.</em>";
     return;
   }
@@ -226,7 +343,7 @@ function updateIcloud(data) {
     console.log("Generating stub events");
     data.events = generateStubWeekEvents();
   }
-  const cal = document.getElementById("calendar");
+  const cal = document.getElementById("week-view-container");
   // --- Week view calendar ---
   const events = Array.isArray(data.events) ? data.events : [];
   // Get start of this week (Sunday)
@@ -352,7 +469,7 @@ function updateIcloud(data) {
           html += `<div class="event-block event-vertical" title="${
             ev.title
           }" data-event-uid="${ev.uid || ""}"
-            style="position:absolute; left:${leftPct}%; width:${widthPct}%; top:${topPct}%; height:${heightPct}%; background:${bgColor}; color:${textColor}; display:flex; align-items:center; justify-content:center;">
+            style="position:absolute; left:${leftPct}%; width:calc(${widthPct}% - 8px); top:${topPct}%; height:${heightPct}%; background:${bgColor}; color:${textColor}; display:flex; align-items:center; justify-content:center;">
             <span class="event-title">${ev.title}</span>
           </div>`;
         } else {
@@ -366,7 +483,7 @@ function updateIcloud(data) {
           html += `<div class="event-block event-vertical" title="${
             ev.title
           }" data-event-uid="${ev.uid || ""}"
-            style="position:absolute; left:${leftPct}%; width:${widthPct}%; top:${topPct}%; height:${heightPct}%; background:${bgColor}; color:${textColor}; display:flex; flex-direction:column; justify-content:space-between;">
+            style="position:absolute; left:${leftPct}%; calc(${widthPct}% - 8px); top:${topPct}%; height:${heightPct}%; background:${bgColor}; color:${textColor}; display:flex; flex-direction:column; justify-content:space-between;">
             <span class="event-time event-time-start">${startStr}</span>
             <span class="event-title">${ev.title}</span>
             <span class="event-time event-time-end">${endStr}</span>
@@ -380,7 +497,7 @@ function updateIcloud(data) {
   cal.innerHTML = html;
 
   // Add event listeners for event blocks
-  document.querySelectorAll(".event-block").forEach((block) => {
+  document.querySelectorAll("#week-view-container .event-block").forEach((block) => {
     block.addEventListener("click", (e) => {
       const uid = e.currentTarget.dataset.eventUid;
       if (uid) {
@@ -533,6 +650,126 @@ function updateIcloud(data) {
 
   const img = document.getElementById("shared-photo");
   if (data.photo) img.src = data.photo;
+}
+
+function updateIcloudMonthView(data) {
+  if (!data || typeof data !== "object") {
+    console.warn("No data for month view or data is not an object:", data);
+    return;
+  }
+  const monthViewContainer = document.getElementById("month-view-container");
+  if (!monthViewContainer) {
+    console.error("Month view container not found");
+    return;
+  }
+
+  // --- Map events to expected structure for month view ---
+  const events = Array.isArray(data.events) ? data.events.map(ev => {
+    // Map backend/stub event fields to month view fields
+    const start = new Date(ev.start);
+    const end = ev.end ? new Date(ev.end) : null;
+    // All-day: if event starts at 00:00 and ends at 00:00 next day, or has allDay property
+    let isAllDay = false;
+    if (ev.allDay !== undefined) {
+      isAllDay = !!ev.allDay;
+    } else if (start.getHours() === 0 && start.getMinutes() === 0 && end && end - start === 24*60*60*1000) {
+      isAllDay = true;
+    }
+    // Color: use ev.color or fallback
+    let calendarColor = ev.color || (ev.calendar && data.calendars && Array.isArray(data.calendars) ? (data.calendars.find(c => c.name === ev.calendar) || {}).color : undefined) || '#1976d2';
+    return {
+      ...ev,
+      startDate: ev.start,
+      endDate: ev.end,
+      isAllDay,
+      calendarColor,
+    };
+  }) : [];
+
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  const todayDate = now.getDate();
+
+  // Header for the month
+  let monthHeaderHtml = `<div class="month-header"><h2>${now.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</h2></div>`;
+  
+  // Day names header for the grid
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  let gridHeaderHtml = '<div class="month-grid-header">';
+  dayNames.forEach(name => gridHeaderHtml += `<div>${name}</div>`);
+  gridHeaderHtml += '</div>';
+
+  let monthGridHtml = '<div class="month-grid">';
+
+  const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+  const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
+  
+  // Calculate the start of the grid (Sunday of the week the 1st falls in)
+  let gridStartDate = new Date(firstDayOfMonth);
+  gridStartDate.setDate(gridStartDate.getDate() - firstDayOfMonth.getDay());
+
+  const allEventsForModal = {}; // Store events per day for the modal
+
+  for (let i = 0; i < 42; i++) { // 6 weeks * 7 days = 42 cells
+    const cellDate = new Date(gridStartDate);
+    cellDate.setDate(gridStartDate.getDate() + i);
+
+    const dayKey = cellDate.toISOString().split('T')[0]; // YYYY-MM-DD
+    allEventsForModal[dayKey] = [];
+
+    let cellClasses = "month-day-cell";
+    if (cellDate.getMonth() !== currentMonth) {
+      cellClasses += " other-month";
+    }
+    if (cellDate.getFullYear() === currentYear && cellDate.getMonth() === currentMonth && cellDate.getDate() === todayDate) {
+      cellClasses += " today";
+    }
+
+    monthGridHtml += `<div class="${cellClasses}" data-date="${dayKey}">`;
+    monthGridHtml += `<div class="day-number">${cellDate.getDate()}</div>`;
+    monthGridHtml += `<div class="month-day-cell-events">`;
+
+    // Filter and sort events for this specific day
+    const dayEvents = events.filter(event => {
+      const eventStartDate = new Date(event.startDate);
+      const eventEndDate = event.endDate ? new Date(event.endDate) : null;
+      // Check if event is on this day
+      if (event.isAllDay) {
+        // All-day events: show if any overlap with this day
+        return eventStartDate <= cellDate && eventEndDate > cellDate;
+      } else {
+        // Timed events: show if start is on this day
+        return eventStartDate.toDateString() === cellDate.toDateString();
+      }
+    }).sort((a, b) => { // Sort: all-day first, then by time
+      if (a.isAllDay && !b.isAllDay) return -1;
+      if (!a.isAllDay && b.isAllDay) return 1;
+      if (a.isAllDay && b.isAllDay) return a.title.localeCompare(b.title);
+      return new Date(a.startDate) - new Date(b.startDate);
+    });
+    
+    allEventsForModal[dayKey] = dayEvents; // Store for modal
+
+    dayEvents.forEach(event => {
+      // Basic event display, can be enhanced
+      monthGridHtml += `<div class="month-event-item" style="background-color: ${event.calendarColor || '#e0e0e0'}; color: ${getContrastColor(event.calendarColor || '#e0e0e0')}" title="${event.title}">${event.title}</div>`;
+    });
+
+    monthGridHtml += `</div></div>`; // Close month-day-cell-events and month-day-cell
+  }
+  monthGridHtml += "</div>"; // Close month-grid
+
+  monthViewContainer.innerHTML = monthHeaderHtml + gridHeaderHtml + monthGridHtml;
+
+  // Add click listeners to day cells for the modal
+  monthViewContainer.querySelectorAll('.month-day-cell').forEach(cell => {
+    cell.addEventListener('click', () => {
+      const dateStr = cell.dataset.date;
+      const cellDate = new Date(dateStr + 'T00:00:00'); // Ensure correct date object from string
+      showDayDetailsModal(cellDate, allEventsForModal[dateStr] || []);
+    });
+  });
 }
 
 function showEventDetailsModal(eventData) {
