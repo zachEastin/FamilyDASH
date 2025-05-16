@@ -867,8 +867,9 @@ body.dark-mode .event-modal-close-button:hover {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 110px;
+  /* min-width: 110px; */
   margin-top: -10px;
+  margin-left: 20px;
 }
 .weather-icon-large {
   width: 96px;
