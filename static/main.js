@@ -752,8 +752,9 @@ function updateIcloudMonthView(data) {
     allEventsForModal[dayKey] = dayEvents; // Store for modal
 
     dayEvents.forEach(event => {
-      // Basic event display, can be enhanced
-      monthGridHtml += `<div class="month-event-item" style="background-color: ${event.calendarColor || '#e0e0e0'}; color: ${getContrastColor(event.calendarColor || '#e0e0e0')}" title="${event.title}">${event.title}</div>`;
+      // Add class for all-day or timed event
+      const eventTypeClass = event.isAllDay ? 'all-day' : 'timed';
+      monthGridHtml += `<div class="month-event-item ${eventTypeClass}" style="background-color: ${event.calendarColor || '#e0e0e0'}; color: ${getContrastColor(event.calendarColor || '#e0e0e0')}" title="${event.title}">${event.title}</div>`;
     });
 
     monthGridHtml += `</div></div>`; // Close month-day-cell-events and month-day-cell
@@ -762,12 +763,60 @@ function updateIcloudMonthView(data) {
 
   monthViewContainer.innerHTML = monthHeaderHtml + gridHeaderHtml + monthGridHtml;
 
+  // After rendering, handle event overflow for each day cell
+  monthViewContainer.querySelectorAll('.month-day-cell-events').forEach(eventList => {
+    const maxVisible = 5; // Show up to 3 events, rest are hidden
+    const eventItems = Array.from(eventList.querySelectorAll('.month-event-item'));
+    if (eventItems.length > maxVisible) {
+      // Hide extra events
+      eventItems.forEach((item, idx) => {
+        if (idx >= maxVisible) item.classList.add('hidden-event');
+      });
+      // Add a '+N more' link
+      const moreCount = eventItems.length - maxVisible;
+      const showMore = document.createElement('div');
+      showMore.className = 'show-more';
+      showMore.textContent = `+${moreCount} more`;
+      showMore.addEventListener('click', e => {
+        e.stopPropagation();
+        // Show all events in modal for this day
+        const parentCell = eventList.closest('.month-day-cell');
+        if (parentCell) {
+          const dateStr = parentCell.dataset.date;
+          const cellDate = new Date(dateStr + 'T00:00:00');
+          showDayDetailsModal(cellDate, allEventsForModal[dateStr] || []);
+        }
+      });
+      eventList.appendChild(showMore);
+    }
+  });
+
   // Add click listeners to day cells for the modal
   monthViewContainer.querySelectorAll('.month-day-cell').forEach(cell => {
-    cell.addEventListener('click', () => {
+    cell.addEventListener('click', function(e) {
+      // Prevent day click if clicking on an event (event will handle its own click)
+      if (e.target.closest('.month-event-item')) return;
       const dateStr = cell.dataset.date;
       const cellDate = new Date(dateStr + 'T00:00:00'); // Ensure correct date object from string
       showDayDetailsModal(cellDate, allEventsForModal[dateStr] || []);
+    });
+  });
+
+  // Add click listeners to each event in the month view to show event details modal
+  monthViewContainer.querySelectorAll('.month-event-item').forEach(eventDiv => {
+    eventDiv.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent triggering the day cell click
+      // Find the event data for this event
+      const title = eventDiv.getAttribute('title');
+      // Find the event in the events array for this day
+      const parentCell = eventDiv.closest('.month-day-cell');
+      const dateStr = parentCell ? parentCell.dataset.date : null;
+      const dayEvents = dateStr ? allEventsForModal[dateStr] || [] : [];
+      // Try to match by title and color (could be improved with UID if available)
+      const eventData = dayEvents.find(ev => ev.title === title && eventDiv.style.backgroundColor.replace(/\s/g,"") === (ev.calendarColor ? ev.calendarColor.replace(/\s/g,"") : '')) || dayEvents.find(ev => ev.title === title) || null;
+      if (eventData) {
+        showEventDetailsModal(eventData);
+      }
     });
   });
 }

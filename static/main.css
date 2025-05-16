@@ -196,11 +196,16 @@ body.dark-mode .month-day-cell.other-month .day-number {
 
 .month-day-cell-events {
   flex-grow: 1;
-  overflow-y: auto;
+  overflow-x: hidden;
+  overflow-y: hidden;
   font-size: 0.7em;
+  display: flex;
+  flex-direction: column;
+  max-height: 80px;
+  position: relative;
 }
 
-.month-event-item {
+.month-day-cell-events .month-event-item {
   padding: 2px 3px;
   margin-top: 2px;
   border-radius: 3px;
@@ -215,6 +220,66 @@ body.dark-mode .month-day-cell.other-month .day-number {
 body.dark-mode .month-event-item {
   background-color: #424242;
   color: #eee;
+}
+
+.month-event-item.all-day {
+  width: 100%;
+  font-weight: bold;
+  font-size: 1em;
+  margin-left: 0;
+  background-color: #ffe082;
+  color: #333;
+  border-left: 4px solid #fbc02d;
+}
+body.dark-mode .month-event-item.all-day {
+  background-color: #665c1e;
+  color: #ffe082;
+  border-left: 4px solid #fbc02d;
+}
+
+.month-event-item.timed {
+  width: 85%;
+  margin-left: 10px;
+  font-weight: normal;
+  font-size: 0.95em;
+  background-color: #e3f2fd;
+  color: #1976d2;
+  border-left: 3px solid #1976d2;
+  position: relative;
+}
+body.dark-mode .month-event-item.timed {
+  background-color: #263238;
+  color: #90caf9;
+  border-left: 3px solid #1976d2;
+}
+
+.month-event-item.timed::before {
+  content: '\23F0'; /* Unicode alarm clock */
+  font-size: 0.9em;
+  margin-right: 4px;
+  vertical-align: middle;
+  color: inherit;
+}
+
+.month-day-cell-events .month-event-item.hidden-event {
+  display: none;
+}
+
+.month-day-cell-events .show-more {
+  background: #eee;
+  color: #333;
+  font-size: 0.8em;
+  text-align: center;
+  border-radius: 3px;
+  margin-top: 2px;
+  cursor: pointer;
+  padding: 2px 0;
+  border: 1px solid #ccc;
+}
+body.dark-mode .month-day-cell-events .show-more {
+  background: #444;
+  color: #eee;
+  border: 1px solid #666;
 }
 
 .day-modal-overlay {
