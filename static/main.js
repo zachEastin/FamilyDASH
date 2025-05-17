@@ -152,13 +152,10 @@ function openWeatherModal() {
   overlay.classList.add("open");
   overlay.querySelector(".weather-modal-content").classList.add("open");
   // Fetch both current and forecast data
-  console.log("[WeatherModal] Fetching /api/weather/data and /api/weather/forecast...");
   Promise.all([
-    fetch("/api/weather/data").then((r) => { console.log("[WeatherModal] /api/weather/data response", r); return r.json(); }),
-    fetch("/api/weather/forecast").then((r) => { console.log("[WeatherModal] /api/weather/forecast response", r); return r.json(); })
+    fetch("/api/weather/data").then((r) => r.json()),
+    fetch("/api/weather/forecast").then((r) => r.json())
   ]).then(([currentRes, forecastRes]) => {
-    console.log("[WeatherModal] currentRes:", currentRes);
-    console.log("[WeatherModal] forecastRes:", forecastRes);
     updateWeatherModal({
       current: currentRes.data,
       ...forecastRes.data
@@ -180,7 +177,6 @@ function updateWeatherModal(data) {
   const overlay = document.getElementById("weather-modal-overlay");
   if (!overlay) return;
   const modalCurrent = overlay.querySelector(".weather-modal-current");
-  console.log("[WeatherModal] updateWeatherModal called with data:", data);
   if (!data || !data.hourly || !data.daily || !data.current) {
     modalCurrent.innerHTML = `<div class='weather-modal-fallback'>Weather data unavailable.</div>`;
     overlay.querySelector(".weather-modal-hourly").innerHTML = "";
@@ -189,7 +185,6 @@ function updateWeatherModal(data) {
     return;
   }
   const c = data.current;
-  console.log("[WeatherModal] current weather object:", c);
   // Compose city/date (use location and today's date)
   const city = (data.location || '').replace(/_/g, ' ');
   const today = new Date();
@@ -294,24 +289,80 @@ function updateWeatherModal(data) {
     </div>
   </div>
   `;
-  // Hourly forecast (next 12h)
-  const hourly = data.hourly.slice(0, 12);
+  // Hourly forecast graph (24h)
   overlay.querySelector(".weather-modal-hourly").innerHTML = `
-    <div class="weather-modal-section-title">Next 12 Hours</div>
-    <div class="weather-modal-hourly-row">
-      ${hourly
-        .map(
-          (h) => `
-        <div class="weather-modal-hour">
-          <div class="weather-modal-hour-time">${new Date(h.dt * 1000).toLocaleTimeString([], { hour: "numeric" })}</div>
-          <img src="https://openweathermap.org/img/wn/${h.icon}@2x.png" class="weather-modal-hour-icon" alt="">
-          <div class="weather-modal-hour-temp">${h.temp.toFixed(0)}°</div>
-        </div>
-      `
-        )
-        .join("")}
+    <div class="weather-modal-section-title">Next 24 Hours</div>
+    <div class="weather-modal-forecast-graph-container">
+      <canvas id="weather-modal-forecast-graph" width="600" height="180" aria-label="24-hour forecast graph"></canvas>
     </div>
   `;
+  // Chart.js: destroy previous modal chart if exists, then create new
+  setTimeout(() => {
+    const modalCanvas = document.getElementById('weather-modal-forecast-graph');
+    if (window.modalForecastChart) {
+      window.modalForecastChart.destroy();
+      window.modalForecastChart = null;
+    }
+    if (modalCanvas && data.hourly) {
+      const hourlyDataForModal = data.hourly.slice(0, 24);
+      const modalTemps = hourlyDataForModal.map(h => h.temp);
+      const modalPops = hourlyDataForModal.map(h => (h.pop != null ? h.pop * 100 : 0));
+      const modalLabels = hourlyDataForModal.map(h => new Date(h.dt * 1000).toLocaleTimeString([], { hour: 'numeric' }));
+
+      // Calculate Y-axis min/max for modal chart based on its first 24 hours of temperature data
+      const first24ModalTemps = modalTemps.slice(0, 24).filter(t => typeof t === 'number' && isFinite(t));
+      let modalYAxisMin = null;
+      let modalYAxisMax = null;
+
+      if (first24ModalTemps.length > 0) {
+        const minTempIn24ForModal = Math.min(...first24ModalTemps);
+        const maxTempIn24ForModal = Math.max(...first24ModalTemps);
+        modalYAxisMin = Math.floor(minTempIn24ForModal - 5);
+        modalYAxisMax = Math.ceil(maxTempIn24ForModal + 5);
+      }
+
+      const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+          padding: { top: 20, right: 20, bottom: 20, left: 20 }
+        },
+        plugins: {
+          legend: {
+            display: false // Hide the legend
+          }
+        },
+        scales: {
+          x: { display: true, ticks: { autoSkip: true, maxTicksLimit: 8 } },
+          y1: {
+            type: 'linear',
+            position: 'left',
+            title: { display: true, text: '°F' },
+            ticks: { font: { size: 12 } }
+          },
+          y2: { type: 'linear', position: 'right', title: { display: true, text: '%' }, ticks: { font: { size: 12 } }, grid: { drawOnChartArea: false } }
+        }
+      };
+
+      if (modalYAxisMin !== null && modalYAxisMax !== null && isFinite(modalYAxisMin) && isFinite(modalYAxisMax)) {
+        chartOptions.scales.y1.min = modalYAxisMin;
+        chartOptions.scales.y1.max = modalYAxisMax;
+      }
+
+      const ctx2 = modalCanvas.getContext('2d');
+      window.modalForecastChart = new Chart(ctx2, {
+        type: 'bar',
+        data: {
+          labels: modalLabels,
+          datasets: [
+            { type: 'line', label: 'Temp (°F)', data: modalTemps, borderColor: '#ffd740', backgroundColor: 'rgba(255,215,0,0.2)', yAxisID: 'y1', tension: 0.4, fill: true },
+            { type: 'bar', label: 'Precip (%)', data: modalPops, backgroundColor: 'rgba(64,196,255,0.6)', yAxisID: 'y2' }
+          ]
+        },
+        options: chartOptions
+      });
+    }
+  }, 0);
   // Daily forecast (next 5d)
   overlay.querySelector(".weather-modal-daily").innerHTML = `
     <div class="weather-modal-section-title">5-Day Forecast</div>
@@ -490,6 +541,17 @@ function updateWeather(data) {
       </div>
     </div>
   `;
+
+  // Remove/hide old hourly forecast cards in the weather widget area if present
+  function removeOldHourlyCards() {
+    const weather = document.getElementById("weather");
+    if (!weather) return;
+    // Remove any .weather-hourly-cards or similar elements
+    const oldCards = weather.querySelectorAll('.weather-hourly-cards, .weather-hourly-row, .weather-hourly');
+    oldCards.forEach(el => el.remove());
+  }
+  // Call this after updating weather widget
+  removeOldHourlyCards();
 }
 
 function updateTime(data) {
@@ -1231,6 +1293,130 @@ function getContrastColor(hexColor) {
   return luminance > 0.5 ? "#000000" : "#FFFFFF";
 }
 
+// --- Chart.js Forecast Charts ---
+let mainForecastChart;
+let modalForecastChart;
+
+function initForecastCharts() {
+  const mainCanvas = document.getElementById('weather-forecast-graph');
+  if (mainCanvas) {
+    const ctx = mainCanvas.getContext('2d');
+    mainForecastChart = new Chart(ctx, {
+      type: 'bar',
+      data: { labels: [], datasets: [
+        { type: 'line', label: 'Temp (°F)', data: [], borderColor: '#ffd740', backgroundColor: 'rgba(255,215,0,0.2)', yAxisID: 'y1', tension: 0.4, fill: true },
+        { type: 'bar', label: 'Precip (%)', data: [], backgroundColor: 'rgba(64,196,255,0.6)', yAxisID: 'y2' }
+      ]},
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+          padding: { top: 30, right: 30, bottom: 30, left: 30 }
+        },
+        plugins: {
+          legend: {
+            labels: {
+              font: { size: 16 },
+              padding: 30
+            }
+          }
+        },
+        scales: {
+          x: {
+            display: true,
+            ticks: {
+              autoSkip: true,
+              maxTicksLimit: 8,
+              font: { size: 14 },
+              padding: 10
+            }
+          },
+          y1: {
+            type: 'linear',
+            position: 'left',
+            title: { display: true, text: '°F', font: { size: 16 } },
+            ticks: { font: { size: 14 }, padding: 10 }
+          },
+          y2: {
+            type: 'linear',
+            position: 'right',
+            title: { display: true, text: '%', font: { size: 16 } },
+            ticks: { font: { size: 14 }, padding: 10 },
+            grid: { drawOnChartArea: false }
+          }
+        }
+      }
+    });
+  }
+  const modalCanvas = document.getElementById('weather-modal-forecast-graph');
+  if (modalCanvas) {
+    const ctx2 = modalCanvas.getContext('2d');
+    modalForecastChart = new Chart(ctx2, JSON.parse(JSON.stringify(mainForecastChart.config)));
+  }
+}
+
+function updateForecastCharts(hourly) {
+  const labels = hourly.slice(0, 24).map(h => new Date(h.dt * 1000).toLocaleTimeString([], { hour: 'numeric' }));
+  const tempsData = hourly.slice(0, 24).map(h => h.temp);
+  const pops = hourly.slice(0, 24).map(h => (h.pop != null ? h.pop * 100 : 0));
+
+  // Calculate Y-axis min/max based on the first 24 hours of temperature data
+  const first24Temps = tempsData.slice(0, 24).filter(t => typeof t === 'number' && isFinite(t));
+  let yAxisMin = null;
+  let yAxisMax = null;
+
+  if (first24Temps.length > 0) {
+    const minTempIn24Hours = Math.min(...first24Temps);
+    const maxTempIn24Hours = Math.max(...first24Temps);
+    yAxisMin = Math.floor(minTempIn24Hours - 5);
+    yAxisMax = Math.ceil(maxTempIn24Hours + 5);
+  }
+
+  const chartsToUpdate = [mainForecastChart, modalForecastChart]; 
+
+  chartsToUpdate.forEach(chart => {
+    if (chart) {
+      if (yAxisMin !== null && yAxisMax !== null && isFinite(yAxisMin) && isFinite(yAxisMax)) {
+        chart.options.scales.y1.min = yAxisMin;
+        chart.options.scales.y1.suggestedMin = yAxisMin;
+        chart.options.scales.y1.max = yAxisMax;
+        chart.options.scales.y1.suggestedMax = yAxisMax;
+      } else {
+        // Revert to auto-scaling if no valid data or calculated min/max are not finite
+        delete chart.options.scales.y1.min;
+        delete chart.options.scales.y1.suggestedMin;
+        delete chart.options.scales.y1.max;
+        delete chart.options.scales.y1.suggestedMax;
+      }
+      chart.data.labels = labels;
+      chart.data.datasets[0].data = tempsData; // Full 24h data for the line
+      chart.data.datasets[1].data = pops;     // Full 24h data for precip
+      chart.update();
+    }
+  });
+}
+
+// Replace custom fetchAndUpdateForecast with Chart.js update
+function fetchAndUpdateForecast() {
+  fetch('/api/weather/forecast')
+    .then(r => r.json())
+    .then(r => {
+      if (r.data && Array.isArray(r.data.hourly)) {
+        updateForecastCharts(r.data.hourly);
+      }
+    });
+}
+
+// Initialize charts and fetch data on DOM load
+window.addEventListener('DOMContentLoaded', () => {
+  initForecastCharts();
+  fetchAndUpdateForecast();
+  if (window.io) {
+    const socket = io();
+    socket.on('weather_update', () => fetchAndUpdateForecast());
+  }
+});
+
 function addTouchHandlers() {
-  console.log("Touch handlers stub");
+  // Touch interactions (stubbed)
 }

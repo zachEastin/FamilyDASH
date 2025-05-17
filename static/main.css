@@ -1121,19 +1121,51 @@ body.dark-mode #network-status .network-label {
 .weather-modal-hourly-row, .weather-modal-daily-row { display: flex; gap: 1vw; overflow-x: auto; padding-bottom: 1vw; }
 .weather-modal-hour, .weather-modal-day { display: flex; flex-direction: column; align-items: center; min-width: 4vw; font-size: 1vw; }
 .weather-modal-hour-icon, .weather-modal-day-icon { width: 2vw; height: auto; }
-@media (max-width: 900px) {
-  .weather-modal-details {
-    font-size: 2vw;
-    padding: 2vw 2vw;
-    min-width: 120px;
-    max-width: 98vw;
-    grid-template-columns: 1fr;
-  }
-  .weather-modal-details-label, .weather-modal-details-value {
-    font-size: 2vw;
-  }
+.weather-modal-forecast-graph-container {
+  position: relative;
+  width: 100%;
+  padding-top: 10vw; /*  aspect ratio 5:2 for main, 2:1 for modal */
 }
-@media (max-width: 600px) {
+#weather-modal-forecast-graph {
+  width: 100%;
+  /* max-width: 600px; */
+  height: 180px;
+  background: transparent;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  display: block;
+}
+body.dark-mode #weather-modal-forecast-graph {
+  background: transparent;
+}
+.weather-modal-forecast-graph-container,
+.weather-modal-forecast-graph-container {
+  position: relative;
+  width: 100%;
+  padding-top: 10vw; /*  aspect ratio 5:2 for main, 2:1 for modal */
+}
+.weather-forecast-graph-container canvas, .weather-modal-forecast-graph-container canvas {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100% !important;
+  height: 10vw !important;
+}
+/* Override modal forecast graph container for fixed height */
+.weather-modal-forecast-graph-container {
+  padding-top: 0; /* Disable aspect ratio padding */
+  height: 180px; /* Fixed height matching canvas */
+}
+.weather-modal-forecast-graph-container canvas {
+  height: 100% !important; /* Match container height */
+}
+@media (max-width: 900px) {
+  .weather-modal-forecast-graph-container {
+    max-width: 98vw;
+  }
+  #weather-modal-forecast-graph {
+    max-width: 98vw;
+    height: 120px;
+  }
   .weather-modal-details {
     font-size: 3vw;
     padding: 2vw 2vw;
@@ -1226,8 +1258,16 @@ body.dark-mode #network-status .network-label {
   opacity: 0.8;
   font-size: 1.3vw;
 }
-@media (max-width: 900px) {
-  .weather-modal-current {
+@media (max-width: 600px) {
+  .weather-modal-forecast-graph-container {
+    max-width: 99vw;
+    padding: 2px 0 0 0;
+  }
+  #weather-modal-forecast-graph {
+    max-width: 99vw;
+    height: 80px;
+  }
+.weather-modal-current {
     flex-direction: column;
     align-items: center;
     gap: 2vw;
@@ -1261,8 +1301,6 @@ body.dark-mode #network-status .network-label {
   .weather-modal-hour-temp, .weather-modal-day-high, .weather-modal-day-low {
     font-size: 2.2vw;
   }
-}
-@media (max-width: 600px) {
   .weather-modal-current {
     flex-direction: column;
     align-items: center;
