@@ -82,21 +82,55 @@ document.addEventListener("DOMContentLoaded", () => {
 function setupCalendarTabs() {
   const weekTab = document.getElementById("week-tab");
   const monthTab = document.getElementById("month-tab");
+  const eventsSubtab = document.getElementById("events-subtab");
+  const mealsSubtab = document.getElementById("meals-subtab");
   const weekViewContainer = document.getElementById("week-view-container");
   const monthViewContainer = document.getElementById("month-view-container");
+  const mealsViewContainer = document.getElementById("meals-view-container");
+  const monthSubtabs = document.getElementById("month-subtabs");
+
+  function setActiveTab(tab) {
+    [weekTab, monthTab].forEach((btn) => btn.classList.remove("active"));
+    tab.classList.add("active");
+  }
+  function setActiveSubtab(subtab) {
+    [eventsSubtab, mealsSubtab].forEach((btn) => btn.classList.remove("active"));
+    subtab.classList.add("active");
+  }
+  function showMonthView() {
+    weekViewContainer.classList.add("hidden");
+    monthViewContainer.classList.remove("hidden");
+    mealsViewContainer.classList.remove("hidden");
+    if (eventsSubtab.classList.contains("active")) {
+      monthViewContainer.style.display = "flex";
+      mealsViewContainer.style.display = "none";
+    } else {
+      monthViewContainer.style.display = "none";
+      mealsViewContainer.style.display = "flex";
+      renderMealsMonthView();
+    }
+  }
 
   weekTab.addEventListener("click", () => {
-    weekTab.classList.add("active");
-    monthTab.classList.remove("active");
+    setActiveTab(weekTab);
     weekViewContainer.classList.remove("hidden");
     monthViewContainer.classList.add("hidden");
+    mealsViewContainer.classList.add("hidden");
+    if (monthSubtabs) monthSubtabs.style.display = "none";
   });
-
   monthTab.addEventListener("click", () => {
-    monthTab.classList.add("active");
-    weekTab.classList.remove("active");
-    monthViewContainer.classList.remove("hidden");
-    weekViewContainer.classList.add("hidden");
+    setActiveTab(monthTab);
+    if (monthSubtabs) monthSubtabs.style.display = "flex";
+    setActiveSubtab(eventsSubtab);
+    showMonthView();
+  });
+  eventsSubtab.addEventListener("click", () => {
+    setActiveSubtab(eventsSubtab);
+    showMonthView();
+  });
+  mealsSubtab.addEventListener("click", () => {
+    setActiveSubtab(mealsSubtab);
+    showMonthView();
   });
 }
 
@@ -154,16 +188,18 @@ function openWeatherModal() {
   // Fetch both current and forecast data
   Promise.all([
     fetch("/api/weather/data").then((r) => r.json()),
-    fetch("/api/weather/forecast").then((r) => r.json())
-  ]).then(([currentRes, forecastRes]) => {
-    updateWeatherModal({
-      current: currentRes.data,
-      ...forecastRes.data
+    fetch("/api/weather/forecast").then((r) => r.json()),
+  ])
+    .then(([currentRes, forecastRes]) => {
+      updateWeatherModal({
+        current: currentRes.data,
+        ...forecastRes.data,
+      });
+    })
+    .catch((err) => {
+      console.error("[WeatherModal] Error fetching weather data:", err);
+      updateWeatherModal(null);
     });
-  }).catch((err) => {
-    console.error("[WeatherModal] Error fetching weather data:", err);
-    updateWeatherModal(null);
-  });
 }
 
 function closeWeatherModal() {
@@ -181,61 +217,102 @@ function updateWeatherModal(data) {
     modalCurrent.innerHTML = `<div class='weather-modal-fallback'>Weather data unavailable.</div>`;
     overlay.querySelector(".weather-modal-hourly").innerHTML = "";
     overlay.querySelector(".weather-modal-daily").innerHTML = "";
-    if (overlay.querySelector(".weather-modal-details")) overlay.querySelector(".weather-modal-details").innerHTML = "";
+    if (overlay.querySelector(".weather-modal-details"))
+      overlay.querySelector(".weather-modal-details").innerHTML = "";
     return;
   }
   const c = data.current;
   // Compose city/date (use location and today's date)
-  const city = (data.location || '').replace(/_/g, ' ');
+  const city = (data.location || "").replace(/_/g, " ");
   const today = new Date();
-  const dateStr = today.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+  const dateStr = today.toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
   // Details grid with icons (emoji for now)
   // Helper: moon phase to icon
   function moonPhaseIcon(phase) {
-    if (phase == null) return '🌙';
-    if (phase === 0 || phase === 1) return '🌑';
-    if (phase < 0.25) return '🌒';
-    if (phase === 0.25) return '🌓';
-    if (phase < 0.5) return '🌔';
-    if (phase === 0.5) return '🌕';
-    if (phase < 0.75) return '🌖';
-    if (phase === 0.75) return '🌗';
-    return '🌘';
+    if (phase == null) return "🌙";
+    if (phase === 0 || phase === 1) return "🌑";
+    if (phase < 0.25) return "🌒";
+    if (phase === 0.25) return "🌓";
+    if (phase < 0.5) return "🌔";
+    if (phase === 0.5) return "🌕";
+    if (phase < 0.75) return "🌖";
+    if (phase === 0.75) return "🌗";
+    return "🌘";
   }
 
   const details = [
-    { icon: '🌅', label: 'Sunrise', value: c.sunrise ? formatTime(c.sunrise) : '--' },
-    { icon: '🌇', label: 'Sunset', value: c.sunset ? formatTime(c.sunset) : '--' },
-    { icon: '💨', label: 'Wind', value: c.wind_speed != null ? c.wind_speed.toFixed(1) + ' mph ' + windDir(c.wind_deg) : '--' },
-    { icon: '💧', label: 'Humidity', value: c.humidity != null ? c.humidity + ' %' : '--' },
-    { icon: '🎚️', label: 'Pressure', value: c.pressure != null ? c.pressure + ' hPa' : '--' },
-    { icon: '☁️', label: 'Clouds', value: c.clouds != null ? c.clouds + ' %' : '--' },
-    { icon: '🌡️', label: 'Dew Point', value: c.dew_point ? c.dew_point.toFixed(0) + ' °F' : '--' },
-    { icon: '🔆', label: 'UV Index', value: c.uvi != null ? c.uvi : '--' },
-    { icon: '🫁', label: 'Air Quality', value: c.air_quality != null ? airQualityText(c.air_quality) : '--' },
-    { icon: '🌾', label: 'Allergen', value: c.allergen_index != null ? c.allergen_index : '--' },
-    { icon: moonPhaseIcon(c.moon_phase), label: 'Moon', value: '' },
+    {
+      icon: "🌅",
+      label: "Sunrise",
+      value: c.sunrise ? formatTime(c.sunrise) : "--",
+    },
+    {
+      icon: "🌇",
+      label: "Sunset",
+      value: c.sunset ? formatTime(c.sunset) : "--",
+    },
+    {
+      icon: "💨",
+      label: "Wind",
+      value:
+        c.wind_speed != null
+          ? c.wind_speed.toFixed(1) + " mph " + windDir(c.wind_deg)
+          : "--",
+    },
+    { icon: "💧", label: "Humidity", value: c.humidity != null ? c.humidity + " %" : "--" },
+    { icon: "🎚️", label: "Pressure", value: c.pressure != null ? c.pressure + " hPa" : "--" },
+    { icon: "☁️", label: "Clouds", value: c.clouds != null ? c.clouds + " %" : "--" },
+    { icon: "🌡️", label: "Dew Point", value: c.dew_point ? c.dew_point.toFixed(0) + " °F" : "--" },
+    { icon: "🔆", label: "UV Index", value: c.uvi != null ? c.uvi : "--" },
+    {
+      icon: "🫁",
+      label: "Air Quality",
+      value: c.air_quality != null ? airQualityText(c.air_quality) : "--",
+    },
+    { icon: "🌾", label: "Allergen", value: c.allergen_index != null ? c.allergen_index : "--" },
+    { icon: moonPhaseIcon(c.moon_phase), label: "Moon", value: "" },
   ];
   // Assign CSS class based on data ranges and add moon icon
-  details.forEach(d => {
+  details.forEach((d) => {
     const label = d.label;
     const raw = parseFloat(d.value);
-    let cls = '';
-    if (label === 'Humidity') {
-      if (raw >= 70) cls = 'high'; else if (raw >= 30) cls = 'moderate'; else cls = 'low';
-    } else if (label === 'UV Index') {
-      if (raw >= 6) cls = 'high'; else if (raw >= 3) cls = 'moderate'; else cls = 'low';
-    } else if (label === 'Wind') {
-      if (raw >= 15) cls = 'high'; else if (raw >= 7) cls = 'moderate'; else cls = 'low';
-    } else if (label === 'Clouds') {
-      if (raw >= 70) cls = 'high'; else if (raw >= 30) cls = 'moderate'; else cls = 'low';
-    } else if (label === 'Pressure') {
-      if (raw < 1000 || raw > 1020) cls = 'moderate'; else cls = 'low';
-    } else if (label === 'Dew Point') {
-      if (raw >= 60) cls = 'high'; else if (raw >= 50) cls = 'moderate'; else cls = 'low';
-    } else if (label === 'Air Quality') {
-      const m = {'Good':'low','Fair':'moderate','Moderate':'high','Poor':'high','Very Poor':'high'};
-      cls = m[d.value] || '';
+    let cls = "";
+    if (label === "Humidity") {
+      if (raw >= 70) cls = "high";
+      else if (raw >= 30) cls = "moderate";
+      else cls = "low";
+    } else if (label === "UV Index") {
+      if (raw >= 6) cls = "high";
+      else if (raw >= 3) cls = "moderate";
+      else cls = "low";
+    } else if (label === "Wind") {
+      if (raw >= 15) cls = "high";
+      else if (raw >= 7) cls = "moderate";
+      else cls = "low";
+    } else if (label === "Clouds") {
+      if (raw >= 70) cls = "high";
+      else if (raw >= 30) cls = "moderate";
+      else cls = "low";
+    } else if (label === "Pressure") {
+      if (raw < 1000 || raw > 1020) cls = "moderate";
+      else cls = "low";
+    } else if (label === "Dew Point") {
+      if (raw >= 60) cls = "high";
+      else if (raw >= 50) cls = "moderate";
+      else cls = "low";
+    } else if (label === "Air Quality") {
+      const m = {
+        Good: "low",
+        Fair: "moderate",
+        Moderate: "high",
+        Poor: "high",
+        "Very Poor": "high",
+      };
+      cls = m[d.value] || "";
     }
     d.cssClass = cls;
     // if (label === 'Moon') {
@@ -259,20 +336,22 @@ function updateWeatherModal(data) {
       <div class="weather-modal-city">${city}</div>
       <div class="weather-modal-date">${dateStr}</div>
       <div class="weather-modal-details-inline">
-        ${details.map(d => {
-  let mainVal = '', unitVal = '';
-  if (typeof d.value === 'string') {
-    const parts = d.value.split(' ');
-    mainVal = parts.shift();
-    unitVal = parts.join(' ');
-  } else if (typeof d.value === 'number') {
-    mainVal = d.value;
-    unitVal = '';
-  } else {
-    mainVal = d.value || '';
-    unitVal = '';
-  }
-  return `
+        ${details
+          .map((d) => {
+            let mainVal = "",
+              unitVal = "";
+            if (typeof d.value === "string") {
+              const parts = d.value.split(" ");
+              mainVal = parts.shift();
+              unitVal = parts.join(" ");
+            } else if (typeof d.value === "number") {
+              mainVal = d.value;
+              unitVal = "";
+            } else {
+              mainVal = d.value || "";
+              unitVal = "";
+            }
+            return `
             <div class="weather-modal-details-row">
               <span class="weather-modal-details-icon">${d.icon}</span>
               <span class="weather-modal-details-value ${d.cssClass}">
@@ -284,7 +363,8 @@ function updateWeatherModal(data) {
               </span>
             </div>
           `;
-        }).join('')}
+          })
+          .join("")}
       </div>
     </div>
   </div>
@@ -298,19 +378,19 @@ function updateWeatherModal(data) {
   `;
   // Chart.js: destroy previous modal chart if exists, then create new
   setTimeout(() => {
-    const modalCanvas = document.getElementById('weather-modal-forecast-graph');
+    const modalCanvas = document.getElementById("weather-modal-forecast-graph");
     if (window.modalForecastChart) {
       window.modalForecastChart.destroy();
       window.modalForecastChart = null;
     }
     if (modalCanvas && data.hourly) {
       const hourlyDataForModal = data.hourly.slice(0, 24);
-      const modalTemps = hourlyDataForModal.map(h => h.temp);
-      const modalPops = hourlyDataForModal.map(h => (h.pop != null ? h.pop * 100 : 0));
-      const modalLabels = hourlyDataForModal.map(h => new Date(h.dt * 1000).toLocaleTimeString([], { hour: 'numeric' }));
+      const modalTemps = hourlyDataForModal.map((h) => h.temp);
+      const modalPops = hourlyDataForModal.map((h) => (h.pop != null ? h.pop * 100 : 0));
+      const modalLabels = hourlyDataForModal.map((h) => new Date(h.dt * 1000).toLocaleTimeString([], { hour: "numeric" }));
 
       // Calculate Y-axis min/max for modal chart based on its first 24 hours of temperature data
-      const first24ModalTemps = modalTemps.slice(0, 24).filter(t => typeof t === 'number' && isFinite(t));
+      const first24ModalTemps = modalTemps.slice(0, 24).filter((t) => typeof t === "number" && isFinite(t));
       let modalYAxisMin = null;
       let modalYAxisMax = null;
 
@@ -325,23 +405,29 @@ function updateWeatherModal(data) {
         responsive: true,
         maintainAspectRatio: false,
         layout: {
-          padding: { top: 20, right: 20, bottom: 20, left: 20 }
+          padding: { top: 20, right: 20, bottom: 20, left: 20 },
         },
         plugins: {
           legend: {
-            display: false // Hide the legend
-          }
+            display: false, // Hide the legend
+          },
         },
         scales: {
           x: { display: true, ticks: { autoSkip: true, maxTicksLimit: 8 } },
           y1: {
-            type: 'linear',
-            position: 'left',
-            title: { display: true, text: '°F' },
-            ticks: { font: { size: 12 } }
+            type: "linear",
+            position: "left",
+            title: { display: true, text: "°F" },
+            ticks: { font: { size: 12 } },
           },
-          y2: { type: 'linear', position: 'right', title: { display: true, text: '%' }, ticks: { font: { size: 12 } }, grid: { drawOnChartArea: false } }
-        }
+          y2: {
+            type: "linear",
+            position: "right",
+            title: { display: true, text: "%" },
+            ticks: { font: { size: 12 } },
+            grid: { drawOnChartArea: false },
+          },
+        },
       };
 
       if (modalYAxisMin !== null && modalYAxisMax !== null && isFinite(modalYAxisMin) && isFinite(modalYAxisMax)) {
@@ -349,17 +435,32 @@ function updateWeatherModal(data) {
         chartOptions.scales.y1.max = modalYAxisMax;
       }
 
-      const ctx2 = modalCanvas.getContext('2d');
+      const ctx2 = modalCanvas.getContext("2d");
       window.modalForecastChart = new Chart(ctx2, {
-        type: 'bar',
+        type: "bar",
         data: {
           labels: modalLabels,
           datasets: [
-            { type: 'line', label: 'Temp (°F)', data: modalTemps, borderColor: '#ffd740', backgroundColor: 'rgba(255,215,0,0.2)', yAxisID: 'y1', tension: 0.4, fill: true },
-            { type: 'bar', label: 'Precip (%)', data: modalPops, backgroundColor: 'rgba(64,196,255,0.6)', yAxisID: 'y2' }
-          ]
+            {
+              type: "line",
+              label: "Temp (°F)",
+              data: modalTemps,
+              borderColor: "#ffd740",
+              backgroundColor: "rgba(255,215,0,0.2)",
+              yAxisID: "y1",
+              tension: 0.4,
+              fill: true,
+            },
+            {
+              type: "bar",
+              label: "Precip (%)",
+              data: modalPops,
+              backgroundColor: "rgba(64,196,255,0.6)",
+              yAxisID: "y2",
+            },
+          ],
         },
-        options: chartOptions
+        options: chartOptions,
       });
     }
   }, 0);
@@ -388,8 +489,25 @@ function updateWeatherModal(data) {
 // Helper: wind direction as compass
 function windDir(deg) {
   if (deg == null) return "";
-  const dirs = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
-  return dirs[Math.round(deg / 22.5) % 16];
+  const dirs = [
+    "N",
+    "NNE",
+    "NE",
+    "ENE",
+    "E",
+    "ESE",
+    "SE",
+    "SSE",
+    "S",
+    "SSW",
+    "SW",
+    "WSW",
+    "W",
+    "WNW",
+    "NW",
+    "NNW",
+  ];
+  return dirs[Math.round((deg / 22.5) % 16)];
 }
 // Helper: air quality index to text
 function airQualityText(aqi) {
@@ -975,27 +1093,40 @@ function updateIcloudMonthView(data) {
   }
 
   // --- Map events to expected structure for month view ---
-  const events = Array.isArray(data.events) ? data.events.map(ev => {
-    // Map backend/stub event fields to month view fields
-    const start = new Date(ev.start);
-    const end = ev.end ? new Date(ev.end) : null;
-    // All-day: if event starts at 00:00 and ends at 00:00 next day, or has allDay property
-    let isAllDay = false;
-    if (ev.allDay !== undefined) {
-      isAllDay = !!ev.allDay;
-    } else if (start.getHours() === 0 && start.getMinutes() === 0 && end && end - start === 24*60*60*1000) {
-      isAllDay = true;
-    }
-    // Color: use ev.color or fallback
-    let calendarColor = ev.color || (ev.calendar && data.calendars && Array.isArray(data.calendars) ? (data.calendars.find(c => c.name === ev.calendar) || {}).color : undefined) || '#1976d2';
-    return {
-      ...ev,
-      startDate: ev.start,
-      endDate: ev.end,
-      isAllDay,
-      calendarColor,
-    };
-  }) : [];
+  const events = Array.isArray(data.events)
+    ? data.events.map((ev) => {
+        // Map backend/stub event fields to month view fields
+        const start = new Date(ev.start);
+        const end = ev.end ? new Date(ev.end) : null;
+        // All-day: if event starts at 00:00 and ends at 00:00 next day, or has allDay property
+        let isAllDay = false;
+        if (ev.allDay !== undefined) {
+          isAllDay = !!ev.allDay;
+        } else if (
+          start.getHours() === 0 &&
+          start.getMinutes() === 0 &&
+          end &&
+          end - start === 24 * 60 * 60 * 1000
+        ) {
+          isAllDay = true;
+        }
+        // Color: use ev.color or fallback
+        let calendarColor =
+          ev.color ||
+          (ev.calendar &&
+          data.calendars &&
+          Array.isArray(data.calendars)
+            ? (data.calendars.find((c) => c.name === ev.calendar) || {}).color
+            : undefined) || "#1976d2";
+        return {
+          ...ev,
+          startDate: ev.start,
+          endDate: ev.end,
+          isAllDay,
+          calendarColor,
+        };
+      })
+    : [];
 
   const now = new Date();
   const currentMonth = now.getMonth();
@@ -1003,37 +1134,45 @@ function updateIcloudMonthView(data) {
   const todayDate = now.getDate();
 
   // Header for the month
-  let monthHeaderHtml = `<div class="month-header"><h2>${now.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</h2></div>`;
-  
+  let monthHeaderHtml = `<div class="month-header"><h2>${now.toLocaleDateString(
+    undefined,
+    { month: "long", year: "numeric" }
+  )}</h2></div>`;
+
   // Day names header for the grid
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   let gridHeaderHtml = '<div class="month-grid-header">';
-  dayNames.forEach(name => gridHeaderHtml += `<div>${name}</div>`);
-  gridHeaderHtml += '</div>';
+  dayNames.forEach((name) => (gridHeaderHtml += `<div>${name}</div>`));
+  gridHeaderHtml += "</div>";
 
   let monthGridHtml = '<div class="month-grid">';
 
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
   const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
-  
+
   // Calculate the start of the grid (Sunday of the week the 1st falls in)
   let gridStartDate = new Date(firstDayOfMonth);
-  gridStartDate.setDate(gridStartDate.getDate() - firstDayOfMonth.getDay());
+  gridStartDate.setDate(gridStartDate.getDate() - gridStartDate.getDay());
 
   const allEventsForModal = {}; // Store events per day for the modal
 
-  for (let i = 0; i < 42; i++) { // 6 weeks * 7 days = 42 cells
+  for (let i = 0; i < 42; i++) {
+    // 6 weeks * 7 days = 42 cells
     const cellDate = new Date(gridStartDate);
     cellDate.setDate(gridStartDate.getDate() + i);
 
-    const dayKey = cellDate.toISOString().split('T')[0]; // YYYY-MM-DD
+    const dayKey = cellDate.toISOString().split("T")[0]; // YYYY-MM-DD
     allEventsForModal[dayKey] = [];
 
     let cellClasses = "month-day-cell";
     if (cellDate.getMonth() !== currentMonth) {
       cellClasses += " other-month";
     }
-    if (cellDate.getFullYear() === currentYear && cellDate.getMonth() === currentMonth && cellDate.getDate() === todayDate) {
+    if (
+      cellDate.getFullYear() === currentYear &&
+      cellDate.getMonth() === currentMonth &&
+      cellDate.getDate() === todayDate
+    ) {
       cellClasses += " today";
     }
 
@@ -1042,30 +1181,35 @@ function updateIcloudMonthView(data) {
     monthGridHtml += `<div class="month-day-cell-events">`;
 
     // Filter and sort events for this specific day
-    const dayEvents = events.filter(event => {
-      const eventStartDate = new Date(event.startDate);
-      const eventEndDate = event.endDate ? new Date(event.endDate) : null;
-      // Check if event is on this day
-      if (event.isAllDay) {
-        // All-day events: show if any overlap with this day
-        return eventStartDate <= cellDate && eventEndDate > cellDate;
-      } else {
-        // Timed events: show if start is on this day
-        return eventStartDate.toDateString() === cellDate.toDateString();
-      }
-    }).sort((a, b) => { // Sort: all-day first, then by time
-      if (a.isAllDay && !b.isAllDay) return -1;
-      if (!a.isAllDay && b.isAllDay) return 1;
-      if (a.isAllDay && b.isAllDay) return a.title.localeCompare(b.title);
-      return new Date(a.startDate) - new Date(b.startDate);
-    });
-    
+    const dayEvents = events
+      .filter((event) => {
+        const eventStartDate = new Date(event.startDate);
+        const eventEndDate = event.endDate ? new Date(event.endDate) : null;
+        // Check if event is on this day
+        if (event.isAllDay) {
+          // All-day events: show if any overlap with this day
+          return eventStartDate <= cellDate && eventEndDate > cellDate;
+        } else {
+          // Timed events: show if start is on this day
+          return eventStartDate.toDateString() === cellDate.toDateString();
+        }
+      })
+      .sort((a, b) => {
+        // Sort: all-day first, then by time
+        if (a.isAllDay && !b.isAllDay) return -1;
+        if (!a.isAllDay && b.isAllDay) return 1;
+        if (a.isAllDay && b.isAllDay) return a.title.localeCompare(b.title);
+        return new Date(a.startDate) - new Date(b.startDate);
+      });
+
     allEventsForModal[dayKey] = dayEvents; // Store for modal
 
-    dayEvents.forEach(event => {
+    dayEvents.forEach((event) => {
       // Add class for all-day or timed event
-      const eventTypeClass = event.isAllDay ? 'all-day' : 'timed';
-      monthGridHtml += `<div class="month-event-item ${eventTypeClass}" style="background-color: ${event.calendarColor || '#e0e0e0'}; color: ${getContrastColor(event.calendarColor || '#e0e0e0')}" title="${event.title}">${event.title}</div>`;
+      const eventTypeClass = event.isAllDay ? "all-day" : "timed";
+      monthGridHtml += `<div class="month-event-item ${eventTypeClass}" style="background-color: ${event.calendarColor || "#e0e0e0"}; color: ${getContrastColor(
+        event.calendarColor || "#e0e0e0"
+      )}" title="${event.title}">${event.title}</div>`;
     });
 
     monthGridHtml += `</div></div>`; // Close month-day-cell-events and month-day-cell
@@ -1075,26 +1219,26 @@ function updateIcloudMonthView(data) {
   monthViewContainer.innerHTML = monthHeaderHtml + gridHeaderHtml + monthGridHtml;
 
   // After rendering, handle event overflow for each day cell
-  monthViewContainer.querySelectorAll('.month-day-cell-events').forEach(eventList => {
+  monthViewContainer.querySelectorAll(".month-day-cell-events").forEach((eventList) => {
     const maxVisible = 5; // Show up to 3 events, rest are hidden
-    const eventItems = Array.from(eventList.querySelectorAll('.month-event-item'));
+    const eventItems = Array.from(eventList.querySelectorAll(".month-event-item"));
     if (eventItems.length > maxVisible) {
       // Hide extra events
       eventItems.forEach((item, idx) => {
-        if (idx >= maxVisible) item.classList.add('hidden-event');
+        if (idx >= maxVisible) item.classList.add("hidden-event");
       });
       // Add a '+N more' link
       const moreCount = eventItems.length - maxVisible;
-      const showMore = document.createElement('div');
-      showMore.className = 'show-more';
+      const showMore = document.createElement("div");
+      showMore.className = "show-more";
       showMore.textContent = `+${moreCount} more`;
-      showMore.addEventListener('click', e => {
+      showMore.addEventListener("click", (e) => {
         e.stopPropagation();
         // Show all events in modal for this day
-        const parentCell = eventList.closest('.month-day-cell');
+        const parentCell = eventList.closest(".month-day-cell");
         if (parentCell) {
           const dateStr = parentCell.dataset.date;
-          const cellDate = new Date(dateStr + 'T00:00:00');
+          const cellDate = new Date(dateStr + "T00:00:00");
           showDayDetailsModal(cellDate, allEventsForModal[dateStr] || []);
         }
       });
@@ -1103,28 +1247,34 @@ function updateIcloudMonthView(data) {
   });
 
   // Add click listeners to day cells for the modal
-  monthViewContainer.querySelectorAll('.month-day-cell').forEach(cell => {
-    cell.addEventListener('click', function(e) {
+  monthViewContainer.querySelectorAll(".month-day-cell").forEach((cell) => {
+    cell.addEventListener("click", function (e) {
       // Prevent day click if clicking on an event (event will handle its own click)
-      if (e.target.closest('.month-event-item')) return;
+      if (e.target.closest(".month-event-item")) return;
       const dateStr = cell.dataset.date;
-      const cellDate = new Date(dateStr + 'T00:00:00'); // Ensure correct date object from string
+      const cellDate = new Date(dateStr + "T00:00:00"); // Ensure correct date object from string
       showDayDetailsModal(cellDate, allEventsForModal[dateStr] || []);
     });
   });
 
   // Add click listeners to each event in the month view to show event details modal
-  monthViewContainer.querySelectorAll('.month-event-item').forEach(eventDiv => {
-    eventDiv.addEventListener('click', (e) => {
+  monthViewContainer.querySelectorAll(".month-event-item").forEach((eventDiv) => {
+    eventDiv.addEventListener("click", (e) => {
       e.stopPropagation(); // Prevent triggering the day cell click
       // Find the event data for this event
-      const title = eventDiv.getAttribute('title');
+      const title = eventDiv.getAttribute("title");
       // Find the event in the events array for this day
-      const parentCell = eventDiv.closest('.month-day-cell');
+      const parentCell = eventDiv.closest(".month-day-cell");
       const dateStr = parentCell ? parentCell.dataset.date : null;
       const dayEvents = dateStr ? allEventsForModal[dateStr] || [] : [];
       // Try to match by title and color (could be improved with UID if available)
-      const eventData = dayEvents.find(ev => ev.title === title && eventDiv.style.backgroundColor.replace(/\s/g,"") === (ev.calendarColor ? ev.calendarColor.replace(/\s/g,"") : '')) || dayEvents.find(ev => ev.title === title) || null;
+      const eventData =
+        dayEvents.find(
+          (ev) =>
+            ev.title === title &&
+            eventDiv.style.backgroundColor.replace(/\s/g, "") ===
+              (ev.calendarColor ? ev.calendarColor.replace(/\s/g, "") : "")
+        ) || dayEvents.find((ev) => ev.title === title) || null;
       if (eventData) {
         showEventDetailsModal(eventData);
       }
@@ -1298,28 +1448,46 @@ let mainForecastChart;
 let modalForecastChart;
 
 function initForecastCharts() {
-  const mainCanvas = document.getElementById('weather-forecast-graph');
+  const mainCanvas = document.getElementById("weather-forecast-graph");
   if (mainCanvas) {
-    const ctx = mainCanvas.getContext('2d');
+    const ctx = mainCanvas.getContext("2d");
     mainForecastChart = new Chart(ctx, {
-      type: 'bar',
-      data: { labels: [], datasets: [
-        { type: 'line', label: 'Temp (°F)', data: [], borderColor: '#ffd740', backgroundColor: 'rgba(255,215,0,0.2)', yAxisID: 'y1', tension: 0.4, fill: true },
-        { type: 'bar', label: 'Precip (%)', data: [], backgroundColor: 'rgba(64,196,255,0.6)', yAxisID: 'y2' }
-      ]},
+      type: "bar",
+      data: {
+        labels: [],
+        datasets: [
+          {
+            type: "line",
+            label: "Temp (°F)",
+            data: [],
+            borderColor: "#ffd740",
+            backgroundColor: "rgba(255,215,0,0.2)",
+            yAxisID: "y1",
+            tension: 0.4,
+            fill: true,
+          },
+          {
+            type: "bar",
+            label: "Precip (%)",
+            data: [],
+            backgroundColor: "rgba(64,196,255,0.6)",
+            yAxisID: "y2",
+          },
+        ],
+      },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         layout: {
-          padding: { top: 30, right: 30, bottom: 30, left: 30 }
+          padding: { top: 30, right: 30, bottom: 30, left: 30 },
         },
         plugins: {
           legend: {
             labels: {
               font: { size: 16 },
-              padding: 30
-            }
-          }
+              padding: 30,
+            },
+          },
         },
         scales: {
           x: {
@@ -1328,40 +1496,40 @@ function initForecastCharts() {
               autoSkip: true,
               maxTicksLimit: 8,
               font: { size: 14 },
-              padding: 10
-            }
+              padding: 10,
+            },
           },
           y1: {
-            type: 'linear',
-            position: 'left',
-            title: { display: true, text: '°F', font: { size: 16 } },
-            ticks: { font: { size: 14 }, padding: 10 }
+            type: "linear",
+            position: "left",
+            title: { display: true, text: "°F", font: { size: 16 } },
+            ticks: { font: { size: 14 }, padding: 10 },
           },
           y2: {
-            type: 'linear',
-            position: 'right',
-            title: { display: true, text: '%', font: { size: 16 } },
+            type: "linear",
+            position: "right",
+            title: { display: true, text: "%", font: { size: 16 } },
             ticks: { font: { size: 14 }, padding: 10 },
-            grid: { drawOnChartArea: false }
-          }
-        }
-      }
+            grid: { drawOnChartArea: false },
+          },
+        },
+      },
     });
   }
-  const modalCanvas = document.getElementById('weather-modal-forecast-graph');
+  const modalCanvas = document.getElementById("weather-modal-forecast-graph");
   if (modalCanvas) {
-    const ctx2 = modalCanvas.getContext('2d');
+    const ctx2 = modalCanvas.getContext("2d");
     modalForecastChart = new Chart(ctx2, JSON.parse(JSON.stringify(mainForecastChart.config)));
   }
 }
 
 function updateForecastCharts(hourly) {
-  const labels = hourly.slice(0, 24).map(h => new Date(h.dt * 1000).toLocaleTimeString([], { hour: 'numeric' }));
-  const tempsData = hourly.slice(0, 24).map(h => h.temp);
-  const pops = hourly.slice(0, 24).map(h => (h.pop != null ? h.pop * 100 : 0));
+  const labels = hourly.slice(0, 24).map((h) => new Date(h.dt * 1000).toLocaleTimeString([], { hour: "numeric" }));
+  const tempsData = hourly.slice(0, 24).map((h) => h.temp);
+  const pops = hourly.slice(0, 24).map((h) => (h.pop != null ? h.pop * 100 : 0));
 
   // Calculate Y-axis min/max based on the first 24 hours of temperature data
-  const first24Temps = tempsData.slice(0, 24).filter(t => typeof t === 'number' && isFinite(t));
+  const first24Temps = tempsData.slice(0, 24).filter((t) => typeof t === "number" && isFinite(t));
   let yAxisMin = null;
   let yAxisMax = null;
 
@@ -1372,9 +1540,9 @@ function updateForecastCharts(hourly) {
     yAxisMax = Math.ceil(maxTempIn24Hours + 5);
   }
 
-  const chartsToUpdate = [mainForecastChart, modalForecastChart]; 
+  const chartsToUpdate = [mainForecastChart, modalForecastChart];
 
-  chartsToUpdate.forEach(chart => {
+  chartsToUpdate.forEach((chart) => {
     if (chart) {
       if (yAxisMin !== null && yAxisMax !== null && isFinite(yAxisMin) && isFinite(yAxisMax)) {
         chart.options.scales.y1.min = yAxisMin;
@@ -1398,9 +1566,9 @@ function updateForecastCharts(hourly) {
 
 // Replace custom fetchAndUpdateForecast with Chart.js update
 function fetchAndUpdateForecast() {
-  fetch('/api/weather/forecast')
-    .then(r => r.json())
-    .then(r => {
+  fetch("/api/weather/forecast")
+    .then((r) => r.json())
+    .then((r) => {
       if (r.data && Array.isArray(r.data.hourly)) {
         updateForecastCharts(r.data.hourly);
       }
@@ -1408,15 +1576,61 @@ function fetchAndUpdateForecast() {
 }
 
 // Initialize charts and fetch data on DOM load
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener("DOMContentLoaded", () => {
   initForecastCharts();
   fetchAndUpdateForecast();
   if (window.io) {
     const socket = io();
-    socket.on('weather_update', () => fetchAndUpdateForecast());
+    socket.on("weather_update", () => fetchAndUpdateForecast());
   }
 });
 
 function addTouchHandlers() {
   // Touch interactions (stubbed)
+}
+
+function renderMealsMonthView() {
+  const mealsViewContainer = document.getElementById("meals-view-container");
+  if (!mealsViewContainer) return;
+  // For now, use current month and year
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  const todayDate = now.getDate();
+
+  // Header
+  let monthHeaderHtml = `<div class="month-header"><h2>${now.toLocaleDateString(
+    undefined,
+    { month: "long", year: "numeric" }
+  )}</h2></div>`;
+  // Day names header
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  let gridHeaderHtml = '<div class="meals-grid-header">';
+  dayNames.forEach((name) => (gridHeaderHtml += `<div>${name}</div>`));
+  gridHeaderHtml += "</div>";
+  let mealsGridHtml = '<div class="meals-grid">';
+  const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+  let gridStartDate = new Date(firstDayOfMonth);
+  gridStartDate.setDate(gridStartDate.getDate() - gridStartDate.getDay());
+  for (let i = 0; i < 42; i++) {
+    const cellDate = new Date(gridStartDate);
+    cellDate.setDate(gridStartDate.getDate() + i);
+    let cellClasses = "meals-day-cell";
+    if (cellDate.getMonth() !== currentMonth) cellClasses += " other-month";
+    if (
+      cellDate.getFullYear() === currentYear &&
+      cellDate.getMonth() === currentMonth &&
+      cellDate.getDate() === todayDate
+    )
+      cellClasses += " today";
+    mealsGridHtml += `<div class="${cellClasses}" data-date="${cellDate.toISOString().split("T")[0]}">`;
+    mealsGridHtml += `<div class="day-number">${cellDate.getDate()}</div>`;
+    mealsGridHtml += `<div class="meals-zones">`;
+    ["Breakfast", "Lunch", "Dinner"].forEach((zone) => {
+      mealsGridHtml += `<div class="meal-zone"><span class="meal-zone-label">${zone}</span><div class="recipe-slot"></div><button class="add-recipe-btn" title="Add recipe">+</button></div>`;
+    });
+    mealsGridHtml += `</div></div>`;
+  }
+  mealsGridHtml += "</div>";
+  mealsViewContainer.innerHTML = monthHeaderHtml + gridHeaderHtml + mealsGridHtml;
 }

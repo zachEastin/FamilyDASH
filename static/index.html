@@ -14,14 +14,21 @@
       <div class="calendar-tabs">
         <button id="week-tab" class="calendar-tab active">Week</button>
         <button id="month-tab" class="calendar-tab">Month</button>
+        <div class="month-subtabs" id="month-subtabs" style="display:none;">
+          <div class="month-subtabs-group">
+            <button id="events-subtab" class="month-subtab active">Events</button>
+            <button id="meals-subtab" class="month-subtab">Meals</button>
+          </div>
+        </div>
       </div>
       <div id="week-view-container">
         <!-- Existing week view will be rendered here by JS -->
         Loading calendar...
       </div>
-      <div id="month-view-container" class="hidden">
+      <div id="month-view-container" class="hidden calendar-view">
         <!-- Month view will be rendered here by JS -->
       </div>
+      <div id="meals-view-container" class="hidden calendar-view" style="display:none;"></div>
     </div>
     <div id="reminders" class="widget">Loading reminders...</div>
     <div id="photo" class="widget"><img id="shared-photo" src="" alt="Family Photo"></div>
