@@ -42,6 +42,36 @@
     <div id="network-status" class="widget">Checking network...</div>
     <div id="offline-indicator" class="widget hidden">Offline</div>
   </div>
+  <div id="recipe-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <button class="modal-close" id="recipe-modal-close" title="Close">&times;</button>
+      <h2 id="recipe-modal-title">Edit Recipe</h2>
+      <form id="recipe-form" autocomplete="off">
+        <label for="recipe-title">Title</label>
+        <input type="text" id="recipe-title" name="title" required>
+
+        <label for="recipe-ingredients">Ingredients</label>
+        <textarea id="recipe-ingredients" name="ingredients" rows="3" placeholder="One per line or comma separated"></textarea>
+
+        <div class="favorite-toggle">
+          <span id="favorite-star" class="fa fa-star-o" title="Mark as favorite" tabindex="0"></span>
+          <span>Favorite</span>
+        </div>
+
+        <div class="recipe-tags">
+          <label>Tags:</label>
+          <label><input type="checkbox" name="tags" value="vegetarian"> Vegetarian</label>
+          <label><input type="checkbox" name="tags" value="quick"> Quick</label>
+          <label><input type="checkbox" name="tags" value="slow-cooker"> Slow Cooker</label>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" id="recipe-save">Save</button>
+          <button type="button" id="recipe-cancel">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="/static/main.js"></script>
 </body>

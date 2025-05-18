@@ -107,7 +107,7 @@ function setupCalendarTabs() {
     } else {
       monthViewContainer.style.display = "none";
       mealsViewContainer.style.display = "flex";
-      renderMealsMonthView();
+      fetchAndRenderMealsMonthView();
     }
   }
 
@@ -1282,317 +1282,129 @@ function updateIcloudMonthView(data) {
   });
 }
 
-function showEventDetailsModal(eventData) {
-  // Remove existing modal if any
-  const existingModal = document.getElementById("event-details-modal");
-  if (existingModal) {
-    existingModal.remove();
-  }
+// --- Recipe Modal Logic ---
+(function setupRecipeModal() {
+  const modal = document.getElementById("recipe-modal");
+  const form = document.getElementById("recipe-form");
+  const closeBtn = document.getElementById("recipe-modal-close");
+  const saveBtn = document.getElementById("recipe-save");
+  const cancelBtn = document.getElementById("recipe-cancel");
+  const titleInput = document.getElementById("recipe-title");
+  const ingredientsInput = document.getElementById("recipe-ingredients");
+  const favoriteStar = document.getElementById("favorite-star");
+  const tagInputs = form.querySelectorAll("input[name='tags']");
+  let currentDate = null, currentMealType = null, currentMonth = null;
+  let isFavorite = false;
 
-  const modal = document.createElement("div");
-  modal.id = "event-details-modal";
-  modal.className = "event-details-modal-overlay"; // Initial state for animation is in CSS
-
-  const modalContent = document.createElement("div");
-  modalContent.className = "event-details-modal-content";
-
-  // Darken the event color for the modal background
-  const eventColor = eventData.color || "#1976d2";
-  modalContent.style.backgroundColor = darkenColor(eventColor, 20); // Darken by 20%
-  // Ensure text color contrasts with the new background
-  modalContent.style.color = getContrastColor(
-    modalContent.style.backgroundColor
-  );
-
-  let contentHtml = `<h2>${eventData.title}</h2>`;
-  const startDate = new Date(eventData.start);
-  const endDate = eventData.end ? new Date(eventData.end) : null;
-
-  // Calculate duration
-  let durationStr = "All day";
-  if (endDate) {
-    const diffMs = endDate - startDate;
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-    if (diffHours > 0 && diffMins > 0) {
-      durationStr = `${diffHours}h ${diffMins}m`;
-    } else if (diffHours > 0) {
-      durationStr = `${diffHours} hour${diffHours > 1 ? "s" : ""}`;
-    } else if (diffMins > 0) {
-      durationStr = `${diffMins} minute${diffMins > 1 ? "s" : ""}`;
-    } else if (diffMs > 0) {
-      // Less than a minute, show as 1 minute
-      durationStr = "1 minute";
-    }
-    // If it's exactly 24 hours and starts at midnight, could also be considered "All day"
-    if (
-      diffMs === 24 * 60 * 60 * 1000 &&
-      startDate.getHours() === 0 &&
-      startDate.getMinutes() === 0
-    ) {
-      durationStr = "All day";
-    }
-  }
-
-  contentHtml += `<p><strong>Duration:</strong> ${durationStr}</p>`;
-
-  const startTimeFormatted = startDate.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  let endTimeFormatted = "";
-  let fullDateTimeInfo = `From: ${startDate.toLocaleDateString([], {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  })} at ${startTimeFormatted}`;
-
-  if (endDate) {
-    endTimeFormatted = endDate.toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
+  function showModal(recipe, date, mealType) {
+    modal.style.display = "flex";
+    setTimeout(() => { modal.classList.add("open"); }, 10);
+    currentDate = date;
+    currentMealType = mealType;
+    currentMonth = date.slice(0, 7);
+    titleInput.value = recipe && recipe.title ? recipe.title : "";
+    ingredientsInput.value = recipe && recipe.ingredients ? (Array.isArray(recipe.ingredients) ? recipe.ingredients.join("\n") : recipe.ingredients) : "";
+    isFavorite = recipe && recipe.isFavorite ? true : false;
+    updateFavoriteStar();
+    // Tags
+    const tags = recipe && recipe.tags ? recipe.tags : [];
+    tagInputs.forEach(input => {
+      input.checked = tags.includes(input.value);
     });
-    if (startDate.toDateString() === endDate.toDateString()) {
-      fullDateTimeInfo += ` to ${endTimeFormatted}`;
+  }
+  function hideModal() {
+    modal.classList.remove("open");
+    setTimeout(() => { modal.style.display = "none"; }, 200);
+    form.reset();
+    isFavorite = false;
+    updateFavoriteStar();
+  }
+  function updateFavoriteStar() {
+    if (isFavorite) {
+      favoriteStar.classList.add("favorited", "fa-star");
+      favoriteStar.classList.remove("fa-star-o");
     } else {
-      fullDateTimeInfo += ` to ${endDate.toLocaleDateString([], {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-      })} at ${endTimeFormatted}`;
+      favoriteStar.classList.remove("favorited", "fa-star");
+      favoriteStar.classList.add("fa-star-o");
     }
   }
-  contentHtml += `<p class="event-time-details">${fullDateTimeInfo}</p>`;
-
-  contentHtml += `<p><strong>Calendar:</strong> ${
-    eventData.calendar || "N/A"
-  }</p>`;
-
-  if (eventData.attendees && eventData.attendees.length > 0) {
-    contentHtml += `<p><strong>Attendees:</strong></p><ul>`;
-    eventData.attendees.forEach((att) => {
-      const statusClass = att.status
-        ? att.status.toLowerCase().replace("-", "")
-        : "noreply";
-      contentHtml += `<li><span class="attendee-status-icon status-${statusClass}"></span>${att.name} (${att.email})</li>`;
-    });
-    contentHtml += `</ul>`;
-  }
-
-  modalContent.innerHTML = contentHtml;
-
-  const closeButton = document.createElement("button");
-  closeButton.textContent = "Close";
-  closeButton.className = "event-modal-close-button";
-  closeButton.onclick = () => {
-    modal.classList.remove("open"); // Trigger close animation
-    modal.addEventListener("transitionend", () => modal.remove(), {
-      once: true,
-    });
-  };
-  modalContent.appendChild(closeButton);
-
-  modal.appendChild(modalContent);
-  document.body.appendChild(modal);
-
-  // Trigger open animation
-  requestAnimationFrame(() => {
-    modal.classList.add("open");
+  favoriteStar.addEventListener("click", () => {
+    isFavorite = !isFavorite;
+    updateFavoriteStar();
   });
-
-  // Close modal if clicking outside of modal-content
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) {
-      modal.classList.remove("open");
-      modal.addEventListener("transitionend", () => modal.remove(), {
-        once: true,
+  favoriteStar.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      isFavorite = !isFavorite;
+      updateFavoriteStar();
+      e.preventDefault();
+    }
+  });
+  closeBtn.addEventListener("click", hideModal);
+  cancelBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    hideModal();
+  });
+  form.addEventListener("submit", function(e) {
+    e.preventDefault();
+    const title = titleInput.value.trim();
+    if (!title) return;
+    let ingredients = ingredientsInput.value.split(/\n|,/).map(s => s.trim()).filter(Boolean);
+    const tags = Array.from(tagInputs).filter(i => i.checked).map(i => i.value);
+    const recipe = { title, ingredients, tags, isFavorite };
+    // POST to /api/meals/update
+    fetch("/api/meals/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        month: currentMonth,
+        date: currentDate,
+        mealType: currentMealType,
+        recipe
+      })
+    })
+      .then(r => r.json())
+      .then(() => {
+        hideModal();
+        fetchAndRenderMealsMonthView();
       });
-    }
+  });
+  // Expose for use in meals view
+  window.openRecipeModal = showModal;
+})();
+
+// Patch meal-slot click handler to open modal with data
+function patchMealSlotClicksWithModal(mealsData) {
+  document.querySelectorAll(".meal-slot").forEach(slot => {
+    slot.addEventListener("click", function(e) {
+      const date = slot.dataset.date;
+      const mealType = slot.dataset.mealType;
+      // Find recipe data if available
+      let recipe = null;
+      if (mealsData) {
+        const month = date.slice(0, 7);
+        if (mealsData[month] && mealsData[month][date] && mealsData[month][date][mealType]) {
+          recipe = mealsData[month][date][mealType];
+        }
+      }
+      window.openRecipeModal(recipe, date, mealType);
+    });
   });
 }
 
-// Helper function to darken a hex color
-function darkenColor(hex, percent) {
-  let r = parseInt(hex.slice(1, 3), 16);
-  let g = parseInt(hex.slice(3, 5), 16);
-  let b = parseInt(hex.slice(5, 7), 16);
-
-  r = Math.floor(r * (1 - percent / 100));
-  g = Math.floor(g * (1 - percent / 100));
-  b = Math.floor(b * (1 - percent / 100));
-
-  r = Math.max(0, Math.min(255, r));
-  g = Math.max(0, Math.min(255, g));
-  b = Math.max(0, Math.min(255, b));
-
-  return `#${r.toString(16).padStart(2, "0")}${g
-    .toString(16)
-    .padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+// --- Fix: Restore renderMealsMonthView to default if not already patched ---
+if (!window._origRenderMealsMonthView) {
+  window._origRenderMealsMonthView = renderMealsMonthView;
+}
+renderMealsMonthView = function(data) {
+  window._origRenderMealsMonthView(data);
+  if (data) patchMealSlotClicksWithModal(data);
 }
 
-// Helper function to get contrasting text color (black or white)
-function getContrastColor(hexColor) {
-  if (hexColor.startsWith("#")) {
-    hexColor = hexColor.slice(1);
-  }
-  const r = parseInt(hexColor.slice(0, 2), 16);
-  const g = parseInt(hexColor.slice(2, 4), 16);
-  const b = parseInt(hexColor.slice(4, 6), 16);
-  // Standard luminance calculation
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.5 ? "#000000" : "#FFFFFF";
-}
-
-// --- Chart.js Forecast Charts ---
-let mainForecastChart;
-let modalForecastChart;
-
-function initForecastCharts() {
-  const mainCanvas = document.getElementById("weather-forecast-graph");
-  if (mainCanvas) {
-    const ctx = mainCanvas.getContext("2d");
-    mainForecastChart = new Chart(ctx, {
-      type: "bar",
-      data: {
-        labels: [],
-        datasets: [
-          {
-            type: "line",
-            label: "Temp (°F)",
-            data: [],
-            borderColor: "#ffd740",
-            backgroundColor: "rgba(255,215,0,0.2)",
-            yAxisID: "y1",
-            tension: 0.4,
-            fill: true,
-          },
-          {
-            type: "bar",
-            label: "Precip (%)",
-            data: [],
-            backgroundColor: "rgba(64,196,255,0.6)",
-            yAxisID: "y2",
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        layout: {
-          padding: { top: 30, right: 30, bottom: 30, left: 30 },
-        },
-        plugins: {
-          legend: {
-            labels: {
-              font: { size: 16 },
-              padding: 30,
-            },
-          },
-        },
-        scales: {
-          x: {
-            display: true,
-            ticks: {
-              autoSkip: true,
-              maxTicksLimit: 8,
-              font: { size: 14 },
-              padding: 10,
-            },
-          },
-          y1: {
-            type: "linear",
-            position: "left",
-            title: { display: true, text: "°F", font: { size: 16 } },
-            ticks: { font: { size: 14 }, padding: 10 },
-          },
-          y2: {
-            type: "linear",
-            position: "right",
-            title: { display: true, text: "%", font: { size: 16 } },
-            ticks: { font: { size: 14 }, padding: 10 },
-            grid: { drawOnChartArea: false },
-          },
-        },
-      },
-    });
-  }
-  const modalCanvas = document.getElementById("weather-modal-forecast-graph");
-  if (modalCanvas) {
-    const ctx2 = modalCanvas.getContext("2d");
-    modalForecastChart = new Chart(ctx2, JSON.parse(JSON.stringify(mainForecastChart.config)));
-  }
-}
-
-function updateForecastCharts(hourly) {
-  const labels = hourly.slice(0, 24).map((h) => new Date(h.dt * 1000).toLocaleTimeString([], { hour: "numeric" }));
-  const tempsData = hourly.slice(0, 24).map((h) => h.temp);
-  const pops = hourly.slice(0, 24).map((h) => (h.pop != null ? h.pop * 100 : 0));
-
-  // Calculate Y-axis min/max based on the first 24 hours of temperature data
-  const first24Temps = tempsData.slice(0, 24).filter((t) => typeof t === "number" && isFinite(t));
-  let yAxisMin = null;
-  let yAxisMax = null;
-
-  if (first24Temps.length > 0) {
-    const minTempIn24Hours = Math.min(...first24Temps);
-    const maxTempIn24Hours = Math.max(...first24Temps);
-    yAxisMin = Math.floor(minTempIn24Hours - 5);
-    yAxisMax = Math.ceil(maxTempIn24Hours + 5);
-  }
-
-  const chartsToUpdate = [mainForecastChart, modalForecastChart];
-
-  chartsToUpdate.forEach((chart) => {
-    if (chart) {
-      if (yAxisMin !== null && yAxisMax !== null && isFinite(yAxisMin) && isFinite(yAxisMax)) {
-        chart.options.scales.y1.min = yAxisMin;
-        chart.options.scales.y1.suggestedMin = yAxisMin;
-        chart.options.scales.y1.max = yAxisMax;
-        chart.options.scales.y1.suggestedMax = yAxisMax;
-      } else {
-        // Revert to auto-scaling if no valid data or calculated min/max are not finite
-        delete chart.options.scales.y1.min;
-        delete chart.options.scales.y1.suggestedMin;
-        delete chart.options.scales.y1.max;
-        delete chart.options.scales.y1.suggestedMax;
-      }
-      chart.data.labels = labels;
-      chart.data.datasets[0].data = tempsData; // Full 24h data for the line
-      chart.data.datasets[1].data = pops;     // Full 24h data for precip
-      chart.update();
-    }
-  });
-}
-
-// Replace custom fetchAndUpdateForecast with Chart.js update
-function fetchAndUpdateForecast() {
-  fetch("/api/weather/forecast")
-    .then((r) => r.json())
-    .then((r) => {
-      if (r.data && Array.isArray(r.data.hourly)) {
-        updateForecastCharts(r.data.hourly);
-      }
-    });
-}
-
-// Initialize charts and fetch data on DOM load
-window.addEventListener("DOMContentLoaded", () => {
-  initForecastCharts();
-  fetchAndUpdateForecast();
-  if (window.io) {
-    const socket = io();
-    socket.on("weather_update", () => fetchAndUpdateForecast());
-  }
-});
-
-function addTouchHandlers() {
-  // Touch interactions (stubbed)
-}
-
-function renderMealsMonthView() {
+// --- Ensure all helpers and functions are defined in global scope ---
+function renderMealsMonthView(data) {
   const mealsViewContainer = document.getElementById("meals-view-container");
   if (!mealsViewContainer) return;
-  // For now, use current month and year
+  // Use current month and year
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
@@ -1612,6 +1424,10 @@ function renderMealsMonthView() {
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
   let gridStartDate = new Date(firstDayOfMonth);
   gridStartDate.setDate(gridStartDate.getDate() - gridStartDate.getDay());
+
+  // Meals data is structured as { [month]: { [date]: { breakfast: {...}, lunch: {...}, dinner: {...} } } }
+  // month = YYYY-MM, date = YYYY-MM-DD
+  const mealsData = data || {};
   for (let i = 0; i < 42; i++) {
     const cellDate = new Date(gridStartDate);
     cellDate.setDate(gridStartDate.getDate() + i);
@@ -1623,14 +1439,48 @@ function renderMealsMonthView() {
       cellDate.getDate() === todayDate
     )
       cellClasses += " today";
-    mealsGridHtml += `<div class="${cellClasses}" data-date="${cellDate.toISOString().split("T")[0]}">`;
+    const dateStr = cellDate.toISOString().split("T")[0];
+    const monthStr = `${cellDate.getFullYear()}-${String(cellDate.getMonth() + 1).padStart(2, "0")}`;
+    const dayMeals = (mealsData[monthStr] && mealsData[monthStr][dateStr]) || {};
+    mealsGridHtml += `<div class="${cellClasses}" data-date="${dateStr}">`;
     mealsGridHtml += `<div class="day-number">${cellDate.getDate()}</div>`;
     mealsGridHtml += `<div class="meals-zones">`;
-    ["Breakfast", "Lunch", "Dinner"].forEach((zone) => {
-      mealsGridHtml += `<div class="meal-zone"><span class="meal-zone-label">${zone}</span><div class="recipe-slot"></div><button class="add-recipe-btn" title="Add recipe">+</button></div>`;
+    ["breakfast", "lunch", "dinner"].forEach((mealType, idx) => {
+      const meal = dayMeals[mealType];
+      const slotClass = ["top", "mid", "bottom"][idx];
+      let slotContent = meal && meal.title ? meal.title : "+";
+      mealsGridHtml += `<div class="meal-slot ${mealType} ${slotClass}" data-date="${dateStr}" data-meal-type="${mealType}">${slotContent}</div>`;
     });
     mealsGridHtml += `</div></div>`;
   }
   mealsGridHtml += "</div>";
   mealsViewContainer.innerHTML = monthHeaderHtml + gridHeaderHtml + mealsGridHtml;
+}
+
+// Helper for contrast color (used in updateIcloudMonthView)
+function getContrastColor(hex) {
+  if (!hex) return '#222';
+  // Remove # if present
+  hex = hex.replace('#', '');
+  if (hex.length === 3) {
+    hex = hex.split('').map(x => x + x).join('');
+  }
+  const r = parseInt(hex.substr(0,2),16);
+  const g = parseInt(hex.substr(2,2),16);
+  const b = parseInt(hex.substr(4,2),16);
+  // Perceived brightness
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  return brightness > 150 ? '#222' : '#fff';
+}
+
+// Dummy addTouchHandlers if not defined
+if (typeof addTouchHandlers !== 'function') {
+  function addTouchHandlers() {}
+}
+
+// --- Ensure fetchAndRenderMealsMonthView is defined globally ---
+function fetchAndRenderMealsMonthView() {
+  fetch("/api/meals/data")
+    .then((r) => r.json())
+    .then((data) => renderMealsMonthView(data));
 }

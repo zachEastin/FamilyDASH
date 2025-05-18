@@ -1,0 +1,30 @@
+{
+  "2025-04": {
+    "2025-04-30": {
+      "lunch": {
+        "title": "Chicken Parm",
+        "ingredients": [
+          "Chicken",
+          "Noodles",
+          "Parmesian",
+          "Spinach"
+        ],
+        "tags": [
+          "slow-cooker"
+        ],
+        "isFavorite": false
+      },
+      "breakfast": {
+        "title": "Cereal",
+        "ingredients": [
+          "Cereal",
+          "Milk"
+        ],
+        "tags": [
+          "quick"
+        ],
+        "isFavorite": false
+      }
+    }
+  }
+}
