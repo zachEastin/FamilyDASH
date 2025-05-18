@@ -1351,6 +1351,74 @@ function updateFavoriteStar() {
   }
 }
 
+// --- Spoonacular Recipe Search & Import ---
+(function setupSpoonacularSearch() {
+  const searchInput = document.getElementById("spoonacular-search-input");
+  const searchBtn = document.getElementById("spoonacular-search-button");
+  const resultsContainer = document.getElementById("spoonacular-results");
+  if (!searchInput || !searchBtn || !resultsContainer) return;
+
+  function renderResults(results) {
+    resultsContainer.innerHTML = '';
+    if (!results || !results.length) {
+      resultsContainer.innerHTML = '<div style="color:#888;">No results found.</div>';
+      return;
+    }results.forEach(r => {
+      const card = document.createElement('div');
+      card.className = 'spoonacular-result-card';
+      card.style = 'display:flex;align-items:center;gap:0.5em;padding:0.3em 0;border-bottom:1px solid #eee;';
+      card.innerHTML = `
+        <img src="${r.image || ''}" alt="" style="width:40px;height:40px;object-fit:cover;border-radius:4px;">
+        <span style="flex:1;">${r.title}</span>
+        <button type="button" class="spoonacular-import-btn" data-id="${r.id}">Import</button>
+      `;
+      resultsContainer.appendChild(card);
+    });
+  }
+
+  searchBtn.addEventListener('click', function() {
+    const q = searchInput.value.trim();
+    if (!q) return;
+    resultsContainer.innerHTML = '<div>Searching...</div>';
+    fetch(`/api/meals/search?query=${encodeURIComponent(q)}`)
+      .then(r => r.json())
+      .then(data => renderResults(data.results || []))
+      .catch(() => { resultsContainer.innerHTML = '<div style="color:red;">Error searching recipes.</div>'; });
+  });
+
+  resultsContainer.addEventListener('click', function(e) {
+    const btn = e.target.closest('.spoonacular-import-btn');
+    if (!btn) return;
+    const id = btn.getAttribute('data-id');
+    if (!id) return;
+    btn.disabled = true;
+    btn.textContent = 'Importing...';
+    fetch(`/api/meals/recipe?id=${encodeURIComponent(id)}`)
+      .then(r => r.json())
+      .then(obj => {
+        // Fill modal fields
+        document.getElementById('recipe-title').value = obj.title || '';
+        document.getElementById('recipe-ingredients').value = (obj.ingredients || []).join('\n');
+        // Uncheck all tags first
+        document.querySelectorAll('#recipe-form input[name="tags"]').forEach(cb => { cb.checked = false; });
+        (obj.tags || []).forEach(tag => {
+          const cb = document.querySelector(`#recipe-form input[name="tags"][value="${tag}"]`);
+          if (cb) cb.checked = true;
+        });
+        // Optionally set a hidden field for source if needed
+        // document.getElementById('recipe-source').value = obj.source || '';
+        // Optionally update favorite star
+        if (window.updateFavoriteStar) window.updateFavoriteStar(false);
+        // Scroll to top of modal
+        document.querySelector('#recipe-modal .modal-content').scrollTop = 0;
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.textContent = 'Import';
+      });
+  });
+})();
+
 // --- Shuffle Meals Logic ---
 function shuffleMealPlan() {
   // Fetch meal plan and favorites in parallel

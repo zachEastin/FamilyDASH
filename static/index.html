@@ -83,6 +83,16 @@
           <label><input type="checkbox" name="tags" value="slow-cooker"> Slow Cooker</label>
         </div>
 
+        <div class="spoonacular-search-section">
+          <label for="spoonacular-search-input">Search Recipes (Spoonacular)</label>
+          <div style="display:flex;gap:0.5em;align-items:center;">
+            <input type="text" id="spoonacular-search-input" placeholder="e.g. chicken, pasta..." style="flex:1;">
+            <button type="button" id="spoonacular-search-button">Search</button>
+          </div>
+          <div id="spoonacular-results" style="max-height:180px;overflow-y:auto;margin-top:0.5em;"></div>
+        </div>
+        <!-- Spoonacular search section ends here -->
+
         <div class="modal-actions">
           <button type="submit" id="recipe-save">Save</button>
           <button type="button" id="recipe-cancel">Cancel</button>

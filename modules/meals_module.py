@@ -111,3 +111,32 @@ def search_recipes():
         return jsonify(resp.json())
     except Exception:
         return jsonify({"results": []})
+
+@meals_bp.route("/recipe", methods=["GET"])
+def get_recipe_details():
+    recipe_id = request.args.get("id")
+    if not recipe_id or not SPOONACULAR_API_KEY:
+        return jsonify({"error": "Missing id or API key"}), 400
+    url = f"https://api.spoonacular.com/recipes/{recipe_id}/information"
+    params = {"apiKey": SPOONACULAR_API_KEY}
+    try:
+        resp = requests.get(url, params=params)
+        data = resp.json()
+        # Format to local schema
+        title = data.get("title", "")
+        # Ingredients: use originalString or name
+        ingredients = [
+            i.get("originalString") or i.get("original") or i.get("name", "")
+            for i in data.get("extendedIngredients", [])
+        ]
+        # Tags: combine dishTypes and diets
+        tags = list(set(data.get("dishTypes", []) + data.get("diets", [])))
+        recipe_obj = {
+            "title": title,
+            "ingredients": ingredients,
+            "tags": tags,
+            "source": "spoonacular"
+        }
+        return jsonify(recipe_obj)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
