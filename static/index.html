@@ -45,6 +45,7 @@
         <div id="meals-view-container" class="hidden calendar-view" style="display:none;"></div>
       </div>
       <button id="shuffle-meals-button" class="shuffle-meals-btn"><i class="fa fa-random"></i> Shuffle Meals</button>
+      <button id="open-shopping-list-button" class="shuffle-meals-btn"><i class="fa fa-shopping-cart"></i> Shopping List</button>
       <!-- Shuffle button inserted above calendar grid -->
     </div>
     <div id="reminders" class="widget">Loading reminders...</div>
@@ -87,6 +88,20 @@
           <button type="button" id="recipe-cancel">Cancel</button>
         </div>
       </form>
+    </div>
+  </div>
+  <div id="shopping-list-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <button class="modal-close" id="shopping-list-modal-close" title="Close">&times;</button>
+      <h2>Grocery List</h2>
+      <div class="shopping-list-date-range">
+        <label for="shopping-start-date">From:</label>
+        <input type="date" id="shopping-start-date">
+        <label for="shopping-end-date">To:</label>
+        <input type="date" id="shopping-end-date">
+        <button id="generate-shopping-list">Generate List</button>
+      </div>
+      <ul id="shopping-list-output"></ul>
     </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

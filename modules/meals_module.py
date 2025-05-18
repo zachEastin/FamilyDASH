@@ -64,10 +64,30 @@ def get_favorites():
 
 @meals_bp.route("/shopping-list", methods=["GET"])
 def get_shopping_list():
+    from datetime import datetime
     data = load_meals()
     ingredients = []
-    for month in data.values():
-        for day in month.values():
+    start = request.args.get("start")
+    end = request.args.get("end")
+    date_filter = None
+    if start and end:
+        try:
+            start_dt = datetime.strptime(start, "%Y-%m-%d")
+            end_dt = datetime.strptime(end, "%Y-%m-%d")
+            print("Start date:", start_dt, "End date:", end_dt)
+            date_filter = (start_dt, end_dt)
+        except Exception:
+            date_filter = None
+    for month_key, month in data.items():
+        for day_key, day in month.items():
+            # day_key is 'YYYY-MM-DD' or similar
+            if date_filter:
+                try:
+                    day_dt = datetime.strptime(day_key, "%Y-%m-%d")
+                except Exception:
+                    continue
+                if not (date_filter[0] <= day_dt <= date_filter[1]):
+                    continue
             for meal in day.values():
                 if isinstance(meal, dict):
                     ings = meal.get("ingredients")

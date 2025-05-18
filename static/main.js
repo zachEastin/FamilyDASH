@@ -1945,3 +1945,73 @@ function fetchAndRenderMealsMonthView() {
     .then((r) => r.json())
     .then((data) => renderMealsMonthView(data));
 }
+
+// --- Shopping List Modal Logic ---
+(function setupShoppingListModal() {
+  const openBtn = document.getElementById("open-shopping-list-button");
+  const modal = document.getElementById("shopping-list-modal");
+  const closeBtn = document.getElementById("shopping-list-modal-close");
+  const startDateInput = document.getElementById("shopping-start-date");
+  const endDateInput = document.getElementById("shopping-end-date");
+  const generateBtn = document.getElementById("generate-shopping-list");
+  const listEl = document.getElementById("shopping-list-output");
+
+  function openModal() {
+    // Set default dates: this week
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    const sowYYYY = startOfWeek.getFullYear();
+    const sowMM = String(startOfWeek.getMonth() + 1).padStart(2, '0');
+    const sowDD = String(startOfWeek.getDate()).padStart(2, '0');
+    startDateInput.value = `${sowYYYY}-${sowMM}-${sowDD}`;
+    endDateInput.value = `${yyyy}-${mm}-${dd}`;
+    listEl.innerHTML = '';
+    modal.style.display = "block";
+  }
+  function closeModal() {
+    modal.style.display = "none";
+  }
+  if (openBtn) openBtn.addEventListener("click", openModal);
+  if (closeBtn) closeBtn.addEventListener("click", closeModal);
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  if (generateBtn) {
+    generateBtn.addEventListener("click", () => {
+      const start = startDateInput.value;
+      const end = endDateInput.value;
+      if (!start || !end) {
+        listEl.innerHTML = '<li>Please select both start and end dates.</li>';
+        return;
+      }
+      fetch(`/api/meals/shopping-list?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`)
+        .then((r) => r.json())
+        .then((ingredients) => {
+          // De-dupe (case-insensitive), count, and sort
+          const counts = {};
+          ingredients.forEach((item) => {
+            const key = item.trim().toLowerCase();
+            if (!key) return;
+            counts[key] = (counts[key] || 0) + 1;
+          });
+          const sorted = Object.keys(counts).sort((a, b) => a.localeCompare(b));
+          listEl.innerHTML = sorted.length
+            ? sorted
+                .map((key) => {
+                  const display = ingredients.find(
+                    (i) => i.trim().toLowerCase() === key
+                  ) || key;
+                  const count = counts[key];
+                  return `<li>${display}${count > 1 ? ` <span class=\"ingredient-count\">(x${count})</span>` : ""}</li>`;
+                })
+                .join("")
+            : '<li>No ingredients found for this date range.</li>';
+        });
+    });
+  }
+})();

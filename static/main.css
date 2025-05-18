@@ -1880,3 +1880,92 @@ body.dark-mode .side-panel-tab.active {
 .meal-slot-title {
   margin-left: 2px;
 }
+
+#shopping-list-modal.modal {
+  display: none;
+  position: fixed;
+  z-index: 1002;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.4);
+  align-items: center;
+  justify-content: center;
+}
+#shopping-list-modal .modal-content {
+  background: var(--widget-bg);
+  color: var(--text-color);
+  border-radius: 10px;
+  max-width: 400px;
+  margin: 10vh auto;
+  padding: 2em 2em 1.5em 2em;
+  box-shadow: 0 2px 24px rgba(0,0,0,0.2);
+  position: relative;
+}
+#shopping-list-modal .modal-close {
+  position: absolute;
+  top: 0.7em;
+  right: 1em;
+  background: none;
+  border: none;
+  font-size: 2em;
+  color: #888;
+  cursor: pointer;
+}
+#shopping-list-modal h2 {
+  margin-top: 0.2em;
+  margin-bottom: 1em;
+  font-size: 1.5em;
+  text-align: center;
+}
+#shopping-list-modal .shopping-list-date-range {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  margin-bottom: 1em;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+#shopping-list-modal .shopping-list-date-range label {
+  font-size: 1em;
+  color: var(--text-color);
+  margin-right: 0.2em;
+}
+#shopping-list-modal .shopping-list-date-range input[type="date"] {
+  font-size: 1em;
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  margin-right: 0.5em;
+}
+#shopping-list-modal .shopping-list-date-range button {
+  font-size: 1em;
+  padding: 0.3em 1em;
+  border-radius: 4px;
+  border: none;
+  background: #4caf50;
+  color: #fff;
+  cursor: pointer;
+  margin-left: 0.5em;
+  transition: background 0.2s;
+}
+#shopping-list-modal .shopping-list-date-range button:hover {
+  background: #388e3c;
+}
+#shopping-list-output {
+  list-style: disc inside;
+  padding-left: 0.5em;
+  font-size: 1.1em;
+  color: var(--text-color);
+  margin-top: 0.5em;
+}
+#shopping-list-output li {
+  margin-bottom: 0.5em;
+  padding-left: 0.2em;
+}
+#shopping-list-output .ingredient-count {
+  color: #888;
+  font-size: 0.95em;
+  margin-left: 0.3em;
+}
