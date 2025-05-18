@@ -120,13 +120,15 @@ function setupCalendarTabs() {
       mealsPanelsWrapper.classList.add('active');
       mealsPanelsWrapper.style.display = 'flex';
       mealsViewContainer.classList.remove('hidden');
+      // fetchFavorites(); // fetchFavorites is called by the patched renderMealsMonthView
+      fetchAndRenderMealsMonthView(); // Ensures grid is rendered and slots are made droppable
     }
   }
   function hideMealsPanelsWrapper() {
     const mealsPanelsWrapper = document.querySelector('.meals-panels-wrapper');
     const mealsViewContainer = document.getElementById('meals-view-container');
     if (mealsPanelsWrapper) {
-      mealsPanelsWrapper.classList.remove('active');
+      mealsPanelsWrapper.classList.remove('active'); // Corrected typo: mealsPanelsWrapper -> mealsPanelWrapper
       mealsPanelsWrapper.style.display = 'none';
       mealsViewContainer.classList.add('hidden');
     }
@@ -1495,6 +1497,7 @@ function shuffleMealPlan() {
       div.innerHTML = '<i class="fa fa-star"></i>' + title;
       favoritesList.appendChild(div);
     });
+    makeRecipeItemsDraggable(); // Call here
   }
   function fetchFavorites() {
     fetch('/api/meals/favorites')
@@ -1515,6 +1518,7 @@ function shuffleMealPlan() {
       div.dataset.recipe = JSON.stringify(recipe);
       historyList.appendChild(div);
     });
+    makeRecipeItemsDraggable(); // Call here
   }
   function fetchHistory() {
     fetch('/api/meals/data')
@@ -1535,8 +1539,6 @@ function shuffleMealPlan() {
             });
           });
         });
-        // Debug log
-        console.log('History recipes found:', Array.from(recipesMap.keys()));
         // Sort alphabetically by title
         const recipes = Array.from(recipesMap.values()).sort((a,b) => a.title.localeCompare(b.title));
         renderHistory(recipes);
@@ -1546,26 +1548,31 @@ function shuffleMealPlan() {
   // --- Drag and Drop Logic ---
   function handleDragStart(e) {
     const title = this.getAttribute('data-title');
-    e.dataTransfer.setData('text/plain', title);
+    const recipeData = this.dataset.recipe;
+
+    if (title) {
+      e.dataTransfer.setData('text/plain', title);
+    }
+
     // Also store full recipe if available
-    if (this.dataset.recipe) {
-      e.dataTransfer.setData('application/json', this.dataset.recipe);
+    if (recipeData) {
+      e.dataTransfer.setData('application/json', recipeData);
     }
     e.dataTransfer.effectAllowed = 'copy';
   }
   function makeRecipeItemsDraggable() {
-    document.querySelectorAll('.recipe-item').forEach(item => {
+    const items = document.querySelectorAll('.recipe-item');
+    items.forEach(item => {
+      item.removeEventListener('dragstart', handleDragStart); // Avoid duplicate listeners
       item.addEventListener('dragstart', handleDragStart);
     });
   }
   // --- Add drop target logic for meal slots ---
   function handleMealSlotDragOver(e) {
-    console.log('dragover', this)
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
   }
   function handleMealSlotDrop(e) {
-    console.log('handling meal-slot drop', this)
     e.preventDefault();
     const date = this.dataset.date;
     const mealType = this.dataset.mealType;
@@ -1579,23 +1586,29 @@ function shuffleMealPlan() {
       // Fallback: look up by title in history or favorites
       const title = e.dataTransfer.getData('text/plain');
       // Search history first
-      if (allMealsData) {
-        const now = new Date();
-        const monthStr = now.toISOString().slice(0,7);
-        if (allMealsData[monthStr]) {
-          for (const dayMeals of Object.values(allMealsData[monthStr])) {
+      if (allMealsData && title) {
+        let foundRecipe = null;
+        // Iterate over all months in allMealsData
+        for (const monthData of Object.values(allMealsData)) {
+          // Iterate over all days in that month
+          for (const dayMeals of Object.values(monthData)) {
+            // Iterate over all meal types in that day
             for (const meal of Object.values(dayMeals)) {
               if (meal && meal.title === title) {
-                recipe = meal;
+                foundRecipe = meal; // Found the recipe with full details
                 break;
               }
             }
-            if (recipe) break;
+            if (foundRecipe) break;
           }
+          if (foundRecipe) break;
+        }
+        if (foundRecipe) {
+          recipe = foundRecipe; // Use the found recipe with full details
         }
       }
-      // If not found, fallback to minimal object
-      if (!recipe) recipe = { title };
+      // If not found after searching all history, fallback to minimal object
+      if (!recipe && title) recipe = { title };
     }
     // POST to /api/meals/update
     fetch('/api/meals/update', {
@@ -1616,7 +1629,6 @@ function shuffleMealPlan() {
       });
   }
   function makeMealSlotsDroppable() {
-    console.log("Making meal-slots droppable");
     const grid = document.querySelector('.meals-grid');
     if (!grid) return;
 
@@ -1630,10 +1642,6 @@ function shuffleMealPlan() {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'copy';
         slot.classList.add('dragover-debug');
-        console.log('dragover slot', slot);
-      } else {
-        // Not over a slot
-        console.log('dragover not on slot', e.target);
       }
     });
 
@@ -1641,19 +1649,16 @@ function shuffleMealPlan() {
       const slot = e.target.closest('.meal-slot');
       if (slot) {
         slot.classList.remove('dragover-debug');
-        console.log('dragleave slot', slot);
       }
     });
 
     grid.addEventListener('drop', function(e) {
       const slot = e.target.closest('.meal-slot');
       if (!slot) {
-        console.log('drop not on slot', e.target);
         return;
       }
       e.preventDefault();
       slot.classList.remove('dragover-debug');
-      console.log('drop on slot', slot);
       handleMealSlotDrop.call(slot, e);
     });
   }
@@ -1666,22 +1671,27 @@ function shuffleMealPlan() {
   }
 
   // --- Refresh logic after meals view render ---
-  const origRenderMealsMonthView = window._origRenderMealsMonthView || renderMealsMonthView;
-  window._origRenderMealsMonthView = origRenderMealsMonthView;
-  renderMealsMonthView = function(data) {
-    origRenderMealsMonthView(data);
-    patchMealSlotClicksWithModal(data);
-    makeMealSlotsDroppable();
-    fetchHistory();
-    fetchFavorites();
-    setTimeout(makeRecipeItemsDraggable, 0);
+  const actualRenderMealsMonthViewFunction = window.renderMealsMonthView; // Capture the global renderMealsMonthView
+
+  window.renderMealsMonthView = function(data) { // Explicitly override the global function
+    if (typeof actualRenderMealsMonthViewFunction === 'function') {
+      actualRenderMealsMonthViewFunction(data); // Call the original global rendering logic
+    } else {
+      console.error("The main renderMealsMonthView function was not found by the IIFE patch during execution.");
+      // This case should ideally not happen if the main function is defined globally.
+    }
+
+    // Enhancements from the IIFE:
+    patchMealSlotClicksWithModal(data); // This is a global function
+    makeMealSlotsDroppable();           // This function is defined within this IIFE
+    fetchHistory();                     // This will eventually call renderHistory, which calls makeRecipeItemsDraggable
+    fetchFavorites();                   // This will eventually call renderFavorites, which calls makeRecipeItemsDraggable
   };
 
   // Initial load if panel is visible
   if (mealsPanelWrapper && !mealsPanelWrapper.classList.contains('hidden')) {
-    fetchFavorites();
-    fetchHistory();
-    setTimeout(makeRecipeItemsDraggable, 0);
+    fetchFavorites(); // This will eventually call renderFavorites, which calls makeRecipeItemsDraggable
+    fetchHistory();   // This will eventually call renderHistory, which calls makeRecipeItemsDraggable
   }
 })();
 
@@ -1767,6 +1777,7 @@ function shuffleMealPlan() {
     fetch("/api/meals/update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+
       body: JSON.stringify({
         month: currentMonth,
         date: currentDate,

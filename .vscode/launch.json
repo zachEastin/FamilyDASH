@@ -10,6 +10,12 @@
             "env": {
                 "FLASK_ENV": "development"
             }
+        },
+        {
+            "type": "chrome",
+            "name": "http://localhost:8080/",
+            "request": "launch",
+            "url": "http://localhost:8080/"
         }
     ]
 }

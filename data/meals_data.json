@@ -23,7 +23,37 @@
         "tags": [
           "quick"
         ],
-        "isFavorite": false
+        "isFavorite": true
+      }
+    }
+  },
+  "2025-05": {
+    "2025-05-11": {
+      "breakfast": {
+        "ingredients": [
+          "Chicken",
+          "Noodles",
+          "Parmesian",
+          "Spinach"
+        ],
+        "isFavorite": true,
+        "tags": [
+          "slow-cooker"
+        ],
+        "title": "Chicken Parm"
+      }
+    },
+    "2025-05-21": {
+      "lunch": {
+        "ingredients": [
+          "Cereal",
+          "Milk"
+        ],
+        "isFavorite": true,
+        "tags": [
+          "quick"
+        ],
+        "title": "Cereal"
       }
     }
   }
