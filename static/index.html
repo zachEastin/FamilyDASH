@@ -28,7 +28,24 @@
       <div id="month-view-container" class="hidden calendar-view">
         <!-- Month view will be rendered here by JS -->
       </div>
-      <div id="meals-view-container" class="hidden calendar-view" style="display:none;"></div>
+      <div id="meals-panel-wrapper" class="meals-panel-wrapper hidden calendar-view" style="display:none;">
+        <div id="meals-side-panel" class="side-panel" aria-label="Meals Panel" tabindex="0">
+          <div class="side-panel-header">
+            <div class="side-panel-tabs">
+              <button id="favorites-tab" class="side-panel-tab active">Favorites</button>
+              <button id="history-tab" class="side-panel-tab">History</button>
+            </div>
+            <span class="side-panel-toggle" title="Collapse">&laquo;</span>
+          </div>
+          <div class="side-panel-content">
+            <div id="favorites-list" class="panel-list"></div>
+            <div id="history-list" class="panel-list" style="display:none;"></div>
+          </div>
+        </div>
+        <div id="meals-view-container" class="hidden calendar-view" style="display:none;"></div>
+      </div>
+      <button id="shuffle-meals-button" class="shuffle-meals-btn"><i class="fa fa-random"></i> Shuffle Meals</button>
+      <!-- Shuffle button inserted above calendar grid -->
     </div>
     <div id="reminders" class="widget">Loading reminders...</div>
     <div id="photo" class="widget"><img id="shared-photo" src="" alt="Family Photo"></div>
@@ -54,7 +71,7 @@
         <textarea id="recipe-ingredients" name="ingredients" rows="3" placeholder="One per line or comma separated"></textarea>
 
         <div class="favorite-toggle">
-          <span id="favorite-star" class="fa fa-star-o" title="Mark as favorite" tabindex="0"></span>
+          <span id="favorite-star" class="fa-regular fa-star" title="Mark as favorite" tabindex="0"></span>
           <span>Favorite</span>
         </div>
 

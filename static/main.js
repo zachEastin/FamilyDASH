@@ -111,6 +111,39 @@ function setupCalendarTabs() {
     }
   }
 
+  // Show/hide meals panels wrapper when switching tabs
+  // Use variables from outer scope
+  function showMealsPanelsWrapper() {
+    const mealsPanelsWrapper = document.querySelector('.meals-panels-wrapper');
+    const mealsViewContainer = document.getElementById('meals-view-container');
+    if (mealsPanelsWrapper) {
+      mealsPanelsWrapper.classList.add('active');
+      mealsPanelsWrapper.style.display = 'flex';
+      mealsViewContainer.classList.remove('hidden');
+    }
+  }
+  function hideMealsPanelsWrapper() {
+    const mealsPanelsWrapper = document.querySelector('.meals-panels-wrapper');
+    const mealsViewContainer = document.getElementById('meals-view-container');
+    if (mealsPanelsWrapper) {
+      mealsPanelsWrapper.classList.remove('active');
+      mealsPanelsWrapper.style.display = 'none';
+      mealsViewContainer.classList.add('hidden');
+    }
+  }
+  if (mealsSubtab) {
+    mealsSubtab.addEventListener('click', showMealsPanelsWrapper);
+  }
+  if (eventsSubtab) {
+    eventsSubtab.addEventListener('click', hideMealsPanelsWrapper);
+  }
+  if (monthTab) {
+    monthTab.addEventListener('click', function() {
+      if (mealsSubtab.classList.contains('active')) showMealsPanelsWrapper();
+      else hideMealsPanelsWrapper();
+    });
+  }
+
   weekTab.addEventListener("click", () => {
     setActiveTab(weekTab);
     weekViewContainer.classList.remove("hidden");
@@ -1282,6 +1315,376 @@ function updateIcloudMonthView(data) {
   });
 }
 
+// --- Favorite toggle logic in modal ---
+let isFavorite = false;
+const favoriteStar = document.getElementById("favorite-star");
+if (favoriteStar) {
+  favoriteStar.addEventListener("click", () => {
+    isFavorite = !isFavorite;
+    updateFavoriteStar();
+  });
+  favoriteStar.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      isFavorite = !isFavorite;
+      updateFavoriteStar();
+      e.preventDefault();
+    }
+  });
+  // Show/hide favorite star based on modal context
+  function showFavoriteStar(show) {
+    favoriteStar.parentElement.style.display = show ? '' : 'none';
+  }
+  // Always show favorite toggle in modal
+  showFavoriteStar(true);
+}
+// --- Fix: Define updateFavoriteStar globally for favorite star in main modal ---
+function updateFavoriteStar() {
+  if (!favoriteStar) return;
+  if (isFavorite) {
+    favoriteStar.classList.add("favorited", "fa-solid");
+    favoriteStar.classList.remove("fa-regular");
+  } else {
+    favoriteStar.classList.remove("favorited", "fa-solid");
+    favoriteStar.classList.add("fa-regular");
+  }
+}
+
+// --- Shuffle Meals Logic ---
+function shuffleMealPlan() {
+  // Fetch meal plan and favorites in parallel
+  Promise.all([
+    fetch('/api/meals/data').then(r => r.json()),
+    fetch('/api/meals/favorites').then(r => r.json())
+  ]).then(([mealsData, favorites]) => {
+    if (!Array.isArray(favorites) || favorites.length === 0) return;
+    // Build a map of week (Sun-Sat) to assigned titles
+    const assignedTitlesByWeek = {};
+    // Helper: get week key (YYYY-WW) for a date
+    function getWeekKey(dateStr) {
+      const d = new Date(dateStr);
+      const year = d.getFullYear();
+      // Week number (ISO, but Sun-Sat window)
+      const jan1 = new Date(year, 0, 1);
+      const days = Math.floor((d - jan1) / 86400000);
+      const week = Math.floor((days + jan1.getDay()) / 7);
+      return `${year}-W${week}`;
+    }
+    // Collect all slots to fill
+    const slotsToFill = [];
+    Object.keys(mealsData).forEach(month => {
+      Object.keys(mealsData[month]).forEach(date => {
+        ["breakfast", "lunch", "dinner"].forEach(mealType => {
+          const meal = mealsData[month][date][mealType];
+          const key = `${date}|${mealType}`;
+          const locked = window.mealSlotLocks && window.mealSlotLocks[key];
+          if (!locked && (!meal || !meal.title)) {
+            slotsToFill.push({ month, date, mealType });
+          } else if (meal && meal.title) {
+            // Track assigned titles for week
+            const weekKey = getWeekKey(date);
+            if (!assignedTitlesByWeek[weekKey]) assignedTitlesByWeek[weekKey] = new Set();
+            assignedTitlesByWeek[weekKey].add(meal.title);
+          }
+        });
+      });
+    });
+    // Shuffle favorites
+    const shuffled = favorites.slice().sort(() => Math.random() - 0.5);
+    // Assign recipes to slots, avoiding repeats in week
+    const updates = [];
+    slotsToFill.forEach(slot => {
+      const weekKey = getWeekKey(slot.date);
+      if (!assignedTitlesByWeek[weekKey]) assignedTitlesByWeek[weekKey] = new Set();
+      // Find a favorite not used in this week
+      const pick = shuffled.find(fav => !assignedTitlesByWeek[weekKey].has(fav.title));
+      if (pick) {
+        assignedTitlesByWeek[weekKey].add(pick.title);
+        updates.push({ ...slot, recipe: pick });
+      }
+    });
+    // POST updates sequentially
+    (async function postUpdates() {
+      for (const upd of updates) {
+        await fetch('/api/meals/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(upd)
+        });
+      }
+      fetchAndRenderMealsMonthView();
+    })();
+  });
+}
+
+// --- Meals Side Panel Logic (Tabbed) ---
+(function setupMealsSidePanel() {
+  const mealsPanelWrapper = document.querySelector('.meals-panel-wrapper');
+  const mealsViewContainer = document.getElementById('meals-view-container');
+  const sidePanel = document.getElementById('meals-side-panel');
+  const favoritesTab = document.getElementById('favorites-tab');
+  const historyTab = document.getElementById('history-tab');
+  const favoritesList = document.getElementById('favorites-list');
+  const historyList = document.getElementById('history-list');
+  const panelToggle = sidePanel.querySelector('.side-panel-toggle');
+
+  // Show/hide wrapper when Meals tab is active
+  function showMealsPanelWrapper() {
+    if (mealsPanelWrapper) {
+      mealsPanelWrapper.classList.add('active');
+      mealsPanelWrapper.style.display = 'flex';
+      mealsViewContainer.classList.remove('hidden');
+      fetchFavorites();
+    }
+  }
+  function hideMealsPanelWrapper() {
+    if (mealsPanelWrapper) {
+      mealsPanelWrapper.classList.remove('active');
+      mealsPanelWrapper.style.display = 'none';
+      mealsViewContainer.classList.add('hidden');
+    }
+  }
+  // Patch calendar tab logic to show/hide panel
+  const monthTab = document.getElementById('month-tab');
+  const mealsSubtab = document.getElementById('meals-subtab');
+  const eventsSubtab = document.getElementById('events-subtab');
+  if (mealsSubtab) {
+    mealsSubtab.addEventListener('click', showMealsPanelWrapper);
+  }
+  if (eventsSubtab) {
+    eventsSubtab.addEventListener('click', hideMealsPanelWrapper);
+  }
+  if (monthTab) {
+    monthTab.addEventListener('click', function() {
+      if (mealsSubtab.classList.contains('active')) showMealsPanelWrapper();
+      else hideMealsPanelWrapper();
+    });
+  }
+
+  // Collapse/expand logic
+  panelToggle.addEventListener('click', function(e) {
+    e.stopPropagation();
+    sidePanel.classList.toggle('collapsed');
+  });
+  sidePanel.querySelector('.side-panel-header').addEventListener('dblclick', function() {
+    sidePanel.classList.toggle('collapsed');
+  });
+
+  // Tab switching logic
+  favoritesTab.addEventListener('click', function() {
+    favoritesTab.classList.add('active');
+    historyTab.classList.remove('active');
+    favoritesList.style.display = '';
+    historyList.style.display = 'none';
+  });
+  historyTab.addEventListener('click', function() {
+    historyTab.classList.add('active');
+    favoritesTab.classList.remove('active');
+    historyList.style.display = '';
+    favoritesList.style.display = 'none';
+    fetchHistory(); // Ensure history is refreshed when tab is activated
+  });
+
+  // --- Fetch and render Favorites ---
+  function renderFavorites(favorites) {
+    favoritesList.innerHTML = '';
+    favorites.forEach(title => {
+      const div = document.createElement('div');
+      div.className = 'recipe-item';
+      div.setAttribute('draggable', 'true');
+      div.setAttribute('data-title', title);
+      div.innerHTML = '<i class="fa fa-star"></i>' + title;
+      favoritesList.appendChild(div);
+    });
+  }
+  function fetchFavorites() {
+    fetch('/api/meals/favorites')
+      .then(r => r.json())
+      .then(renderFavorites);
+  }
+
+  // --- Fetch and render History ---
+  let allMealsData = null;
+  function renderHistory(historyRecipes) {
+    historyList.innerHTML = '';
+    historyRecipes.forEach(recipe => {
+      const div = document.createElement('div');
+      div.className = 'recipe-item';
+      div.setAttribute('draggable', 'true');
+      div.setAttribute('data-title', recipe.title);
+      div.innerHTML = '<i class="fa fa-history"></i>' + recipe.title;
+      div.dataset.recipe = JSON.stringify(recipe);
+      historyList.appendChild(div);
+    });
+  }
+  function fetchHistory() {
+    fetch('/api/meals/data')
+      .then(r => r.json())
+      .then(data => {
+        allMealsData = data;
+        const now = new Date();
+        const todayStr = now.toISOString().slice(0,10);
+        const recipesMap = new Map();
+        // Iterate all months and all days
+        Object.entries(data).forEach(([month, days]) => {
+          Object.entries(days).forEach(([date, meals]) => {
+            if (date > todayStr) return; // skip future days
+            Object.values(meals).forEach(meal => {
+              if (meal && meal.title && !recipesMap.has(meal.title)) {
+                recipesMap.set(meal.title, meal);
+              }
+            });
+          });
+        });
+        // Debug log
+        console.log('History recipes found:', Array.from(recipesMap.keys()));
+        // Sort alphabetically by title
+        const recipes = Array.from(recipesMap.values()).sort((a,b) => a.title.localeCompare(b.title));
+        renderHistory(recipes);
+      });
+  }
+
+  // --- Drag and Drop Logic ---
+  function handleDragStart(e) {
+    const title = this.getAttribute('data-title');
+    e.dataTransfer.setData('text/plain', title);
+    // Also store full recipe if available
+    if (this.dataset.recipe) {
+      e.dataTransfer.setData('application/json', this.dataset.recipe);
+    }
+    e.dataTransfer.effectAllowed = 'copy';
+  }
+  function makeRecipeItemsDraggable() {
+    document.querySelectorAll('.recipe-item').forEach(item => {
+      item.addEventListener('dragstart', handleDragStart);
+    });
+  }
+  // --- Add drop target logic for meal slots ---
+  function handleMealSlotDragOver(e) {
+    console.log('dragover', this)
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  }
+  function handleMealSlotDrop(e) {
+    console.log('handling meal-slot drop', this)
+    e.preventDefault();
+    const date = this.dataset.date;
+    const mealType = this.dataset.mealType;
+    let recipe = null;
+    // Try to get full recipe object from dataTransfer
+    let recipeJson = e.dataTransfer.getData('application/json');
+    if (recipeJson) {
+      try { recipe = JSON.parse(recipeJson); } catch {}
+    }
+    if (!recipe) {
+      // Fallback: look up by title in history or favorites
+      const title = e.dataTransfer.getData('text/plain');
+      // Search history first
+      if (allMealsData) {
+        const now = new Date();
+        const monthStr = now.toISOString().slice(0,7);
+        if (allMealsData[monthStr]) {
+          for (const dayMeals of Object.values(allMealsData[monthStr])) {
+            for (const meal of Object.values(dayMeals)) {
+              if (meal && meal.title === title) {
+                recipe = meal;
+                break;
+              }
+            }
+            if (recipe) break;
+          }
+        }
+      }
+      // If not found, fallback to minimal object
+      if (!recipe) recipe = { title };
+    }
+    // POST to /api/meals/update
+    fetch('/api/meals/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        month: date.slice(0,7),
+        date,
+        mealType,
+        recipe
+      })
+    })
+      .then(r => r.json())
+      .then(() => {
+        fetchAndRenderMealsMonthView();
+        fetchHistory();
+        fetchFavorites();
+      });
+  }
+  function makeMealSlotsDroppable() {
+    console.log("Making meal-slots droppable");
+    const grid = document.querySelector('.meals-grid');
+    if (!grid) return;
+
+    // Remove previous listeners if any
+    grid.ondragover = null;
+    grid.ondrop = null;
+
+    grid.addEventListener('dragover', function(e) {
+      const slot = e.target.closest('.meal-slot');
+      if (slot) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+        slot.classList.add('dragover-debug');
+        console.log('dragover slot', slot);
+      } else {
+        // Not over a slot
+        console.log('dragover not on slot', e.target);
+      }
+    });
+
+    grid.addEventListener('dragleave', function(e) {
+      const slot = e.target.closest('.meal-slot');
+      if (slot) {
+        slot.classList.remove('dragover-debug');
+        console.log('dragleave slot', slot);
+      }
+    });
+
+    grid.addEventListener('drop', function(e) {
+      const slot = e.target.closest('.meal-slot');
+      if (!slot) {
+        console.log('drop not on slot', e.target);
+        return;
+      }
+      e.preventDefault();
+      slot.classList.remove('dragover-debug');
+      console.log('drop on slot', slot);
+      handleMealSlotDrop.call(slot, e);
+    });
+  }
+  // Add debug CSS for dragover
+  if (!document.getElementById('dragover-debug-style')) {
+    const style = document.createElement('style');
+    style.id = 'dragover-debug-style';
+    style.textContent = `.dragover-debug { outline: 2px dashed red !important; background: #ff000033 !important; }`;
+    document.head.appendChild(style);
+  }
+
+  // --- Refresh logic after meals view render ---
+  const origRenderMealsMonthView = window._origRenderMealsMonthView || renderMealsMonthView;
+  window._origRenderMealsMonthView = origRenderMealsMonthView;
+  renderMealsMonthView = function(data) {
+    origRenderMealsMonthView(data);
+    patchMealSlotClicksWithModal(data);
+    makeMealSlotsDroppable();
+    fetchHistory();
+    fetchFavorites();
+    setTimeout(makeRecipeItemsDraggable, 0);
+  };
+
+  // Initial load if panel is visible
+  if (mealsPanelWrapper && !mealsPanelWrapper.classList.contains('hidden')) {
+    fetchFavorites();
+    fetchHistory();
+    setTimeout(makeRecipeItemsDraggable, 0);
+  }
+})();
+
 // --- Recipe Modal Logic ---
 (function setupRecipeModal() {
   const modal = document.getElementById("recipe-modal");
@@ -1320,14 +1723,16 @@ function updateIcloudMonthView(data) {
     updateFavoriteStar();
   }
   function updateFavoriteStar() {
+    if (!favoriteStar) return;
     if (isFavorite) {
-      favoriteStar.classList.add("favorited", "fa-star");
-      favoriteStar.classList.remove("fa-star-o");
+      favoriteStar.classList.add("favorited", "fa-solid");
+      favoriteStar.classList.remove("fa-regular");
     } else {
-      favoriteStar.classList.remove("favorited", "fa-star");
-      favoriteStar.classList.add("fa-star-o");
+      favoriteStar.classList.remove("favorited", "fa-solid");
+      favoriteStar.classList.add("fa-regular");
     }
   }
+  // --- Favorite toggle logic in modal ---
   favoriteStar.addEventListener("click", () => {
     isFavorite = !isFavorite;
     updateFavoriteStar();
@@ -1339,6 +1744,13 @@ function updateIcloudMonthView(data) {
       e.preventDefault();
     }
   });
+  // Show/hide favorite star based on modal context
+  function showFavoriteStar(show) {
+    favoriteStar.parentElement.style.display = show ? '' : 'none';
+  }
+  // Always show favorite toggle in modal
+  showFavoriteStar(true);
+
   closeBtn.addEventListener("click", hideModal);
   cancelBtn.addEventListener("click", (e) => {
     e.preventDefault();
@@ -1389,6 +1801,7 @@ function patchMealSlotClicksWithModal(mealsData) {
       window.openRecipeModal(recipe, date, mealType);
     });
   });
+
 }
 
 // --- Fix: Restore renderMealsMonthView to default if not already patched ---
@@ -1449,12 +1862,49 @@ function renderMealsMonthView(data) {
       const meal = dayMeals[mealType];
       const slotClass = ["top", "mid", "bottom"][idx];
       let slotContent = meal && meal.title ? meal.title : "+";
-      mealsGridHtml += `<div class="meal-slot ${mealType} ${slotClass}" data-date="${dateStr}" data-meal-type="${mealType}">${slotContent}</div>`;
+      // Add lock icon (FontAwesome), default unlocked
+      const locked = meal && meal.locked ? true : false;
+      const lockIcon = `<span class="meal-lock-icon fa ${locked ? 'fa-lock' : 'fa-unlock'}" data-locked="${locked}" title="${locked ? 'Unlock' : 'Lock'}"></span>`;
+      mealsGridHtml += `<div class="meal-slot ${mealType} ${slotClass}" data-date="${dateStr}" data-meal-type="${mealType}" data-locked="${locked}">${lockIcon}<span class="meal-slot-title">${slotContent}</span></div>`;
     });
     mealsGridHtml += `</div></div>`;
   }
   mealsGridHtml += "</div>";
   mealsViewContainer.innerHTML = monthHeaderHtml + gridHeaderHtml + mealsGridHtml;
+
+  // Add lock/unlock click handlers and manage lock state in memory
+  const mealSlotLocks = {};
+  document.querySelectorAll('.meal-slot').forEach(slot => {
+    const date = slot.dataset.date;
+    const mealType = slot.dataset.mealType;
+    const lockIcon = slot.querySelector('.meal-lock-icon');
+    // Initialize lock state from DOM or memory
+    const key = `${date}|${mealType}`;
+    let locked = slot.getAttribute('data-locked') === 'true';
+    if (mealSlotLocks[key] !== undefined) locked = mealSlotLocks[key];
+    slot.setAttribute('data-locked', locked);
+    if (lockIcon) {
+      lockIcon.classList.toggle('fa-lock', locked);
+      lockIcon.classList.toggle('fa-unlock', !locked);
+      lockIcon.setAttribute('data-locked', locked);
+      lockIcon.title = locked ? 'Unlock' : 'Lock';
+      lockIcon.onclick = (e) => {
+        e.stopPropagation();
+        locked = !locked;
+        mealSlotLocks[key] = locked;
+        slot.setAttribute('data-locked', locked);
+        lockIcon.classList.toggle('fa-lock', locked);
+        lockIcon.classList.toggle('fa-unlock', !locked);
+        lockIcon.setAttribute('data-locked', locked);
+        lockIcon.title = locked ? 'Unlock' : 'Lock';
+      };
+    }
+  });
+  window.mealSlotLocks = mealSlotLocks;
+  // Ensure meal slots are always droppable after rendering
+  if (typeof makeMealSlotsDroppable === 'function') {
+    makeMealSlotsDroppable();
+  }
 }
 
 // Helper for contrast color (used in updateIcloudMonthView)
