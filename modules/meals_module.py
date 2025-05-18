@@ -4,6 +4,7 @@ from pathlib import Path
 from flask import Blueprint, request, jsonify
 from dotenv import load_dotenv
 import requests
+from datetime import datetime # Add datetime import
 
 # Load environment variables
 load_dotenv()
@@ -48,6 +49,90 @@ def update_meal():
     data[month][date][meal_type] = recipe
     save_meals(data)
     return jsonify({"status": "ok"})
+
+@meals_bp.route("/today", methods=["GET"])
+def get_todays_meals():
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    month_key = datetime.now().strftime("%Y-%m")
+    data = load_meals()
+    
+    todays_data = data.get(month_key, {}).get(today_str, {})
+    
+    # Ensure all meal types are present, defaulting to None or empty dict
+    response = {
+        "breakfast": todays_data.get("breakfast"),
+        "lunch": todays_data.get("lunch"),
+        "dinner": todays_data.get("dinner")
+    }
+    return jsonify(response)
+
+@meals_bp.route("/shopping-list/today", methods=["GET"])
+def get_todays_shopping_list():
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    month_key = datetime.now().strftime("%Y-%m")
+    data = load_meals()
+    ingredients = []
+    
+    todays_meals = data.get(month_key, {}).get(today_str, {})
+    
+    for meal in todays_meals.values():
+        if isinstance(meal, dict):
+            ings = meal.get("ingredients")
+            if isinstance(ings, list):
+                ingredients.extend(ings)
+    return jsonify(sorted(list(set(ingredients))))
+
+@meals_bp.route("/add-recipe", methods=["POST"])
+def add_recipe_to_meal():
+    req = request.get_json()
+    date_str = req.get("date") # Expects "YYYY-MM-DD"
+    meal_type = req.get("mealType")
+    recipe = req.get("recipe") # Expects {title, ingredients[], tags[], isFavorite}
+
+    if not (date_str and meal_type and recipe and isinstance(recipe, dict) and "title" in recipe):
+        return jsonify({"error": "Missing or invalid fields"}), 400
+
+    try:
+        # Parse date_str to get month_key and day_key
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+        month_key = date_obj.strftime("%Y-%m")
+        day_key = date_obj.strftime("%Y-%m-%d")
+    except ValueError:
+        return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
+
+    data = load_meals()
+    data.setdefault(month_key, {})
+    data[month_key].setdefault(day_key, {})
+    
+    # Ensure recipe structure is complete
+    full_recipe_data = {
+        "title": recipe.get("title"),
+        "ingredients": recipe.get("ingredients", []),
+        "tags": recipe.get("tags", []),
+        "isFavorite": recipe.get("isFavorite", False)
+    }
+    data[month_key][day_key][meal_type] = full_recipe_data
+    
+    save_meals(data)
+    return jsonify({"status": "ok", "message": f"Recipe '{full_recipe_data['title']}' added to {meal_type} on {date_str}"})
+
+@meals_bp.route("/favorites/full", methods=["GET"])
+def get_full_favorites():
+    data = load_meals()
+    favorite_recipes = {} # Use a dict to store full recipes by title to avoid duplicates
+    for month_data in data.values():
+        for day_data in month_data.values():
+            for meal_type, meal_details in day_data.items():
+                if isinstance(meal_details, dict) and meal_details.get("isFavorite"):
+                    title = meal_details.get("title")
+                    if title and title not in favorite_recipes: # Add only if title exists and not already added
+                        favorite_recipes[title] = {
+                            "title": title,
+                            "ingredients": meal_details.get("ingredients", []),
+                            "tags": meal_details.get("tags", [])
+                            # isFavorite is implicitly true
+                        }
+    return jsonify(list(favorite_recipes.values()))
 
 @meals_bp.route("/favorites", methods=["GET"])
 def get_favorites():

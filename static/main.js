@@ -2083,3 +2083,68 @@ function fetchAndRenderMealsMonthView() {
     });
   }
 })();
+
+// --- Voice Assistant / External App Helper Functions ---
+
+async function getMealPlanForToday() {
+  try {
+    const response = await fetch("/api/meals/today");
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching today's meal plan:", error);
+    return null; // Or throw error, or return a default structure
+  }
+}
+
+async function getTodaysShoppingList() {
+  try {
+    const response = await fetch("/api/meals/shopping-list/today");
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data; // Expected to be an array of ingredients
+  } catch (error) {
+    console.error("Error fetching today's shopping list:", error);
+    return []; // Or throw error
+  }
+}
+
+async function addRecipeToMeal({ date, mealType, recipe }) {
+  try {
+    const response = await fetch("/api/meals/add-recipe", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ date, mealType, recipe }),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
+      throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.error}`);
+    }
+    const data = await response.json();
+    return data; // Should contain {status: "ok", ...}
+  } catch (error) {
+    console.error("Error adding recipe to meal:", error);
+    return { status: "error", message: error.message };
+  }
+}
+
+async function getFavoriteRecipes() {
+  try {
+    const response = await fetch("/api/meals/favorites/full");
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data; // Expected to be a list of recipe objects
+  } catch (error) {
+    console.error("Error fetching favorite recipes:", error);
+    return []; // Or throw error
+  }
+}
