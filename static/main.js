@@ -117,6 +117,10 @@ function setupCalendarTabs() {
     weekViewContainer.classList.add("hidden");
     monthViewContainer.classList.remove("hidden");
     mealsViewContainer.classList.remove("hidden");
+    const isMealsSubtab = mealsSubtab.classList.contains("active");
+    if (!isMealsSubtab) {
+      hideMealsPanelsWrapper();
+    }
     if (eventsSubtab.classList.contains("active")) {
       monthViewContainer.style.display = "flex";
       mealsViewContainer.style.display = "none";
@@ -130,7 +134,7 @@ function setupCalendarTabs() {
   // Show/hide meals panels wrapper when switching tabs
   // Use variables from outer scope
   function showMealsPanelsWrapper() {
-    const mealsPanelsWrapper = document.querySelector('.meals-panels-wrapper');
+    const mealsPanelsWrapper = document.querySelector('.meals-panel-wrapper');
     const mealsViewContainer = document.getElementById('meals-view-container');
     if (mealsPanelsWrapper) {
       mealsPanelsWrapper.classList.add('active');
@@ -141,7 +145,7 @@ function setupCalendarTabs() {
     }
   }
   function hideMealsPanelsWrapper() {
-    const mealsPanelsWrapper = document.querySelector('.meals-panels-wrapper');
+    const mealsPanelsWrapper = document.querySelector('.meals-panel-wrapper');
     const mealsViewContainer = document.getElementById('meals-view-container');
     if (mealsPanelsWrapper) {
       mealsPanelsWrapper.classList.remove('active'); // Corrected typo: mealsPanelsWrapper -> mealsPanelWrapper
@@ -168,6 +172,8 @@ function setupCalendarTabs() {
     weekViewContainer.classList.remove("hidden");
     monthViewContainer.classList.add("hidden");
     mealsViewContainer.classList.add("hidden");
+    monthViewContainer.style.display = "none";
+    hideMealsPanelsWrapper();
     if (monthSubtabs) monthSubtabs.style.display = "none";
     updateButtonVisibility();
   });
