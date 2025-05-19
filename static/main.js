@@ -88,14 +88,30 @@ function setupCalendarTabs() {
   const monthViewContainer = document.getElementById("month-view-container");
   const mealsViewContainer = document.getElementById("meals-view-container");
   const monthSubtabs = document.getElementById("month-subtabs");
+  const shuffleMealsButton = document.getElementById("shuffle-meals-button");
+  const shoppingListButton = document.getElementById("open-shopping-list-button");
+
+  function updateButtonVisibility() {
+    const isMonthView = monthTab.classList.contains("active");
+    const isMealsSubtab = mealsSubtab.classList.contains("active");
+    if (isMonthView && isMealsSubtab) {
+      shuffleMealsButton.style.display = "block";
+      shoppingListButton.style.display = "block";
+    } else {
+      shuffleMealsButton.style.display = "none";
+      shoppingListButton.style.display = "none";
+    }
+  }
 
   function setActiveTab(tab) {
     [weekTab, monthTab].forEach((btn) => btn.classList.remove("active"));
     tab.classList.add("active");
+    updateButtonVisibility();
   }
   function setActiveSubtab(subtab) {
     [eventsSubtab, mealsSubtab].forEach((btn) => btn.classList.remove("active"));
     subtab.classList.add("active");
+    updateButtonVisibility();
   }
   function showMonthView() {
     weekViewContainer.classList.add("hidden");
@@ -143,6 +159,7 @@ function setupCalendarTabs() {
     monthTab.addEventListener('click', function() {
       if (mealsSubtab.classList.contains('active')) showMealsPanelsWrapper();
       else hideMealsPanelsWrapper();
+      updateButtonVisibility(); // Add this call
     });
   }
 
@@ -152,21 +169,25 @@ function setupCalendarTabs() {
     monthViewContainer.classList.add("hidden");
     mealsViewContainer.classList.add("hidden");
     if (monthSubtabs) monthSubtabs.style.display = "none";
+    updateButtonVisibility();
   });
   monthTab.addEventListener("click", () => {
     setActiveTab(monthTab);
     if (monthSubtabs) monthSubtabs.style.display = "flex";
-    setActiveSubtab(eventsSubtab);
+    setActiveSubtab(eventsSubtab); // Default to events subtab
     showMonthView();
+    updateButtonVisibility();
   });
   eventsSubtab.addEventListener("click", () => {
     setActiveSubtab(eventsSubtab);
     showMonthView();
+    updateButtonVisibility();
   });
   mealsSubtab.addEventListener("click", () => {
     setActiveSubtab(mealsSubtab);
     showMonthView();
-  });
+    updateButtonVisibility();
+    });
 }
 
 function createDayModal() {
@@ -191,7 +212,7 @@ function createDayModal() {
     .querySelector(".day-modal-close-button")
     .addEventListener("click", () => {
       modalOverlay.classList.remove("open");
-    });
+  });
 }
 
 // --- Weather Modal Overlay ---
