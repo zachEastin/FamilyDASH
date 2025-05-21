@@ -11,7 +11,7 @@ from modules.time_module import time_bp, get_time
 from modules.network_module import network_bp, get_network
 from modules.lighting_module import lighting_bp, get_lighting
 from modules.sun_module import sun_bp, get_sun
-from modules.meals_module import meals_bp
+from modules.meals_module import meals_bp, recipes_bp
 
 import os
 
@@ -43,6 +43,7 @@ app.register_blueprint(network_bp)
 app.register_blueprint(lighting_bp)
 app.register_blueprint(sun_bp)
 app.register_blueprint(meals_bp)
+app.register_blueprint(recipes_bp)
 
 
 # Background task to poll data sources and emit updates
