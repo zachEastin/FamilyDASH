@@ -535,10 +535,23 @@ function shuffleMealPlan() {
         recipe
       })
     })
-      .then(r => r.json())
+      .then(async r => {
+        if (!r.ok) {
+          let errMsg = "Unknown error";
+          try {
+            const err = await r.json();
+            errMsg = err.error || JSON.stringify(err);
+          } catch {}
+          throw new Error(`Failed to save recipe: ${errMsg}`);
+        }
+        return r.json();
+      })
       .then(() => {
         hideModal();
         fetchAndRenderMealsMonthView();
+      })
+      .catch(err => {
+        alert("Error saving recipe: " + err.message);
       });
   });
   // Expose for use in meals view
