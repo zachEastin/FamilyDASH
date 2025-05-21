@@ -1,0 +1,15 @@
+{
+  "name": "familydash",
+  "version": "1.0.0",
+  "description": "FamilyVista Dashboard - run via npm",
+  "main": "app.py",
+  "scripts": {
+    "start": "python app.py",
+    "dev": "nodemon --exec python app.py",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
+}
