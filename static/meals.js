@@ -458,6 +458,18 @@ function shuffleMealPlan() {
   const tagInputs = form.querySelectorAll("input[name='tags']");
   let currentDate = null, currentMealType = null, currentMonth = null;
   let isFavorite = false;
+  let currentRecipeUuid = null;
+
+  function setModalFields(rec) {
+    titleInput.value = rec && rec.title ? rec.title : "";
+    ingredientsInput.value = rec && rec.ingredients ? (Array.isArray(rec.ingredients) ? rec.ingredients.join("\n") : rec.ingredients) : "";
+    isFavorite = rec && rec.isFavorite ? true : false;
+    updateFavoriteStar();
+    const tags = rec && rec.tags ? rec.tags : [];
+    tagInputs.forEach(input => {
+      input.checked = tags.includes(input.value);
+    });
+  }
 
   function showModal(recipe, date, mealType) {
     modal.style.display = "flex";
@@ -465,21 +477,15 @@ function shuffleMealPlan() {
     currentDate = date;
     currentMealType = mealType;
     currentMonth = date.slice(0, 7);
-    titleInput.value = recipe && recipe.title ? recipe.title : "";
-    ingredientsInput.value = recipe && recipe.ingredients ? (Array.isArray(recipe.ingredients) ? recipe.ingredients.join("\n") : recipe.ingredients) : "";
-    isFavorite = recipe && recipe.isFavorite ? true : false;
-    updateFavoriteStar();
-    // Tags
-    const tags = recipe && recipe.tags ? recipe.tags : [];
-    tagInputs.forEach(input => {
-      input.checked = tags.includes(input.value);
-    });
+    currentRecipeUuid = recipe && (recipe.uuid || recipe.recipe_uuid) || null;
+    setModalFields(recipe || {});
   }
   function hideModal() {
     modal.classList.remove("open");
     setTimeout(() => { modal.style.display = "none"; }, 200);
     form.reset();
     isFavorite = false;
+    currentRecipeUuid = null;
     updateFavoriteStar();
   }
   function updateFavoriteStar() {
@@ -516,43 +522,58 @@ function shuffleMealPlan() {
     e.preventDefault();
     hideModal();
   });
-  form.addEventListener("submit", function(e) {
+  form.addEventListener("submit", async function(e) {
     e.preventDefault();
     const title = titleInput.value.trim();
     if (!title) return;
     let ingredients = ingredientsInput.value.split(/\n|,/).map(s => s.trim()).filter(Boolean);
     const tags = Array.from(tagInputs).filter(i => i.checked).map(i => i.value);
-    const recipe = { title, ingredients, tags, isFavorite };
-    // POST to /api/meals/update
-    fetch("/api/meals/update", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-
-      body: JSON.stringify({
-        month: currentMonth,
-        date: currentDate,
-        mealType: currentMealType,
-        recipe
-      })
-    })
-      .then(async r => {
+    const recipeData = { title, ingredients, tags, isFavorite };
+    try {
+      let recipe_uuid = currentRecipeUuid;
+      if (recipe_uuid) {
+        const r = await fetch("/api/recipes/update", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ uuid: recipe_uuid, ...recipeData })
+        });
         if (!r.ok) {
-          let errMsg = "Unknown error";
-          try {
-            const err = await r.json();
-            errMsg = err.error || JSON.stringify(err);
-          } catch {}
-          throw new Error(`Failed to save recipe: ${errMsg}`);
+          const err = await r.json().catch(() => ({}));
+          throw new Error(err.error || "Failed to update recipe");
         }
-        return r.json();
-      })
-      .then(() => {
-        hideModal();
-        fetchAndRenderMealsMonthView();
-      })
-      .catch(err => {
-        alert("Error saving recipe: " + err.message);
+      } else {
+        const r = await fetch("/api/recipes/add", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(recipeData)
+        });
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({}));
+          throw new Error(err.error || "Failed to add recipe");
+        }
+        const data = await r.json();
+        recipe_uuid = data.uuid;
+      }
+
+      const resp = await fetch("/api/meals/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          month: currentMonth,
+          date: currentDate,
+          mealType: currentMealType,
+          recipe_uuid
+        })
       });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to save recipe");
+      }
+      hideModal();
+      fetchAndRenderMealsMonthView();
+    } catch (err) {
+      alert("Error saving recipe: " + err.message);
+    }
   });
   // Expose for use in meals view
   window.openRecipeModal = showModal;
