@@ -127,14 +127,12 @@ function showDayDetailsModal(date, events) {
     events.forEach((event) => {
       const eventDiv = document.createElement("div");
       eventDiv.className =
-        "day-modal-event" + (event.isAllDay ? " all-day" : "");
+        "day-modal-event" + (event.isAllDay ? " all-day" : "") +
+        " " + getEventCategoryClass(event.calendar || "");
 
       const titleSpan = document.createElement("span");
       titleSpan.className = "day-modal-event-title";
       titleSpan.textContent = event.title;
-      if (event.calendarColor) {
-        titleSpan.style.color = event.calendarColor;
-      }
       eventDiv.appendChild(titleSpan);
 
       const timeSpan = document.createElement("span");
@@ -159,6 +157,17 @@ function showDayDetailsModal(date, events) {
     });
   }
   modalOverlay.classList.add("open");
+}
+
+function getEventCategoryClass(calName = "") {
+  const name = calName.toLowerCase();
+  if (name.includes("personal")) return "event-personal";
+  if (name.includes("school")) return "event-school";
+  if (name.includes("family")) return "event-family";
+  if (name.includes("sports")) return "event-sports";
+  if (name.includes("work")) return "event-work";
+  if (name.includes("birth")) return "event-birthday";
+  return "event-default";
 }
 
 function updateIcloudWeekView(data) {
@@ -606,11 +615,9 @@ function updateIcloudMonthView(data) {
     allEventsForModal[dayKey] = dayEvents; // Store for modal
 
     dayEvents.forEach((event) => {
-      // Add class for all-day or timed event
       const eventTypeClass = event.isAllDay ? "all-day" : "timed";
-      monthGridHtml += `<div class="month-event-item ${eventTypeClass}" style="background-color: ${event.calendarColor || "#e0e0e0"}; color: ${getContrastColor(
-        event.calendarColor || "#e0e0e0"
-      )}" title="${event.title}">${event.title}</div>`;
+      const categoryClass = getEventCategoryClass(event.calendar || "");
+      monthGridHtml += `<div class="month-event-item ${eventTypeClass} ${categoryClass}" data-event-uid="${event.uid || ""}" title="${event.title}">${event.title}</div>`;
     });
     if (otherMonth) {
       monthGridHtml += `</div>`;
@@ -663,21 +670,12 @@ function updateIcloudMonthView(data) {
   // Add click listeners to each event in the month view to show event details modal
   monthViewContainer.querySelectorAll(".month-event-item").forEach((eventDiv) => {
     eventDiv.addEventListener("click", (e) => {
-      e.stopPropagation(); // Prevent triggering the day cell click
-      // Find the event data for this event
-      const title = eventDiv.getAttribute("title");
-      // Find the event in the events array for this day
+      e.stopPropagation();
+      const uid = eventDiv.dataset.eventUid;
       const parentCell = eventDiv.closest(".month-day-cell");
       const dateStr = parentCell ? parentCell.dataset.date : null;
       const dayEvents = dateStr ? allEventsForModal[dateStr] || [] : [];
-      // Try to match by title and color (could be improved with UID if available)
-      const eventData =
-        dayEvents.find(
-          (ev) =>
-            ev.title === title &&
-            eventDiv.style.backgroundColor.replace(/\s/g, "") ===
-              (ev.calendarColor ? ev.calendarColor.replace(/\s/g, "") : "")
-        ) || dayEvents.find((ev) => ev.title === title) || null;
+      const eventData = uid ? dayEvents.find((ev) => ev.uid === uid) : null;
       if (eventData) {
         showEventDetailsModal(eventData);
       }

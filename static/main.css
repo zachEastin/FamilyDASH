@@ -15,6 +15,21 @@
   --color-lunch: #10B981;
   --color-dinner: #F97316;
   --color-snack: #8B5CF6;
+  /* Event palette */
+  --event-personal-bg: #F97316;
+  --event-personal-text: #fff;
+  --event-school-bg: #3B82F6;
+  --event-school-text: #fff;
+  --event-family-bg: #10B981;
+  --event-family-text: #fff;
+  --event-sports-bg: #8B5CF6;
+  --event-sports-text: #fff;
+  --event-work-bg: #FACC15;
+  --event-work-text: #1F2937;
+  --event-birthday-bg: #EF4444;
+  --event-birthday-text: #fff;
+  --event-default-bg: #6B7280;
+  --event-default-text: #fff;
   /* Shadows and borders */
   --elevation-1: 0 2px 8px rgba(0,0,0,0.10);
   --border-radius-card: 12px;
@@ -51,6 +66,21 @@ body.dark-mode {
   --color-lunch: #10B981;
   --color-dinner: #F97316;
   --color-snack: #8B5CF6;
+  /* Event palette */
+  --event-personal-bg: #F97316;
+  --event-personal-text: #fff;
+  --event-school-bg: #3B82F6;
+  --event-school-text: #fff;
+  --event-family-bg: #10B981;
+  --event-family-text: #fff;
+  --event-sports-bg: #8B5CF6;
+  --event-sports-text: #fff;
+  --event-work-bg: #FACC15;
+  --event-work-text: #fff;
+  --event-birthday-bg: #EF4444;
+  --event-birthday-text: #fff;
+  --event-default-bg: #6B7280;
+  --event-default-text: #fff;
   --elevation-1: 0 2px 8px rgba(0,0,0,0.30);
   --border-radius-card: 12px;
   --border-radius-btn: 8px;
@@ -338,20 +368,22 @@ body.dark-mode .month-grid-header {
   grid-template-columns: repeat(7, 1fr);
   grid-auto-rows: minmax(100px, auto);
   gap: 1px;
-  background-color: #ccc;
-  border: 1px solid #ccc;
+  background-color: var(--color-gray);
+  border: 1px solid var(--color-gray);
   flex-grow: 1;
   overflow: auto;
 }
 
 body.dark-mode .month-grid {
-  background-color: #555;
-  border: 1px solid #555;
+  background-color: var(--color-gray);
+  border: 1px solid var(--color-gray);
 }
 
 .month-day-cell {
-  background-color: var(--widget-bg);
-  padding: 4px;
+  background: var(--color-bg-card);
+  border-radius: var(--border-radius-card);
+  box-shadow: var(--elevation-1);
+  padding: var(--space-xs);
   position: relative;
   overflow: hidden;
   display: flex;
@@ -361,12 +393,14 @@ body.dark-mode .month-grid {
 .month-day-cell .day-number {
   font-size: var(--font-small);
   font-weight: bold;
+  color: var(--text-color);
   text-align: right;
-  margin-bottom: 4px;
+  margin-bottom: var(--space-xs);
 }
 
+
 .other-month {
-  color: #aaa;
+  color: var(--color-gray);
   opacity: 0.3;
 }
 
@@ -376,66 +410,47 @@ body.dark-mode .other-month {
 }
 
 .month-day-cell.today {
-  box-shadow: 0 0 0 2px #2196f3 inset;
+  box-shadow: 0 0 0 2px var(--color-primary) inset;
 }
 
 .month-day-cell-events {
   flex-grow: 1;
   overflow-x: hidden;
   overflow-y: hidden;
-  font-size: 0.7em;
+  font-size: var(--font-small);
   display: flex;
   flex-direction: column;
+  gap: var(--space-xs);
   max-height: 80px;
   position: relative;
 }
 
 .month-day-cell-events .month-event-item {
-  padding: 2px 3px;
-  margin-top: 2px;
-  border-radius: 3px;
+  padding: 4px 10px;
+  margin-top: 3px;
+  border-radius: 8px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: pointer;
-  background-color: #e0e0e0;
-  color: #333;
-}
-
-body.dark-mode .month-event-item {
-  background-color: #424242;
-  color: #eee;
+  font-size: var(--font-small);
+  font-weight: 500;
+  line-height: 1.3;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
 }
 
 .month-event-item.all-day {
   width: 100%;
   font-weight: bold;
-  font-size: 1em;
-  margin-left: 0;
-  background-color: #ffe082;
-  color: #333;
-  border-left: 4px solid #fbc02d;
-}
-body.dark-mode .month-event-item.all-day {
-  background-color: #665c1e;
-  color: #ffe082;
-  border-left: 4px solid #fbc02d;
 }
 
 .month-event-item.timed {
-  width: 85%;
-  margin-left: 10px;
+  width: 100%;
   font-weight: normal;
-  font-size: 0.95em;
-  background-color: #e3f2fd;
-  color: #1976d2;
-  border-left: 3px solid #1976d2;
   position: relative;
-}
-body.dark-mode .month-event-item.timed {
-  background-color: #263238;
-  color: #90caf9;
-  border-left: 3px solid #1976d2;
 }
 
 .month-event-item.timed::before {
@@ -446,25 +461,50 @@ body.dark-mode .month-event-item.timed {
   color: inherit;
 }
 
+/* Event category colors */
+.month-event-item.event-personal {
+  background: var(--event-personal-bg);
+  color: var(--event-personal-text);
+}
+.month-event-item.event-school {
+  background: var(--event-school-bg);
+  color: var(--event-school-text);
+}
+.month-event-item.event-family {
+  background: var(--event-family-bg);
+  color: var(--event-family-text);
+}
+.month-event-item.event-sports {
+  background: var(--event-sports-bg);
+  color: var(--event-sports-text);
+}
+.month-event-item.event-work {
+  background: var(--event-work-bg);
+  color: var(--event-work-text);
+}
+.month-event-item.event-birthday {
+  background: var(--event-birthday-bg);
+  color: var(--event-birthday-text);
+}
+.month-event-item.event-default {
+  background: var(--event-default-bg);
+  color: var(--event-default-text);
+}
+
 .month-day-cell-events .month-event-item.hidden-event {
   display: none;
 }
 
 .month-day-cell-events .show-more {
-  background: #eee;
-  color: #333;
-  font-size: 0.8em;
+  background: var(--color-bg-card);
+  color: var(--text-color);
+  font-size: var(--font-small);
   text-align: center;
-  border-radius: 3px;
-  margin-top: 2px;
+  border-radius: 8px;
+  margin-top: var(--space-xs);
   cursor: pointer;
-  padding: 2px 0;
-  border: 1px solid #ccc;
-}
-body.dark-mode .month-day-cell-events .show-more {
-  background: #444;
-  color: #eee;
-  border: 1px solid #666;
+  padding: var(--space-xs) 0;
+  border: 1px solid var(--color-gray);
 }
 
 .day-modal-overlay {
@@ -525,6 +565,14 @@ body.dark-mode .day-modal-event {
   display: block;
   margin-bottom: 3px;
 }
+
+.day-modal-event.event-personal .day-modal-event-title { color: var(--event-personal-bg); }
+.day-modal-event.event-school .day-modal-event-title { color: var(--event-school-bg); }
+.day-modal-event.event-family .day-modal-event-title { color: var(--event-family-bg); }
+.day-modal-event.event-sports .day-modal-event-title { color: var(--event-sports-bg); }
+.day-modal-event.event-work .day-modal-event-title { color: var(--event-work-bg); }
+.day-modal-event.event-birthday .day-modal-event-title { color: var(--event-birthday-bg); }
+.day-modal-event.event-default .day-modal-event-title { color: var(--event-default-bg); }
 
 .day-modal-event-time {
   font-size: 0.9em;
