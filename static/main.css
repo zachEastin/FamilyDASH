@@ -1861,6 +1861,13 @@ body.dark-mode .side-panel-tab.active {
 .meal-slot {
   position: relative;
   padding-left: 28px;
+  height: 33.333%;
+  display: flex;
+  overflow: hidden;
+  line-height: 90%;
+}
+.empty-meal-slot {
+  align-items: center;
 }
 .meal-lock-icon {
   position: absolute;
