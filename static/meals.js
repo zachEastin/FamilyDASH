@@ -503,6 +503,10 @@ function shuffleMealPlan() {
     e.preventDefault();
     hideModal();
   });
+  // Close modal when clicking outside modal content
+  modal.addEventListener("click", function(e) {
+    if (e.target === modal) hideModal();
+  });
   form.addEventListener("submit", async function(e) {
     e.preventDefault();
     const title = titleInput.value.trim();
@@ -671,8 +675,9 @@ function renderMealsMonthView(data) {
       mealsGridHtml += `<div class="day-number">${cellDate.getDate()}</div>`;
       mealsGridHtml += `<div class="meals-zones">`;
       ["breakfast", "lunch", "dinner"].forEach((mealType, idx) => {
+        let slotClasses = "meal-slot " + mealType + [" top", " mid", " bottom"][idx];
         const meal = dayMeals[mealType];
-        const slotClass = ["top", "mid", "bottom"][idx];
+        // const slotClass = ["top", "mid", "bottom"][idx];
         let slotContent = "+";
         let locked = false;
         let recipe_uuid = meal && meal.recipe_uuid;
@@ -681,9 +686,11 @@ function renderMealsMonthView(data) {
           if (recipe_uuid && recipeMap[recipe_uuid]) {
             slotContent = recipeMap[recipe_uuid].title || "+";
           }
+        } else {
+          slotClasses += " empty-meal-slot";
         }
         const lockIcon = `<span class="meal-lock-icon fa ${locked ? 'fa-lock' : 'fa-unlock'}" data-locked="${locked}" title="${locked ? 'Unlock' : 'Lock'}"></span>`;
-        mealsGridHtml += `<div class="meal-slot ${mealType} ${slotClass}" data-date="${dateStr}" data-meal-type="${mealType}" data-locked="${locked}" data-recipe-uuid="${recipe_uuid}">${lockIcon}<span class="meal-slot-title">${slotContent}</span></div>`;
+        mealsGridHtml += `<div class="${slotClasses}" data-date="${dateStr}" data-meal-type="${mealType}" data-locked="${locked}" data-recipe-uuid="${recipe_uuid}">${lockIcon}<span class="meal-slot-title">${slotContent}</span></div>`;
       });
       if (otherMonth) {
         mealsGridHtml += `</div>`;
