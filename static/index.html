@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FamilyVista Dashboard</title>
   <link rel="stylesheet" href="/static/main.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
   <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
 </head>
 <body>
@@ -13,23 +13,23 @@
     <nav class="sidebar">
       <div class="sidebar-nav">
         <button class="nav-button active" data-section="week-calendar">
-          <i class="fas fa-calendar-week"></i>
+          <span class="material-symbols-outlined">view_week</span>
           <span class="nav-label">Week</span>
         </button>
         <button class="nav-button" data-section="month-calendar">
-          <i class="fas fa-calendar-alt"></i>
+          <span class="material-symbols-outlined">calendar_month</span>
           <span class="nav-label">Month</span>
         </button>
         <button class="nav-button" data-section="meal-planning">
-          <i class="fas fa-utensils"></i>
+          <span class="material-symbols-outlined">restaurant</span>
           <span class="nav-label">Meals</span>
         </button>
         <button class="nav-button" data-section="reminders">
-          <i class="fas fa-bell"></i>
+          <span class="material-symbols-outlined">notifications</span>
           <span class="nav-label">Reminders</span>
         </button>
         <button class="nav-button" data-section="photos">
-          <i class="fas fa-images"></i>
+          <span class="material-symbols-outlined">photo_library</span>
           <span class="nav-label">Photos</span>
         </button>
       </div>
@@ -61,13 +61,13 @@
                 <div class="side-panel-content">
                   <div id="favorites-list" class="panel-list"></div>
                   <div id="history-list" class="panel-list" style="display:none;"></div>
+                  <div id="meals-actions" class="meals-actions">
+                    <button id="shuffle-meals-button" class="shuffle-meals-btn"><span class="material-symbols-outlined">shuffle</span>Shuffle</button>
+                    <button id="open-shopping-list-button" class="shuffle-meals-btn"><span class="material-symbols-outlined">shopping_cart</span>List</button>
+                  </div>
                 </div>
               </div>
               <div id="meals-view-container" class="calendar-view"></div>
-            </div>
-            <div id="meals-actions" class="meals-actions">
-              <button id="shuffle-meals-button" class="shuffle-meals-btn"><i class="fa fa-random"></i> Shuffle Meals</button>
-              <button id="open-shopping-list-button" class="shuffle-meals-btn"><i class="fa fa-shopping-cart"></i> Shopping List</button>
             </div>
         </div>
         <div id="reminders" class="widget section-content" data-section="reminders">Loading reminders...</div>
@@ -96,7 +96,7 @@
         <textarea id="recipe-ingredients" name="ingredients" rows="3" placeholder="One per line or comma separated"></textarea>
 
         <div class="favorite-toggle">
-          <span id="favorite-star" class="fa-regular fa-star" title="Mark as favorite" tabindex="0"></span>
+          <span id="favorite-star" class="material-symbols-outlined" title="Mark as favorite" tabindex="0">star_outline</span>
           <span>Favorite</span>
         </div>
 
