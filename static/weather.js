@@ -308,6 +308,11 @@ function updateWeatherModal(data) {
             grid: { drawOnChartArea: false },
           },
         },
+        elements: {
+          line: {
+            borderJoinStyle: 'round' // Smoother line connection
+          }
+        }
       };
 
       if (modalYAxisMin !== null && modalYAxisMax !== null && isFinite(modalYAxisMin) && isFinite(modalYAxisMax)) {
@@ -317,7 +322,7 @@ function updateWeatherModal(data) {
 
       const ctx2 = modalCanvas.getContext("2d");
       window.modalForecastChart = new Chart(ctx2, {
-        type: "bar",
+        type: "line",
         data: {
           labels: modalLabels,
           datasets: [
@@ -325,23 +330,78 @@ function updateWeatherModal(data) {
               type: "line",
               label: "Temp (°F)",
               data: modalTemps,
-              borderColor: "#ffd740",
+              borderColor: "rgba(255,215,64,0.9)",
+              borderWidth: 2,
+              pointRadius: 0,
               backgroundColor: "rgba(255,215,0,0.2)",
               yAxisID: "y1",
-              tension: 0.4,
+              tension: 0.5,
               fill: true,
             },
             {
               type: "bar",
               label: "Precip (%)",
               data: modalPops,
-              backgroundColor: "rgba(64,196,255,0.6)",
+              borderColor: "rgba(64,196,255,1)",
+              // backgroundColor: "rgba(64,196,255,0.2)",
+              borderWidth: {
+                top: 2,
+                right: 0,
+                bottom: 0,
+                left: 0
+              },
               yAxisID: "y2",
+              barPercentage: 1.0,
+              categoryPercentage: 1.0,
+              fill: true,
             },
           ],
         },
         options: chartOptions,
       });
+      window.modalForecastChart.update();
+
+      // Now, after the chart is created, we can access the scales
+      const gradientStart = window.modalForecastChart.scales['y1'].getPixelForValue(modalYAxisMax); // Max temperature
+      const gradientEnd = window.modalForecastChart.scales['y1'].getPixelForValue(modalYAxisMin);   // Min temperature
+
+      // Create gradient based on y-axis values
+      const tempGradient = ctx2.createLinearGradient(0, gradientStart, 0, gradientEnd - 10);
+      for(var t = 0; t <= 1; t += 0.02) {    // convert linear t to "easing" t:
+        // Interpolate alpha between 0.95 (t=0) and 0.01 (t=1)
+        const alpha = 0.95 + (0.01 - 0.95) * t;
+        tempGradient.addColorStop(t, `rgba(252,204,5, ${alpha})`);
+      }
+      // tempGradient.addColorStop(0, 'rgba(252,204,5, 0.95)'); // Top of the gradient (max temperature)
+      // tempGradient.addColorStop(1, 'rgba(252,204,5, 0.01)'); // Bottom of the gradient (min temperature)
+
+      // Update the chart to apply the gradient
+      window.modalForecastChart.data.datasets[0].backgroundColor = tempGradient;
+
+      // Create gradient based on y-axis values
+      const precipitationGradient = ctx2.createLinearGradient(0, gradientStart, 0, gradientEnd - 80);
+      const r1 = 26;
+      const g1 = 111;
+      const b1 = 176;
+      const r2 = 194;
+      const g2 = 223;
+      const b2 = 246;
+      for(var t = 0; t <= 1; t += 0.02) {    // convert linear t to "easing" t:
+        // Interpolate the color between rgba(26, 111, 176, 0.8) (t=0) and rgba(194, 223, 246, 0) (t=1)
+        const alpha = 0.8 + (0 - 0.8) * t;
+        const r = Math.round(r1 + (r2 - r1) * t);
+        const g = Math.round(g1 + (g2 - g1) * t);
+        const b = Math.round(b1 + (b2 - b1) * t);
+        const color = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        // Add color stop to the gradient
+        precipitationGradient.addColorStop(t, color);
+      }
+      // precipitationGradient.addColorStop(0, 'rgba(26, 111, 176, 0.8)'); // Top of the gradient (max temperature)
+      // precipitationGradient.addColorStop(1, 'rgba(194, 223, 246, 0)'); // Bottom of the gradient (min temperature)
+
+      window.modalForecastChart.data.datasets[1].backgroundColor = precipitationGradient;
+
+      window.modalForecastChart.update();
     }
   }, 0);
   // Daily forecast (next 5d)
