@@ -161,6 +161,39 @@ function showDayDetailsModal(date, events) {
   modalOverlay.classList.add("open");
 }
 
+// Map calendar names to CSS class names used for styling
+function getCalendarClass(name) {
+  if (!name) return "default";
+  const n = name.toLowerCase();
+  if (n.includes("work")) return "work";
+  if (n.includes("family")) return "family";
+  if (n.includes("birthday")) return "birthday";
+  if (n.includes("personal")) return "personal";
+  if (n.includes("school")) return "school";
+  if (n.includes("sport")) return "sports";
+  return "default";
+}
+
+// Choose an icon for each calendar class
+function getCalendarIcon(cls) {
+  switch (cls) {
+    case "work":
+      return "work";
+    case "family":
+      return "group";
+    case "birthday":
+      return "cake";
+    case "personal":
+      return "person";
+    case "school":
+      return "school";
+    case "sports":
+      return "sports_soccer";
+    default:
+      return "event";
+  }
+}
+
 function updateIcloudWeekView(data) {
   if (!data || typeof data !== "object") {
     document.getElementById("week-view-container").innerHTML =
@@ -579,7 +612,7 @@ function updateIcloudMonthView(data) {
       monthGridHtml += `<div class="other-month">`;
     }
     monthGridHtml += `<div class="day-number">${cellDate.getDate()}</div>`;
-    monthGridHtml += `<div class="month-day-cell-events">`;
+    monthGridHtml += `<div class="all-day-events-row">`;
 
     // Filter and sort events for this specific day
     const dayEvents = events
@@ -605,10 +638,28 @@ function updateIcloudMonthView(data) {
 
     allEventsForModal[dayKey] = dayEvents; // Store for modal
 
-    dayEvents.forEach((event) => {
-      // Add class for all-day or timed event
-      const eventTypeClass = event.isAllDay ? "all-day" : "timed";
-      monthGridHtml += `<div class="month-event-item ${eventTypeClass}" style="background-color: ${event.calendarColor || "#e0e0e0"}; color: ${getContrastColor(
+    const allDayEvents = dayEvents.filter((ev) => ev.isAllDay);
+    const timedEvents = dayEvents.filter((ev) => !ev.isAllDay);
+    const maxAllDayVisible = 2;
+
+
+    allDayEvents.forEach((event, idx) => {
+      if (idx < maxAllDayVisible) {
+        const cls = getCalendarClass(event.calendar);
+        const icon = getCalendarIcon(cls);
+        monthGridHtml += `<div class="all-day-event-pill event-${cls}" title="${event.title}"><span class="material-symbols-outlined event-icon">${icon}</span>${event.title}</div>`;
+      }
+    });
+    if (allDayEvents.length > maxAllDayVisible) {
+      const moreCount = allDayEvents.length - maxAllDayVisible;
+      monthGridHtml += `<div class="all-day-events-overflow">+${moreCount} more</div>`;
+    }
+
+    monthGridHtml += `</div>`; // close all-day-events-row
+    monthGridHtml += `<div class="month-day-cell-events">`;
+
+    timedEvents.forEach((event) => {
+      monthGridHtml += `<div class="month-event-item timed" style="background-color: ${event.calendarColor || "#e0e0e0"}; color: ${getContrastColor(
         event.calendarColor || "#e0e0e0"
       )}" title="${event.title}">${event.title}</div>`;
     });
@@ -649,6 +700,19 @@ function updateIcloudMonthView(data) {
     }
   });
 
+  // Handle "+N more" badges for all-day events
+  monthViewContainer.querySelectorAll(".all-day-events-overflow").forEach((badge) => {
+    badge.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const parentCell = badge.closest(".month-day-cell");
+      if (parentCell) {
+        const dateStr = parentCell.dataset.date;
+        const cellDate = new Date(dateStr + "T00:00:00");
+        showDayDetailsModal(cellDate, allEventsForModal[dateStr] || []);
+      }
+    });
+  });
+
   // Add click listeners to day cells for the modal
   monthViewContainer.querySelectorAll(".month-day-cell").forEach((cell) => {
     cell.addEventListener("click", function (e) {
@@ -678,6 +742,21 @@ function updateIcloudMonthView(data) {
             eventDiv.style.backgroundColor.replace(/\s/g, "") ===
               (ev.calendarColor ? ev.calendarColor.replace(/\s/g, "") : "")
         ) || dayEvents.find((ev) => ev.title === title) || null;
+      if (eventData) {
+        showEventDetailsModal(eventData);
+      }
+    });
+  });
+
+  // Click handler for all-day event pills
+  monthViewContainer.querySelectorAll(".all-day-event-pill").forEach((pill) => {
+    pill.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const title = pill.getAttribute("title");
+      const parentCell = pill.closest(".month-day-cell");
+      const dateStr = parentCell ? parentCell.dataset.date : null;
+      const dayEvents = dateStr ? allEventsForModal[dateStr] || [] : [];
+      const eventData = dayEvents.find((ev) => ev.title === title) || null;
       if (eventData) {
         showEventDetailsModal(eventData);
       }
