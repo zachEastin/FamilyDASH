@@ -424,6 +424,39 @@ function updateWeatherModal(data) {
         .join("")}
     </div>
   `;
+
+  // --- Enable horizontal scroll for daily row ---
+  setTimeout(() => {
+    const dailyRow = overlay.querySelector('.weather-modal-daily-row');
+    if (!dailyRow) return;
+    // Mouse wheel: vertical wheel scrolls horizontally
+    dailyRow.addEventListener('wheel', function(e) {
+      if (e.deltaY !== 0) {
+        e.preventDefault();
+        dailyRow.scrollLeft += e.deltaY;
+      }
+    }, { passive: false });
+    // Touch swipe: horizontal swipe scrolls
+    let startX = 0, scrollLeft = 0, isDown = false;
+    dailyRow.addEventListener('touchstart', function(e) {
+      if (e.touches.length !== 1) return;
+      isDown = true;
+      startX = e.touches[0].pageX - dailyRow.offsetLeft;
+      scrollLeft = dailyRow.scrollLeft;
+    });
+    dailyRow.addEventListener('touchmove', function(e) {
+      if (!isDown || e.touches.length !== 1) return;
+      const x = e.touches[0].pageX - dailyRow.offsetLeft;
+      const walk = (startX - x); // drag left/right
+      dailyRow.scrollLeft = scrollLeft + walk;
+    });
+    dailyRow.addEventListener('touchend', function() {
+      isDown = false;
+    });
+    dailyRow.addEventListener('touchcancel', function() {
+      isDown = false;
+    });
+  }, 0);
 }
 
 // Helper: wind direction as compass
