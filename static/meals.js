@@ -57,7 +57,7 @@ function updateFavoriteStar() {
     });
   }
 
-  searchBtn.addEventListener('click', function() {
+  function doSpoonacularSearch() {
     const q = searchInput.value.trim();
     if (!q) return;
     resultsContainer.innerHTML = '<div>Searching...</div>';
@@ -65,6 +65,16 @@ function updateFavoriteStar() {
       .then(r => r.json())
       .then(data => renderResults(data.results || []))
       .catch(() => { resultsContainer.innerHTML = '<div style="color:red;">Error searching recipes.</div>'; });
+  }
+
+  searchBtn.addEventListener('click', doSpoonacularSearch);
+
+  // Add Enter key handler to input
+  searchInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      doSpoonacularSearch();
+    }
   });
 
   resultsContainer.addEventListener('click', function(e) {
