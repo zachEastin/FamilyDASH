@@ -43,6 +43,15 @@ def fetch_and_cache_weather():
         _WEATHER_CACHE["allergen_index"] = pollen_data.get("list", [{}])[0].get("main", {}).get("aqi")
     except Exception:
         _WEATHER_CACHE["allergen_index"] = None
+    # Precipitation (if available)
+    try:
+        precip_resp = requests.get(
+            f"https://api.openweathermap.org/data/2.5/onecall?lat={lat}&lon={lon}&appid={api_key}&exclude=hourly,daily"
+        )
+        precip_data = precip_resp.json()
+        _WEATHER_CACHE["precipitation"] = precip_data.get("current", {}).get("precipitation", 0)
+    except Exception:
+        _WEATHER_CACHE["precipitation"] = None
 
 
 def c_to_f(c):
@@ -98,6 +107,7 @@ def get_forecast():
             "temp": c_to_f(h["temp"]),
             "icon": h["weather"][0]["icon"],
             "description": h["weather"][0]["description"],
+            "pop": h.get("pop"),
         })
     # Daily: next 5 days
     daily = []
