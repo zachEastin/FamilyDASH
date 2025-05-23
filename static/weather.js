@@ -1,3 +1,6 @@
+// Global variable to store daily weather data for submodal access
+let cachedDailyWeatherData = null;
+
 // Attach click handler to weather widget after DOM loaded
 window.addEventListener("DOMContentLoaded", () => {
   const weather = document.getElementById("weather");
@@ -403,15 +406,17 @@ function updateWeatherModal(data) {
 
       window.modalForecastChart.update();
     }
-  }, 0);
+  }, 0);  // Cache daily data for submodal access
+  cachedDailyWeatherData = data.daily;
+  
   // Daily forecast (next 16d)
   overlay.querySelector(".weather-modal-daily").innerHTML = `
     <div class="weather-modal-section-title">16-Day Forecast</div>
     <div class="weather-modal-daily-row">
       ${data.daily
         .map(
-          (d) => `
-        <div class="weather-modal-day">
+          (d, index) => `
+        <div class="weather-modal-day" data-day-index="${index}">
           <div class="weather-modal-day-date">${new Date(d.dt * 1000).toLocaleDateString([], { weekday: "short" })}</div>
           <img src="https://openweathermap.org/img/wn/${d.icon}@2x.png" class="weather-modal-day-icon" alt="">
           <div class="weather-modal-day-temps">
@@ -424,11 +429,24 @@ function updateWeatherModal(data) {
         .join("")}
     </div>
   `;
-
   // --- Enable horizontal scroll for daily row ---
   setTimeout(() => {
     const dailyRow = overlay.querySelector('.weather-modal-daily-row');
     if (!dailyRow) return;
+    
+    // Add click listeners to day elements for submodal
+    const dayElements = dailyRow.querySelectorAll('.weather-modal-day');
+    dayElements.forEach(dayElement => {
+      dayElement.style.cursor = 'pointer';
+      dayElement.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const dayIndex = parseInt(dayElement.getAttribute('data-day-index'));
+        if (cachedDailyWeatherData && cachedDailyWeatherData[dayIndex]) {
+          showWeatherForecastDaySubmodal(cachedDailyWeatherData[dayIndex]);
+        }
+      });
+    });
+    
     // Mouse wheel: vertical wheel scrolls horizontally
     dailyRow.addEventListener('wheel', function(e) {
       if (e.deltaY !== 0) {
@@ -457,6 +475,252 @@ function updateWeatherModal(data) {
       isDown = false;
     });
   }, 0);
+}
+
+// --- Weather Forecast Day Submodal Functions ---
+function createWeatherForecastDaySubmodal() {
+  if (document.getElementById("weather-forecast-day-submodal-overlay")) return;
+  
+  const overlay = document.createElement("div");
+  overlay.id = "weather-forecast-day-submodal-overlay";
+  overlay.className = "weather-forecast-day-submodal-overlay";
+  overlay.innerHTML = `
+    <div class="weather-forecast-day-submodal-content">
+      <button class="weather-forecast-day-close">&times;</button>
+      <div class="weather-forecast-day-header">
+        <h3 class="weather-forecast-day-title"></h3>
+        <p class="weather-forecast-day-date"></p>
+      </div>
+      <div class="weather-forecast-day-main">
+        <img class="weather-forecast-day-icon" alt="Weather icon">
+        <div class="weather-forecast-day-temps">
+          <div class="weather-forecast-day-high-low">
+            <span class="weather-forecast-day-high"></span>
+            <span class="weather-forecast-day-low"></span>
+          </div>
+          <p class="weather-forecast-day-description"></p>
+        </div>
+      </div>
+      <div class="weather-forecast-day-summary">
+      </div>
+      <div class="weather-forecast-day-temp-breakdown">
+        <h4 class="weather-forecast-day-section-title">Temperature Details</h4>
+        <div class="weather-forecast-day-temp-grid">
+          <div class="weather-forecast-day-temp-item">
+            <span class="weather-forecast-day-temp-label">Morning</span>
+            <span class="weather-forecast-day-temp-value" data-temp="morn"></span>
+          </div>
+          <div class="weather-forecast-day-temp-item">
+            <span class="weather-forecast-day-temp-label">Day</span>
+            <span class="weather-forecast-day-temp-value" data-temp="day"></span>
+          </div>
+          <div class="weather-forecast-day-temp-item">
+            <span class="weather-forecast-day-temp-label">Evening</span>
+            <span class="weather-forecast-day-temp-value" data-temp="eve"></span>
+          </div>
+          <div class="weather-forecast-day-temp-item">
+            <span class="weather-forecast-day-temp-label">Night</span>
+            <span class="weather-forecast-day-temp-value" data-temp="night"></span>
+          </div>
+        </div>
+      </div>
+      <div class="weather-forecast-day-details"></div>
+    </div>
+  `;
+  
+  document.body.appendChild(overlay);
+  
+  // Close on overlay click
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) {
+      closeWeatherForecastDaySubmodal();
+    }
+  });
+  
+  // Close on close button click
+  overlay.querySelector(".weather-forecast-day-close").addEventListener("click", closeWeatherForecastDaySubmodal);
+}
+
+function showWeatherForecastDaySubmodal(dayData) {
+  createWeatherForecastDaySubmodal();
+  
+  const overlay = document.getElementById("weather-forecast-day-submodal-overlay");
+  const content = overlay.querySelector(".weather-forecast-day-submodal-content");
+  
+  // Populate the submodal with day data
+  populateWeatherForecastDaySubmodal(dayData);
+  
+  // Show the submodal
+  overlay.classList.add("open");
+  setTimeout(() => {
+    content.classList.add("open");
+  }, 10);
+}
+
+function closeWeatherForecastDaySubmodal() {
+  const overlay = document.getElementById("weather-forecast-day-submodal-overlay");
+  if (!overlay) return;
+  
+  const content = overlay.querySelector(".weather-forecast-day-submodal-content");
+  content.classList.remove("open");
+  
+  setTimeout(() => {
+    overlay.classList.remove("open");
+  }, 300);
+}
+
+function populateWeatherForecastDaySubmodal(data) {
+  const dayData = data.full_data;
+  const overlay = document.getElementById("weather-forecast-day-submodal-overlay");
+  if (!overlay) return;
+  
+  // Date and title
+  const date = new Date(dayData.dt * 1000);
+  const dayName = date.toLocaleDateString(undefined, { weekday: "long" });
+  const dateStr = date.toLocaleDateString(undefined, { month: "long", day: "numeric" });
+  
+  overlay.querySelector(".weather-forecast-day-title").textContent = dayName;
+  overlay.querySelector(".weather-forecast-day-date").textContent = dateStr;
+  overlay.querySelector(".weather-forecast-day-summary").textContent = dayData.summary || "";
+  
+  // Weather icon and description
+  const weather = dayData.weather && dayData.weather[0];
+  if (weather) {
+    overlay.querySelector(".weather-forecast-day-icon").src = `https://openweathermap.org/img/wn/${weather.icon}@4x.png`;
+    overlay.querySelector(".weather-forecast-day-description").textContent = weather.description || dayData.summary || "";
+  }
+  
+  // Temperatures
+  overlay.querySelector(".weather-forecast-day-high").textContent = `${dayData.temp_high ? dayData.temp_high.toFixed(0) : (dayData.temp && dayData.temp.max ? dayData.temp.max.toFixed(0) : "--")}°`;
+  overlay.querySelector(".weather-forecast-day-low").textContent = `${dayData.temp_low ? dayData.temp_low.toFixed(0) : (dayData.temp && dayData.temp.min ? dayData.temp.min.toFixed(0) : "--")}°`;
+  
+  // Temperature breakdown
+  const tempElements = overlay.querySelectorAll("[data-temp]");
+  tempElements.forEach(el => {
+    const tempType = el.getAttribute("data-temp");
+    let temp = "--";
+    
+    if (dayData.temp && dayData.temp[tempType] != null) {
+      temp = `${dayData.temp[tempType].toFixed(0)}°`;
+    }
+    
+    el.textContent = temp;
+  });
+  
+  // Helper function for moon phase icon
+  function moonPhaseIcon(phase) {
+    if (phase == null) return "🌙";
+    if (phase === 0 || phase === 1) return "🌑";
+    if (phase < 0.25) return "🌒";
+    if (phase === 0.25) return "🌓";
+    if (phase < 0.5) return "🌔";
+    if (phase === 0.5) return "🌕";
+    if (phase < 0.75) return "🌖";
+    if (phase === 0.75) return "🌗";
+    return "🌘";
+  }
+  
+  // Details
+  const details = [
+    {
+      icon: "🌅",
+      label: "Sunrise",
+      value: dayData.sunrise ? formatTime(dayData.sunrise) : "--",
+    },
+    {
+      icon: "🌇",
+      label: "Sunset",
+      value: dayData.sunset ? formatTime(dayData.sunset) : "--",
+    },
+    {
+      icon: "🌧️",
+      label: "Precipitation",
+      value: dayData.pop != null ? `${(dayData.pop * 100).toFixed(0)}%` : "--",
+    },
+    {
+      icon: "☁️",
+      label: "Clouds",
+      value: dayData.clouds != null ? `${dayData.clouds}%` : "--",
+    },
+    {
+      icon: "💨",
+      label: "Wind",
+      value: dayData.wind_speed != null ? `${dayData.wind_speed.toFixed(1)} mph ${windDir(dayData.wind_deg)}` : "--",
+    },
+    {
+      icon: "💧",
+      label: "Humidity",
+      value: dayData.humidity != null ? `${dayData.humidity}%` : "--",
+    },
+    {
+      icon: "🔆",
+      label: "UV Index",
+      value: dayData.uvi != null ? dayData.uvi.toString() : "--",
+    },
+    {
+      icon: moonPhaseIcon(dayData.moon_phase),
+      label: "Moon Phase",
+      value: moonPhaseText(dayData.moon_phase),
+    },
+    {
+      icon: "🎚️",
+      label: "Pressure",
+      value: dayData.pressure != null ? `${dayData.pressure} hPa` : "--",
+    },
+    {
+      icon: "🌡️",
+      label: "Dew Point",
+      value: dayData.dew_point != null ? `${dayData.dew_point.toFixed(0)}°F` : "--",
+    }
+  ];
+  
+  // Apply CSS classes based on values
+  details.forEach(d => {
+    const label = d.label;
+    const raw = parseFloat(d.value);
+    let cls = "";
+    
+    if (label === "Humidity") {
+      if (raw >= 70) cls = "high";
+      else if (raw >= 30) cls = "moderate";
+      else cls = "low";
+    } else if (label === "UV Index") {
+      if (raw >= 6) cls = "high";
+      else if (raw >= 3) cls = "moderate";
+      else cls = "low";
+    } else if (label === "Wind") {
+      if (raw >= 15) cls = "high";
+      else if (raw >= 7) cls = "moderate";
+      else cls = "low";
+    } else if (label === "Clouds") {
+      if (raw >= 70) cls = "high";
+      else if (raw >= 30) cls = "moderate";
+      else cls = "low";
+    } else if (label === "Precipitation") {
+      if (raw >= 70) cls = "high";
+      else if (raw >= 30) cls = "moderate";
+      else cls = "low";
+    }
+    
+    d.cssClass = cls;
+  });
+  
+  // Render details grid
+  const detailsContainer = overlay.querySelector(".weather-forecast-day-details");
+  detailsContainer.innerHTML = details.map(d => `
+    <div class="weather-forecast-day-detail-item">
+      <div class="weather-forecast-day-detail-icon">${d.icon}</div>
+      <div class="weather-forecast-day-detail-label">${d.label}</div>
+      <div class="weather-forecast-day-detail-value ${d.cssClass || ''}">${d.value}</div>
+    </div>
+  `).join("");
+}
+
+// Helper function for formatting time (if not already present)
+function formatTime(timestamp) {
+  if (!timestamp) return "--";
+  const date = new Date(timestamp * 1000);
+  return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 
 // Helper: wind direction as compass
