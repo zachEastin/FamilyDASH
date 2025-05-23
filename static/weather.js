@@ -505,23 +505,8 @@ function createWeatherForecastDaySubmodal() {
       </div>
       <div class="weather-forecast-day-temp-breakdown">
         <h4 class="weather-forecast-day-section-title">Temperature Details</h4>
-        <div class="weather-forecast-day-temp-grid">
-          <div class="weather-forecast-day-temp-item">
-            <span class="weather-forecast-day-temp-label">Morning</span>
-            <span class="weather-forecast-day-temp-value" data-temp="morn"></span>
-          </div>
-          <div class="weather-forecast-day-temp-item">
-            <span class="weather-forecast-day-temp-label">Day</span>
-            <span class="weather-forecast-day-temp-value" data-temp="day"></span>
-          </div>
-          <div class="weather-forecast-day-temp-item">
-            <span class="weather-forecast-day-temp-label">Evening</span>
-            <span class="weather-forecast-day-temp-value" data-temp="eve"></span>
-          </div>
-          <div class="weather-forecast-day-temp-item">
-            <span class="weather-forecast-day-temp-label">Night</span>
-            <span class="weather-forecast-day-temp-value" data-temp="night"></span>
-          </div>
+        <div class="weather-forecast-day-temp-graph-container">
+          <canvas id="weather-forecast-day-temp-graph" width="400" height="120" aria-label="Daily temperature breakdown graph"></canvas>
         </div>
       </div>
       <div class="weather-forecast-day-details"></div>
@@ -593,19 +578,126 @@ function populateWeatherForecastDaySubmodal(data) {
   // Temperatures
   overlay.querySelector(".weather-forecast-day-high").textContent = `${dayData.temp_high ? dayData.temp_high.toFixed(0) : (dayData.temp && dayData.temp.max ? dayData.temp.max.toFixed(0) : "--")}°`;
   overlay.querySelector(".weather-forecast-day-low").textContent = `${dayData.temp_low ? dayData.temp_low.toFixed(0) : (dayData.temp && dayData.temp.min ? dayData.temp.min.toFixed(0) : "--")}°`;
-  
-  // Temperature breakdown
-  const tempElements = overlay.querySelectorAll("[data-temp]");
-  tempElements.forEach(el => {
-    const tempType = el.getAttribute("data-temp");
-    let temp = "--";
-    
-    if (dayData.temp && dayData.temp[tempType] != null) {
-      temp = `${dayData.temp[tempType].toFixed(0)}°`;
+    // Temperature breakdown graph
+  setTimeout(() => {
+    const canvas = document.getElementById("weather-forecast-day-temp-graph");
+    if (window.dayTempChart) {
+      window.dayTempChart.destroy();
+      window.dayTempChart = null;
     }
     
-    el.textContent = temp;
-  });
+    if (canvas && dayData.temp) {
+      // Prepare data for the chart
+      const tempLabels = ["Morning", "Day", "Evening", "Night"];
+      const tempData = [
+        dayData.temp.morn || 0,
+        dayData.temp.day || 0,
+        dayData.temp.eve || 0,
+        dayData.temp.night || 0
+      ];
+      
+      // Calculate Y-axis min/max
+      const validTemps = tempData.filter(t => typeof t === "number" && isFinite(t));
+      let yAxisMin = null;
+      let yAxisMax = null;
+      
+      if (validTemps.length > 0) {
+        const minTemp = Math.min(...validTemps);
+        const maxTemp = Math.max(...validTemps);
+        yAxisMin = Math.floor(minTemp - 3);
+        yAxisMax = Math.ceil(maxTemp + 3);
+      }
+      
+      const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+          padding: { top: 15, right: 15, bottom: 15, left: 15 },
+        },
+        plugins: {
+          legend: {
+            display: false,
+          },
+        },        scales: {
+          x: {
+            display: true,
+            ticks: { 
+              font: { size: 11 },
+              color: '#666'
+            },
+            grid: {
+              display: false
+            }
+          },
+          y: {
+            display: true,
+            title: { display: true, text: "°F", color: '#666' },
+            ticks: { 
+              font: { size: 11 },
+              color: '#666'
+            },
+            grid: {
+              color: 'rgba(128,128,128,0.2)'
+            }
+          },
+        },
+        elements: {
+          line: {
+            borderJoinStyle: 'round',
+            tension: 0.4
+          },
+          point: {
+            radius: 4,
+            hoverRadius: 6
+          }
+        }
+      };
+      
+      if (yAxisMin !== null && yAxisMax !== null) {
+        chartOptions.scales.y.min = yAxisMin;
+        chartOptions.scales.y.max = yAxisMax;
+      }
+      
+      const ctx = canvas.getContext("2d");
+      window.dayTempChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: tempLabels,
+          datasets: [
+            {
+              label: "Temperature (°F)",
+              data: tempData,
+              borderColor: "rgba(255,215,64,0.9)",
+              borderWidth: 2,
+              pointBackgroundColor: "rgba(255,215,64,1)",
+              pointBorderColor: "#fff",
+              pointBorderWidth: 2,
+              backgroundColor: "rgba(255,215,64,0.2)",
+              fill: true,
+            },
+          ],
+        },
+        options: chartOptions,
+      });
+      
+      // Create and apply gradient after chart creation
+      setTimeout(() => {
+        if (window.dayTempChart && window.dayTempChart.scales && window.dayTempChart.scales.y) {
+          const gradientStart = window.dayTempChart.scales.y.getPixelForValue(yAxisMax);
+          const gradientEnd = window.dayTempChart.scales.y.getPixelForValue(yAxisMin);
+          
+          const tempGradient = ctx.createLinearGradient(0, gradientStart, 0, gradientEnd);
+          for(let t = 0; t <= 1; t += 0.02) {
+            const alpha = 0.6 + (0.01 - 0.6) * t;
+            tempGradient.addColorStop(t, `rgba(255,215,64, ${alpha})`);
+          }
+          
+          window.dayTempChart.data.datasets[0].backgroundColor = tempGradient;
+          window.dayTempChart.update();
+        }
+      }, 100);
+    }
+  }, 0);
   
   // Helper function for moon phase icon
   function moonPhaseIcon(phase) {
