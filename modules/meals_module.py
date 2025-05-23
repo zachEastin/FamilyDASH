@@ -1,7 +1,7 @@
 import os
 import json
 from pathlib import Path
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, Response, request, jsonify
 from dotenv import load_dotenv
 import requests
 from datetime import datetime
@@ -155,10 +155,10 @@ def get_full_favorites():
 
 
 @meals_bp.route("/favorites", methods=["GET"])
-def get_favorites():
+def get_favorites() -> Response:
     recipes = load_recipes()
-    titles = [r.get("title") for r in recipes.values() if r.get("isFavorite")]
-    return jsonify(sorted(titles))
+    favorite_recipes: list[tuple[str, str]] = [(r.get("uuid"), r.get("title")) for r in recipes.values() if r.get("isFavorite")]
+    return jsonify(sorted(favorite_recipes))
 
 
 @meals_bp.route("/shopping-list", methods=["GET"])

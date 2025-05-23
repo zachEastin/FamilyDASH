@@ -1,1 +1,72 @@
-{}
+{
+  "9f4ce4bd-4d16-4146-a52d-8dca2fad360f": {
+    "uuid": "9f4ce4bd-4d16-4146-a52d-8dca2fad360f",
+    "title": "OREO Cookie Balls \u2013 Snowman",
+    "ingredients": [
+      "1 package OREO Cookies",
+      "1 8 oz package Cream Cheese softened",
+      "4 packages Bakers Chocolate",
+      "1 package Rolo chocolate candy",
+      "black gel icing",
+      "orange gel icing",
+      "Additional supplies to decorate snowmen",
+      "Additional supplies to decorate snowmen"
+    ],
+    "tags": [],
+    "isFavorite": true,
+    "source": "local",
+    "default_servings": 1
+  },
+  "e93fdc9f-f296-4719-8241-d3d5b0dfc349": {
+    "uuid": "e93fdc9f-f296-4719-8241-d3d5b0dfc349",
+    "title": "Spicy Fried Chicken w Sweet Chili Sauce",
+    "ingredients": [
+      "1 tsp cayenne pepper",
+      "10 chicken drumsticks",
+      "1/2 cup sweet chili dipping sauce",
+      "1 cup cornstarch",
+      "1 cup all-purpose flour",
+      "1 tsp gochugaru (Korean red pepper flakes)",
+      "1 tsp ground black pepper",
+      "2 tbsp hot sauce",
+      "1 tbsp sea salt",
+      "1 cup cold water"
+    ],
+    "tags": [
+      "quick"
+    ],
+    "isFavorite": true,
+    "source": "local",
+    "default_servings": 1
+  },
+  "8f0645ad-7f5e-4cf2-84be-613429b91a3f": {
+    "uuid": "8f0645ad-7f5e-4cf2-84be-613429b91a3f",
+    "title": "Bacon Wrapped Tofu Tacos",
+    "ingredients": [
+      "1 12 oz package firm tofu",
+      "drained",
+      "1 package flour tortillas",
+      "taco or fajita size",
+      "8 oz package cream cheese",
+      "softened",
+      "3 fresh jalapeno peppers",
+      "de-seeded and diced small",
+      "2 cups monterey jack cheese",
+      "shredded",
+      "1 pound bacon",
+      "cooked",
+      "1 cup chicken broth",
+      "Olive oil",
+      "just have the bottle on hand",
+      "1 teaspoon cumin",
+      "1 teaspoon chili powder",
+      "1 teaspoon paprika",
+      "2 garlic cloves",
+      "minced"
+    ],
+    "tags": [],
+    "isFavorite": false,
+    "source": "local",
+    "default_servings": 1
+  }
+}
