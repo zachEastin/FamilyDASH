@@ -23,13 +23,8 @@ if (favoriteStar) {
 // --- Fix: Define updateFavoriteStar globally for favorite star in main modal ---
 function updateFavoriteStar() {
   if (!favoriteStar) return;
-  if (isFavorite) {
-    favoriteStar.classList.add("favorited", "fa-solid");
-    favoriteStar.classList.remove("fa-regular");
-  } else {
-    favoriteStar.classList.remove("favorited", "fa-solid");
-    favoriteStar.classList.add("fa-regular");
-  }
+  favoriteStar.textContent = isFavorite ? "star" : "star_outline";
+  favoriteStar.classList.toggle("favorited", isFavorite);
 }
 
 // --- Spoonacular Recipe Search & Import ---
@@ -254,7 +249,7 @@ function shuffleMealPlan() {
       div.setAttribute('draggable', 'true');
       div.setAttribute('data-title', title);
       div.setAttribute('data-uuid', uuid);
-      div.innerHTML = '<i class="fa fa-star"></i>' + title;
+      div.innerHTML = '<span class="material-symbols-outlined star-icon">star</span>' + title;
       favoritesList.appendChild(div);
     });
     makeRecipeItemsDraggable(); // Call here
@@ -274,7 +269,7 @@ function shuffleMealPlan() {
       div.setAttribute('draggable', 'true');
       div.setAttribute('data-title', recipe.title);
       div.setAttribute('data-uuid', recipe.uuid);
-      div.innerHTML = '<i class="fa fa-history"></i>' + recipe.title;
+      div.innerHTML = '<span class="material-symbols-outlined history-icon">history</span>' + recipe.title;
       div.dataset.recipe = JSON.stringify(recipe);
       historyList.appendChild(div);
     });
@@ -471,13 +466,8 @@ function shuffleMealPlan() {
   }
   function updateFavoriteStar() {
     if (!favoriteStar) return;
-    if (isFavorite) {
-      favoriteStar.classList.add("favorited", "fa-solid");
-      favoriteStar.classList.remove("fa-regular");
-    } else {
-      favoriteStar.classList.remove("favorited", "fa-solid");
-      favoriteStar.classList.add("fa-regular");
-    }
+    favoriteStar.textContent = isFavorite ? "star" : "star_outline";
+    favoriteStar.classList.toggle("favorited", isFavorite);
   }
   // --- Favorite toggle logic in modal ---
   favoriteStar.addEventListener("click", () => {
@@ -689,7 +679,7 @@ function renderMealsMonthView(data) {
         } else {
           slotClasses += " empty-meal-slot";
         }
-        const lockIcon = `<span class="meal-lock-icon fa ${locked ? 'fa-lock' : 'fa-unlock'}" data-locked="${locked}" title="${locked ? 'Unlock' : 'Lock'}"></span>`;
+        const lockIcon = `<span class="meal-lock-icon material-symbols-outlined" data-locked="${locked}" title="${locked ? 'Unlock' : 'Lock'}">${locked ? 'lock' : 'lock_open'}</span>`;
         mealsGridHtml += `<div class="${slotClasses}" data-date="${dateStr}" data-meal-type="${mealType}" data-locked="${locked}" data-recipe-uuid="${recipe_uuid}">${lockIcon}<span class="meal-slot-title">${slotContent}</span></div>`;
       });
       if (otherMonth) {
@@ -712,8 +702,7 @@ function renderMealsMonthView(data) {
       if (mealSlotLocks[key] !== undefined) locked = mealSlotLocks[key];
       slot.setAttribute('data-locked', locked);
       if (lockIcon) {
-        lockIcon.classList.toggle('fa-lock', locked);
-        lockIcon.classList.toggle('fa-unlock', !locked);
+        lockIcon.textContent = locked ? 'lock' : 'lock_open';
         lockIcon.setAttribute('data-locked', locked);
         lockIcon.title = locked ? 'Unlock' : 'Lock';
         lockIcon.onclick = (e) => {
@@ -721,8 +710,7 @@ function renderMealsMonthView(data) {
           locked = !locked;
           mealSlotLocks[key] = locked;
           slot.setAttribute('data-locked', locked);
-          lockIcon.classList.toggle('fa-lock', locked);
-          lockIcon.classList.toggle('fa-unlock', !locked);
+          lockIcon.textContent = locked ? 'lock' : 'lock_open';
           lockIcon.setAttribute('data-locked', locked);
           lockIcon.title = locked ? 'Unlock' : 'Lock';
         };
