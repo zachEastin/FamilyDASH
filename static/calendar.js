@@ -606,9 +606,7 @@ function updateIcloudMonthView(data) {
     allEventsForModal[dayKey] = [];
 
     let cellClasses = "month-day-cell";
-    if (cellDate.getMonth() !== currentMonth) {
-      cellClasses += " other-month";
-    }
+    const otherMonth = cellDate.getMonth() !== currentMonth;
     if (
       cellDate.getFullYear() === currentYear &&
       cellDate.getMonth() === currentMonth &&
@@ -618,6 +616,9 @@ function updateIcloudMonthView(data) {
     }
 
     monthGridHtml += `<div class="${cellClasses}" data-date="${dayKey}">`;
+    if (otherMonth) {
+      monthGridHtml += `<div class="other-month">`;
+    }
     monthGridHtml += `<div class="day-number">${cellDate.getDate()}</div>`;
     monthGridHtml += `<div class="month-day-cell-events">`;
 
@@ -652,7 +653,9 @@ function updateIcloudMonthView(data) {
         event.calendarColor || "#e0e0e0"
       )}" title="${event.title}">${event.title}</div>`;
     });
-
+    if (otherMonth) {
+      monthGridHtml += `</div>`;
+    }
     monthGridHtml += `</div></div>`; // Close month-day-cell-events and month-day-cell
   }
   monthGridHtml += "</div>"; // Close month-grid

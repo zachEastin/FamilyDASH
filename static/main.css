@@ -178,13 +178,14 @@ body.dark-mode .month-grid {
   margin-bottom: 4px;
 }
 
-.month-day-cell.other-month .day-number {
+.other-month {
   color: #aaa;
-  opacity: 0.6;
+  opacity: 0.3;
 }
 
-body.dark-mode .month-day-cell.other-month .day-number {
-  color: #666;
+body.dark-mode .other-month {
+  /* color: #666; */
+  opacity: 0.15;
 }
 
 .month-day-cell.today {

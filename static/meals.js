@@ -644,7 +644,7 @@ function renderMealsMonthView(data) {
       const cellDate = new Date(gridStartDate);
       cellDate.setDate(gridStartDate.getDate() + i);
       let cellClasses = "meals-day-cell";
-      if (cellDate.getMonth() !== currentMonth) cellClasses += " other-month";
+      const otherMonth = cellDate.getMonth() !== currentMonth;
       if (
         cellDate.getFullYear() === currentYear &&
         cellDate.getMonth() === currentMonth &&
@@ -655,6 +655,9 @@ function renderMealsMonthView(data) {
       const monthStr = `${cellDate.getFullYear()}-${String(cellDate.getMonth() + 1).padStart(2, "0")}`;
       const dayMeals = (mealsData[monthStr] && mealsData[monthStr][dateStr]) || {};
       mealsGridHtml += `<div class="${cellClasses}" data-date="${dateStr}">`;
+      if (otherMonth) {
+        mealsGridHtml += `<div class="other-month">`;
+      }
       mealsGridHtml += `<div class="day-number">${cellDate.getDate()}</div>`;
       mealsGridHtml += `<div class="meals-zones">`;
       ["breakfast", "lunch", "dinner"].forEach((mealType, idx) => {
@@ -672,6 +675,9 @@ function renderMealsMonthView(data) {
         const lockIcon = `<span class="meal-lock-icon fa ${locked ? 'fa-lock' : 'fa-unlock'}" data-locked="${locked}" title="${locked ? 'Unlock' : 'Lock'}"></span>`;
         mealsGridHtml += `<div class="meal-slot ${mealType} ${slotClass}" data-date="${dateStr}" data-meal-type="${mealType}" data-locked="${locked}" data-recipe-uuid="${recipe_uuid}">${lockIcon}<span class="meal-slot-title">${slotContent}</span></div>`;
       });
+      if (otherMonth) {
+        mealsGridHtml += `</div>`;
+      }
       mealsGridHtml += `</div></div>`;
     }
     mealsGridHtml += "</div>";
