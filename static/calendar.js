@@ -640,14 +640,15 @@ function updateIcloudMonthView(data) {
 
     const allDayEvents = dayEvents.filter((ev) => ev.isAllDay);
     const timedEvents = dayEvents.filter((ev) => !ev.isAllDay);
-    const maxAllDayVisible = 2;
+    const maxAllDayVisible = 5;
 
 
     allDayEvents.forEach((event, idx) => {
       if (idx < maxAllDayVisible) {
         const cls = getCalendarClass(event.calendar);
         const icon = getCalendarIcon(cls);
-        monthGridHtml += `<div class="all-day-event-pill event-${cls}" title="${event.title}"><span class="material-symbols-outlined event-icon">${icon}</span>${event.title}</div>`;
+        // monthGridHtml += `<div class="all-day-event-pill event-${cls}" title="${event.title}"><span class="material-symbols-outlined event-icon">${icon}</span>${event.title}</div>`;
+        monthGridHtml += `<div class="all-day-event-pill event-${cls}" title="${event.title}"><span class="material-symbols-outlined event-icon">${icon}</span></div>`;
       }
     });
     if (allDayEvents.length > maxAllDayVisible) {
