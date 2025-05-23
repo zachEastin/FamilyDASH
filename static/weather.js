@@ -404,9 +404,9 @@ function updateWeatherModal(data) {
       window.modalForecastChart.update();
     }
   }, 0);
-  // Daily forecast (next 5d)
+  // Daily forecast (next 16d)
   overlay.querySelector(".weather-modal-daily").innerHTML = `
-    <div class="weather-modal-section-title">5-Day Forecast</div>
+    <div class="weather-modal-section-title">16-Day Forecast</div>
     <div class="weather-modal-daily-row">
       ${data.daily
         .map(

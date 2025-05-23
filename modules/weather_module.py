@@ -109,9 +109,9 @@ def get_forecast():
             "description": h["weather"][0]["description"],
             "pop": h.get("pop"),
         })
-    # Daily: next 5 days
+    # Daily
     daily = []
-    for d in data.get("daily", [])[:5]:
+    for d in data.get("daily", []):
         daily.append({
             "dt": d["dt"],
             "temp_high": c_to_f(d["temp"]["max"]),
