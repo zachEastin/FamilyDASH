@@ -55,6 +55,18 @@
         "recipe_uuid": "e93fdc9f-f296-4719-8241-d3d5b0dfc349",
         "servings": 0
       }
+    },
+    "2025-05-07": {
+      "lunch": {
+        "recipe_uuid": "9f4ce4bd-4d16-4146-a52d-8dca2fad360f",
+        "servings": 0
+      }
+    },
+    "2025-05-01": {
+      "lunch": {
+        "recipe_uuid": "9f4ce4bd-4d16-4146-a52d-8dca2fad360f",
+        "servings": 0
+      }
     }
   }
 }

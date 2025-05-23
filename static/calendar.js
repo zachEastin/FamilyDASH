@@ -1,119 +1,78 @@
-function setupCalendarTabs() {
-  const weekTab = document.getElementById("week-tab");
-  const monthTab = document.getElementById("month-tab");
-  const eventsSubtab = document.getElementById("events-subtab");
-  const mealsSubtab = document.getElementById("meals-subtab");
-  const weekViewContainer = document.getElementById("week-view-container");
-  const monthViewContainer = document.getElementById("month-view-container");
-  const mealsViewContainer = document.getElementById("meals-view-container");
-  const monthSubtabs = document.getElementById("month-subtabs");
-  const shuffleMealsButton = document.getElementById("shuffle-meals-button");
-  const shoppingListButton = document.getElementById("open-shopping-list-button");
+// function setupCalendarTabs() {
+//   const weekTab = document.getElementById("week-tab");
+//   const monthTab = document.getElementById("month-tab");
+//   const eventsSubtab = document.getElementById("events-subtab");
+//   const mealsSubtab = document.getElementById("meals-subtab");
+//   const weekViewContainer = document.getElementById("week-view-container");
+//   const monthViewContainer = document.getElementById("month-view-container");
+//   const mealsViewContainer = document.getElementById("meals-view-container");
+//   const monthSubtabs = document.getElementById("month-subtabs");
+//   const shuffleMealsButton = document.getElementById("shuffle-meals-button");
+//   const shoppingListButton = document.getElementById("open-shopping-list-button");
 
-  function updateButtonVisibility() {
-    const isMonthView = monthTab.classList.contains("active");
-    const isMealsSubtab = mealsSubtab.classList.contains("active");
-    if (isMonthView && isMealsSubtab) {
-      shuffleMealsButton.style.display = "block";
-      shoppingListButton.style.display = "block";
-    } else {
-      shuffleMealsButton.style.display = "none";
-      shoppingListButton.style.display = "none";
-    }
-  }
+//   function updateButtonVisibility() {
+//     const isMonthView = monthTab.classList.contains("active");
+//     const isMealsSubtab = mealsSubtab.classList.contains("active");
+//     if (isMonthView && isMealsSubtab) {
+//       shuffleMealsButton.style.display = "block";
+//       shoppingListButton.style.display = "block";
+//     } else {
+//       shuffleMealsButton.style.display = "none";
+//       shoppingListButton.style.display = "none";
+//     }
+//   }
 
-  function setActiveTab(tab) {
-    [weekTab, monthTab].forEach((btn) => btn.classList.remove("active"));
-    tab.classList.add("active");
-    updateButtonVisibility();
-  }
-  function setActiveSubtab(subtab) {
-    [eventsSubtab, mealsSubtab].forEach((btn) => btn.classList.remove("active"));
-    subtab.classList.add("active");
-    updateButtonVisibility();
-  }
-  function showMonthView() {
-    weekViewContainer.classList.add("hidden");
-    monthViewContainer.classList.remove("hidden");
-    mealsViewContainer.classList.remove("hidden");
-    const isMealsSubtab = mealsSubtab.classList.contains("active");
-    if (!isMealsSubtab) {
-      hideMealsPanelsWrapper();
-    }
-    if (eventsSubtab.classList.contains("active")) {
-      monthViewContainer.style.display = "flex";
-      mealsViewContainer.style.display = "none";
-    } else {
-      monthViewContainer.style.display = "none";
-      mealsViewContainer.style.display = "flex";
-      fetchAndRenderMealsMonthView();
-    }
-  }
+//   function setActiveTab(tab) {
+//     [weekTab, monthTab].forEach((btn) => btn.classList.remove("active"));
+//     tab.classList.add("active");
+//     updateButtonVisibility();
+//   }
+//   function setActiveSubtab(subtab) {
+//     [eventsSubtab, mealsSubtab].forEach((btn) => btn.classList.remove("active"));
+//     subtab.classList.add("active");
+//     updateButtonVisibility();
+//   }
+//   function showMonthView() {
+//     weekViewContainer.classList.add("hidden");
+//     monthViewContainer.classList.remove("hidden");
+//     mealsViewContainer.classList.remove("hidden");
+//     const isMealsSubtab = mealsSubtab.classList.contains("active");
+//     if (!isMealsSubtab) {
+//       hideMealsPanelsWrapper();
+//     }
+//     if (eventsSubtab.classList.contains("active")) {
+//       monthViewContainer.style.display = "flex";
+//       mealsViewContainer.style.display = "none";
+//     } else {
+//       monthViewContainer.style.display = "none";
+//       mealsViewContainer.style.display = "flex";
+//       fetchAndRenderMealsMonthView();
+//     }
+//   }
 
-  // Show/hide meals panels wrapper when switching tabs
-  // Use variables from outer scope
-  function showMealsPanelsWrapper() {
-    const mealsPanelsWrapper = document.querySelector('.meals-panel-wrapper');
-    const mealsViewContainer = document.getElementById('meals-view-container');
-    if (mealsPanelsWrapper) {
-      mealsPanelsWrapper.classList.add('active');
-      mealsPanelsWrapper.style.display = 'flex';
-      mealsViewContainer.classList.remove('hidden');
-      // fetchFavorites(); // fetchFavorites is called by the patched renderMealsMonthView
-      fetchAndRenderMealsMonthView(); // Ensures grid is rendered and slots are made droppable
-    }
-  }
-  function hideMealsPanelsWrapper() {
-    const mealsPanelsWrapper = document.querySelector('.meals-panel-wrapper');
-    const mealsViewContainer = document.getElementById('meals-view-container');
-    if (mealsPanelsWrapper) {
-      mealsPanelsWrapper.classList.remove('active'); // Corrected typo: mealsPanelsWrapper -> mealsPanelWrapper
-      mealsPanelsWrapper.style.display = 'none';
-      mealsViewContainer.classList.add('hidden');
-    }
-  }
-  if (mealsSubtab) {
-    mealsSubtab.addEventListener('click', showMealsPanelsWrapper);
-  }
-  if (eventsSubtab) {
-    eventsSubtab.addEventListener('click', hideMealsPanelsWrapper);
-  }
-  if (monthTab) {
-    monthTab.addEventListener('click', function() {
-      if (mealsSubtab.classList.contains('active')) showMealsPanelsWrapper();
-      else hideMealsPanelsWrapper();
-      updateButtonVisibility(); // Add this call
-    });
-  }
-
-  weekTab.addEventListener("click", () => {
-    setActiveTab(weekTab);
-    weekViewContainer.classList.remove("hidden");
-    monthViewContainer.classList.add("hidden");
-    mealsViewContainer.classList.add("hidden");
-    monthViewContainer.style.display = "none";
-    hideMealsPanelsWrapper();
-    if (monthSubtabs) monthSubtabs.style.display = "none";
-    updateButtonVisibility();
-  });
-  monthTab.addEventListener("click", () => {
-    setActiveTab(monthTab);
-    if (monthSubtabs) monthSubtabs.style.display = "flex";
-    setActiveSubtab(eventsSubtab); // Default to events subtab
-    showMonthView();
-    updateButtonVisibility();
-  });
-  eventsSubtab.addEventListener("click", () => {
-    setActiveSubtab(eventsSubtab);
-    showMonthView();
-    updateButtonVisibility();
-  });
-  mealsSubtab.addEventListener("click", () => {
-    setActiveSubtab(mealsSubtab);
-    showMonthView();
-    updateButtonVisibility();
-    });
-}
+//   // Show/hide meals panels wrapper when switching tabs
+//   // Use variables from outer scope
+//   function showMealsPanelsWrapper() {
+//     const mealsPanelsWrapper = document.querySelector('.meals-panel-wrapper');
+//     const mealsViewContainer = document.getElementById('meals-view-container');
+//     if (mealsPanelsWrapper) {
+//       mealsPanelsWrapper.classList.add('active');
+//       mealsPanelsWrapper.style.display = 'flex';
+//       mealsViewContainer.classList.remove('hidden');
+//       // fetchFavorites(); // fetchFavorites is called by the patched renderMealsMonthView
+//       fetchAndRenderMealsMonthView(); // Ensures grid is rendered and slots are made droppable
+//     }
+//   }
+//   function hideMealsPanelsWrapper() {
+//     const mealsPanelsWrapper = document.querySelector('.meals-panel-wrapper');
+//     const mealsViewContainer = document.getElementById('meals-view-container');
+//     if (mealsPanelsWrapper) {
+//       mealsPanelsWrapper.classList.remove('active'); // Corrected typo: mealsPanelsWrapper -> mealsPanelWrapper
+//       mealsPanelsWrapper.style.display = 'none';
+//       mealsViewContainer.classList.add('hidden');
+//     }
+//   }
+// }
 
 function createDayModal() {
   const modalOverlay = document.createElement("div");

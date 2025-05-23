@@ -3,11 +3,110 @@
   --bg-color: #ffffff;
   --text-color: #000000;
   --widget-bg: rgba(255, 255, 255, 0.8);
+  --sidebar-width: 120px;
 }
 body.dark-mode {
   --bg-color: #1a1a1a;
   --text-color: #f0f0f0;
   --widget-bg: rgba(50, 50, 50, 0.8);
+}
+
+/* App Container */
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  background: var(--widget-bg);
+  border-right: 1px solid rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  padding: 10px 0;
+  box-sizing: border-box;
+}
+
+body.dark-mode .sidebar {
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 8px;
+}
+
+.nav-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 16px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-color);
+  opacity: 0.6;
+  min-height: 70px;
+  touch-action: manipulation;
+}
+
+.nav-button i {
+  font-size: 24px;
+  margin-bottom: 6px;
+  opacity: 0.7;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.nav-label {
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.2;
+  opacity: 0.8;
+}
+
+.nav-button:hover {
+  opacity: 0.8;
+  background: rgba(0, 0, 0, 0.03);
+  transform: translateY(-1px);
+}
+
+body.dark-mode .nav-button:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-button.active {
+  opacity: 1;
+  background: rgba(33, 150, 243, 0.08);
+  color: #2196f3;
+}
+
+.nav-button.active i {
+  opacity: 1;
+  color: #2196f3;
+}
+
+.nav-button.active .nav-label {
+  opacity: 1;
+  font-weight: 600;
+}
+
+/* Main Container */
+.main-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100vh;
 }
 
 html, body {
@@ -22,33 +121,37 @@ html, body {
   color: var(--text-color);
   font-family: sans-serif;
 }
-body {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  max-height: 100vh;
-  height: 100vh;
-  overflow: hidden;
-}
 .main-content {
   flex: 1 1 auto;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   min-height: 0;
+  height: 100vh;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: 2fr 1fr;
-  grid-template-rows: auto auto;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
   gap: 10px;
-  height: 100%;
+  height: calc(100% - 70px); /* Account for footer */
   min-height: 0;
-  max-height: 100%;
   overflow: hidden;
   padding: 10px;
   box-sizing: border-box;
+  flex: 1;
+}
+
+#dashboard {
+  display: flex;
+  flex-direction: column;
+  height: calc(100% - 70px); /* Account for footer */
+  min-height: 0;
+  overflow: hidden;
+  padding: 10px;
+  box-sizing: border-box;
+  flex: 1;
 }
 
 .widget {
@@ -60,7 +163,7 @@ body {
 
 #calendar {
   grid-column: 1 / 2;
-  grid-row: 1 / 3;
+  grid-row: 1 / 2;
   position: relative;
   min-height: 0;
   max-height: 100%;
@@ -70,6 +173,31 @@ body {
   padding: 0;
   display: flex;
   flex-direction: column;
+}
+
+/* Section Content Management */
+.section-content {
+  display: none;
+  height: 100%;
+  flex-direction: column;
+}
+
+.section-content.active {
+  display: flex;
+}
+
+#reminders.section-content, #photo.section-content {
+  grid-column: 2 / 3;
+  grid-row: 1 / 2;
+  display: none;
+  padding: 10px;
+  background: var(--widget-bg);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+#reminders.section-content.active, #photo.section-content.active {
+  display: flex;
 }
 
 .calendar-tabs {
@@ -1027,7 +1155,7 @@ body.dark-mode #network-status .network-label {
   left: 0;
   right: 0;
   bottom: 0;
-  width: calc(100vw - 44px);
+  width: calc(100vw - var(--sidebar-width) - 24px);
   background: var(--widget-bg);
   display: flex;
   flex-direction: row;
@@ -1378,6 +1506,101 @@ body.dark-mode #weather-modal-forecast-graph {
   color: #666;
   margin-left: -3px;
 }
+
+/* Mobile and Touch Optimizations */
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 100px;
+  }
+  
+  .sidebar {
+    width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
+  }
+  
+  .nav-button {
+    padding: 12px 6px;
+    min-height: 60px;
+  }
+  
+  .nav-button i {
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+  
+  .nav-label {
+    font-size: 10px;
+  }
+  
+  .grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+  
+  #reminders.section-content, #photo.section-content {
+    grid-column: 1 / 2;
+    grid-row: 1 / 2;
+  }
+  
+  .footer {
+    width: calc(100vw - var(--sidebar-width) - 24px);
+    flex-direction: column;
+    align-items: stretch;
+    padding: 6px 4px;
+    min-height: 90px;
+  }
+  
+  .footer .widget {
+    margin: 4px 0;
+  }
+  
+  #weather {
+    flex-direction: row;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --sidebar-width: 80px;
+  }
+  
+  .nav-button {
+    padding: 10px 4px;
+    min-height: 50px;
+  }
+  
+  .nav-button i {
+    font-size: 18px;
+    margin-bottom: 3px;
+  }
+  
+  .nav-label {
+    font-size: 9px;
+  }
+}
+
+/* Touch-friendly improvements */
+.nav-button {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.nav-button:active {
+  transform: translateY(0);
+  background: rgba(33, 150, 243, 0.15);
+}
+
+body.dark-mode .nav-button:active {
+  background: rgba(33, 150, 243, 0.2);
+}
+
+
 
 /* --- Weather Forecast Day Submodal Styles --- */
 .weather-forecast-day-submodal-overlay {
@@ -2337,7 +2560,7 @@ body.dark-mode #weather-modal-forecast-graph {
 
 /* Meals calendar view container (hidden by default) */
 #meals-view-container {
-  display: none;
+  /* display: none; */
   flex-direction: column;
   padding: 10px;
 }
@@ -2453,68 +2676,6 @@ body.dark-mode .recipe-slot {
 }
 body.dark-mode .add-recipe-btn:hover {
   color: #90caf9;
-}
-
-/* --- Month sub-tabs (Events/Meals) --- */
-.month-subtabs {
-  display: flex;
-  position: absolute;
-  top: 0;
-  right: 0;
-  z-index: 2;
-  background: none;
-  height: 40px;
-  align-items: center;
-}
-.month-subtabs-group {
-  display: flex;
-  border: 2px solid #2196f3;
-  border-radius: 999px;
-  background: #f7fafd;
-  box-shadow: 0 2px 8px rgba(33,150,243,0.07);
-  overflow: hidden;
-}
-.month-subtab {
-  border: none;
-  background: none;
-  color: #1976d2;
-  font-weight: 600;
-  font-size: 1em;
-  padding: 7px 22px 7px 22px;
-  cursor: pointer;
-  transition: background 0.18s, color 0.18s;
-  outline: none;
-}
-.month-subtab.active {
-  background: #2196f3;
-  color: #fff;
-}
-.month-subtab:not(.active) {
-  background: #e3eaf7;
-  color: #1976d2;
-  opacity: 0.7;
-}
-.month-subtab:first-child {
-  border-top-left-radius: 999px;
-  border-bottom-left-radius: 999px;
-}
-.month-subtab:last-child {
-  border-top-right-radius: 999px;
-  border-bottom-right-radius: 999px;
-}
-body.dark-mode .month-subtabs-group {
-  border: 2px solid #90caf9;
-  background: #23272a;
-  box-shadow: 0 2px 12px rgba(33,150,243,0.13);
-}
-body.dark-mode .month-subtab.active {
-  background: #1565c0;
-  color: #fff;
-}
-body.dark-mode .month-subtab:not(.active) {
-  background: #23272a;
-  color: #90caf9;
-  opacity: 0.7;
 }
 
 #recipe-modal.modal {

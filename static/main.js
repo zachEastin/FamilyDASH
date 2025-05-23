@@ -1,17 +1,23 @@
 document.addEventListener("DOMContentLoaded", () => {
   const socket = io();
 
+  // Initialize sidebar navigation
+  initializeSidebarNavigation();
+
   // Wrap main content in a .main-content div for flex layout
   let mainContent = document.querySelector(".main-content");
   if (!mainContent) {
     mainContent = document.createElement("div");
     mainContent.className = "main-content";
-    // Move all children except .footer into .main-content
-    const body = document.body;
-    const footer = document.querySelector(".footer");
-    const nodes = Array.from(body.childNodes).filter((n) => n !== footer);
-    nodes.forEach((n) => mainContent.appendChild(n));
-    body.insertBefore(mainContent, footer || null);
+    // Move grid and footer into .main-content
+    const mainContainer = document.querySelector(".main-container");
+    if (mainContainer) {
+      const grid = document.querySelector("#dashboard");
+      const footer = document.querySelector(".footer");
+      if (grid) mainContent.appendChild(grid);
+      if (footer) mainContent.appendChild(footer);
+      mainContainer.appendChild(mainContent);
+    }
   }
 
   socket.on("weather_update", (data) => updateWeather(data));
@@ -22,6 +28,8 @@ document.addEventListener("DOMContentLoaded", () => {
   socket.on("icloud_update", (data) => {
     updateIcloudWeekView(data);
     updateIcloudMonthView(data);
+    // updateIcloudReminders(data);
+    // updateIcloudPhotos(data);
   });
 
   // Initial fetch in case events arrived before socket connected
@@ -40,16 +48,20 @@ document.addEventListener("DOMContentLoaded", () => {
   fetch("/api/sun/data")
     .then((r) => r.json())
     .then((r) => updateSunTheme(r.data));
-  fetch("/api/icloud/data")
+    fetch("/api/icloud/data")
     .then((r) => r.json())
     .then((r) => {
       updateIcloudWeekView(r.data);
       updateIcloudMonthView(r.data);
+      // updateIcloudReminders(r.data);
+      // updateIcloudPhotos(r.data);
     });
+    fetchAndRenderMealsMonthView();
 
   addTouchHandlers();
-  setupCalendarTabs();
+  // setupCalendarTabs();
   createDayModal();
+  // renderMealsMonthView();
 
   // Move widgets to footer after DOM is loaded
   moveWidgetsToFooter();
@@ -92,8 +104,13 @@ function moveWidgetsToFooter() {
   if (!footer) {
     footer = document.createElement("div");
     footer.className = "footer";
-    // Insert footer as a section at the end of the main content, before </body>
-    document.body.appendChild(footer);
+    // Insert footer into the main-content
+    const mainContent = document.querySelector(".main-content");
+    if (mainContent) {
+      mainContent.appendChild(footer);
+    } else {
+      document.body.appendChild(footer);
+    }
   }
   const weather = document.getElementById("weather");
   const clock = document.getElementById("clock");
@@ -206,4 +223,107 @@ function getContrastColor(hexColor) {
   // Standard luminance calculation
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   return luminance > 0.5 ? "#000000" : "#FFFFFF";
+}
+
+// Sidebar Navigation System
+function initializeSidebarNavigation() {
+  const navButtons = document.querySelectorAll('.nav-button');
+  const sectionContents = document.querySelectorAll('.section-content');
+  
+  navButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      const targetSection = button.dataset.section;
+      
+      // Remove active class from all buttons
+      navButtons.forEach(btn => btn.classList.remove('active'));
+      
+      // Add active class to clicked button
+      button.classList.add('active');
+      
+      // Hide all section contents
+      sectionContents.forEach(section => {
+        section.classList.remove('active');
+      });
+      
+      // Show target section content
+      const targetElement = document.querySelector(`[data-section="${targetSection}"]`);
+      if (targetElement) {
+        targetElement.classList.add('active');
+      }
+      
+      // Handle specific section logic
+      handleSectionChange(targetSection);
+    });
+  });
+}
+
+function handleSectionChange(section) {
+  // Hide all calendar-related containers first
+  const weekContainer = document.getElementById('week-view-container');
+  const monthContainer = document.getElementById('month-view-container');
+  const mealsWrapper = document.getElementById('meals-panel-wrapper');
+  const remindersWrapper = document.getElementById('reminders');
+  const photoWrapper = document.getElementById('photo');
+  const calendarWrapper = document.getElementById('calendar');
+  
+  if (weekContainer) weekContainer.parentElement.style.display = 'none';
+  if (monthContainer) monthContainer.parentElement.style.display = 'none';
+  if (mealsWrapper) mealsWrapper.parentElement.style.display = 'none';
+
+  if (calendarWrapper) calendarWrapper.style.display = 'none';
+  if (weekContainer) weekContainer.style.display = 'none';
+  if (monthContainer) monthContainer.style.display = 'none';
+  if (mealsWrapper) mealsWrapper.style.display = 'none';
+  if (remindersWrapper) remindersWrapper.style.display = 'none';
+  if (photoWrapper) photoWrapper.style.display = 'none';
+
+  switch(section) {
+    case 'week-calendar':
+      showWeekView();
+      weekContainer.parentElement.style.display = 'flex';
+      calendarWrapper.style.display = 'inherit';
+      break;
+    case 'month-calendar':
+      showMonthView();
+      monthContainer.parentElement.style.display = 'flex';
+      calendarWrapper.style.display = 'inherit';
+      break;
+      case 'meal-planning':
+        showMealPlanning();
+        mealsWrapper.parentElement.style.display = 'flex';
+        calendarWrapper.style.display = 'inherit';
+      break;
+    case 'reminders':
+      remindersWrapper.style.display = 'flex';
+      break;
+    case 'photos':
+      photoWrapper.style.display = 'flex';
+      break;
+  }
+}
+
+function showWeekView() {
+  const weekContainer = document.getElementById('week-view-container');
+  if (weekContainer) {
+    weekContainer.style.display = 'flex';
+  }
+}
+
+function showMonthView() {
+  const monthContainer = document.getElementById('month-view-container');
+  if (monthContainer) {
+    monthContainer.style.display = 'flex';
+  }
+}
+
+function showMealPlanning() {
+  const mealsWrapper = document.getElementById('meals-panel-wrapper');
+  if (mealsWrapper) {
+    mealsWrapper.style.display = 'flex';
+  }
+  
+  // Also trigger the existing meal planning setup if it exists
+  if (typeof setupMealPlanning === 'function') {
+    setupMealPlanning();
+  }
 }

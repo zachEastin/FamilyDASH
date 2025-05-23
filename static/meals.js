@@ -180,7 +180,7 @@ function shuffleMealPlan() {
 // --- Meals Side Panel Logic (Tabbed) ---
 (function setupMealsSidePanel() {
   const mealsPanelWrapper = document.querySelector('.meals-panel-wrapper');
-  const mealsViewContainer = document.getElementById('meals-view-container');
+  // const mealsViewContainer = document.getElementById('meals-view-container');
   const sidePanel = document.getElementById('meals-side-panel');
   const favoritesTab = document.getElementById('favorites-tab');
   const historyTab = document.getElementById('history-tab');
@@ -189,37 +189,37 @@ function shuffleMealPlan() {
   const panelToggle = sidePanel.querySelector('.side-panel-toggle');
 
   // Show/hide wrapper when Meals tab is active
-  function showMealsPanelWrapper() {
-    if (mealsPanelWrapper) {
-      mealsPanelWrapper.classList.add('active');
-      mealsPanelWrapper.style.display = 'flex';
-      mealsViewContainer.classList.remove('hidden');
-      fetchFavorites();
-    }
-  }
-  function hideMealsPanelWrapper() {
-    if (mealsPanelWrapper) {
-      mealsPanelWrapper.classList.remove('active');
-      mealsPanelWrapper.style.display = 'none';
-      mealsViewContainer.classList.add('hidden');
-    }
-  }
+  // function showMealsPanelWrapper() {
+  //   if (mealsPanelWrapper) {
+  //     mealsPanelWrapper.classList.add('active');
+  //     mealsPanelWrapper.style.display = 'flex';
+  //     mealsViewContainer.classList.remove('hidden');
+  //     fetchFavorites();
+  //   }
+  // }
+  // function hideMealsPanelWrapper() {
+  //   if (mealsPanelWrapper) {
+  //     mealsPanelWrapper.classList.remove('active');
+  //     mealsPanelWrapper.style.display = 'none';
+  //     mealsViewContainer.classList.add('hidden');
+  //   }
+  // }
   // Patch calendar tab logic to show/hide panel
-  const monthTab = document.getElementById('month-tab');
-  const mealsSubtab = document.getElementById('meals-subtab');
-  const eventsSubtab = document.getElementById('events-subtab');
-  if (mealsSubtab) {
-    mealsSubtab.addEventListener('click', showMealsPanelWrapper);
-  }
-  if (eventsSubtab) {
-    eventsSubtab.addEventListener('click', hideMealsPanelWrapper);
-  }
-  if (monthTab) {
-    monthTab.addEventListener('click', function() {
-      if (mealsSubtab.classList.contains('active')) showMealsPanelWrapper();
-      else hideMealsPanelWrapper();
-    });
-  }
+  // const monthTab = document.getElementById('month-tab');
+  // const mealsSubtab = document.getElementById('meals-subtab');
+  // const eventsSubtab = document.getElementById('events-subtab');
+  // if (mealsSubtab) {
+  //   mealsSubtab.addEventListener('click', showMealsPanelWrapper);
+  // }
+  // if (eventsSubtab) {
+  //   eventsSubtab.addEventListener('click', hideMealsPanelWrapper);
+  // }
+  // if (monthTab) {
+  //   monthTab.addEventListener('click', function() {
+  //     if (mealsSubtab.classList.contains('active')) showMealsPanelWrapper();
+  //     else hideMealsPanelWrapper();
+  //   });
+  // }
 
   // Collapse/expand logic
   panelToggle.addEventListener('click', function(e) {

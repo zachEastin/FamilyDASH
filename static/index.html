@@ -9,56 +9,80 @@
   <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
 </head>
 <body>
-  <div id="dashboard" class="grid">
-    <div id="calendar" class="widget">
-      <div class="calendar-tabs">
-        <button id="week-tab" class="calendar-tab active">Week</button>
-        <button id="month-tab" class="calendar-tab">Month</button>
-        <div class="month-subtabs" id="month-subtabs" style="display:none;">
-          <div class="month-subtabs-group">
-            <button id="events-subtab" class="month-subtab active">Events</button>
-            <button id="meals-subtab" class="month-subtab">Meals</button>
-          </div>
-        </div>
+  <div class="app-container">
+    <nav class="sidebar">
+      <div class="sidebar-nav">
+        <button class="nav-button active" data-section="week-calendar">
+          <i class="fas fa-calendar-week"></i>
+          <span class="nav-label">Week</span>
+        </button>
+        <button class="nav-button" data-section="month-calendar">
+          <i class="fas fa-calendar-alt"></i>
+          <span class="nav-label">Month</span>
+        </button>
+        <button class="nav-button" data-section="meal-planning">
+          <i class="fas fa-utensils"></i>
+          <span class="nav-label">Meals</span>
+        </button>
+        <button class="nav-button" data-section="reminders">
+          <i class="fas fa-bell"></i>
+          <span class="nav-label">Reminders</span>
+        </button>
+        <button class="nav-button" data-section="photos">
+          <i class="fas fa-images"></i>
+          <span class="nav-label">Photos</span>
+        </button>
       </div>
-      <div id="week-view-container">
-        <!-- Existing week view will be rendered here by JS -->
-        Loading calendar...
-      </div>
-      <div id="month-view-container" class="hidden calendar-view">
-        <!-- Month view will be rendered here by JS -->
-      </div>
-      <div id="meals-panel-wrapper" class="meals-panel-wrapper hidden calendar-view" style="display:none;">
-        <div id="meals-side-panel" class="side-panel" aria-label="Meals Panel" tabindex="0">
-          <div class="side-panel-header">
-            <div class="side-panel-tabs">
-              <button id="favorites-tab" class="side-panel-tab active">Favorites</button>
-              <button id="history-tab" class="side-panel-tab">History</button>
+    </nav>    <div class="main-container">
+      <!-- <div id="dashboard" class="grid"> -->
+      <div id="dashboard" class="dashboard">
+        <div id="calendar" class="widget">
+          <div class="section-content active" data-section="week-calendar">
+            <div id="week-view-container">
+              <!-- Existing week view will be rendered here by JS -->
+              Loading calendar...
             </div>
-            <span class="side-panel-toggle" title="Collapse">&laquo;</span>
           </div>
-          <div class="side-panel-content">
-            <div id="favorites-list" class="panel-list"></div>
-            <div id="history-list" class="panel-list" style="display:none;"></div>
+          <div class="section-content" data-section="month-calendar">
+            <div id="month-view-container" class="calendar-view">
+              <!-- Month view will be rendered here by JS -->
+            </div>
+          </div>
+          <div class="section-content" data-section="meal-planning">
+            <div id="meals-panel-wrapper" class="meals-panel-wrapper calendar-view">
+              <div id="meals-side-panel" class="side-panel" aria-label="Meals Panel" tabindex="0">
+                <div class="side-panel-header">
+                  <div class="side-panel-tabs">
+                    <button id="favorites-tab" class="side-panel-tab active">Favorites</button>
+                    <button id="history-tab" class="side-panel-tab">History</button>
+                  </div>
+                  <span class="side-panel-toggle" title="Collapse">&laquo;</span>
+                </div>
+                <div class="side-panel-content">
+                  <div id="favorites-list" class="panel-list"></div>
+                  <div id="history-list" class="panel-list" style="display:none;"></div>
+                </div>
+              </div>
+              <div id="meals-view-container" class="calendar-view"></div>
+            </div>
+            <div id="meals-actions" class="meals-actions">
+              <button id="shuffle-meals-button" class="shuffle-meals-btn"><i class="fa fa-random"></i> Shuffle Meals</button>
+              <button id="open-shopping-list-button" class="shuffle-meals-btn"><i class="fa fa-shopping-cart"></i> Shopping List</button>
+            </div>
+        </div>
+        <div id="reminders" class="widget section-content" data-section="reminders">Loading reminders...</div>
+        <div id="photo" class="widget section-content" data-section="photos"><img id="shared-photo" src="" alt="Family Photo"></div>
+      </div>
+      <div class="footer">
+        <div id="weather" class="widget">
+          <div class="weather-flex">
           </div>
         </div>
-        <div id="meals-view-container" class="hidden calendar-view" style="display:none;"></div>
-      </div>
-      <button id="shuffle-meals-button" class="shuffle-meals-btn" style="display: none;"><i class="fa fa-random"></i> Shuffle Meals</button>
-      <button id="open-shopping-list-button" class="shuffle-meals-btn" style="display: none;"><i class="fa fa-shopping-cart"></i> Shopping List</button>
-      <!-- Shuffle button inserted above calendar grid -->
-    </div>
-    <div id="reminders" class="widget">Loading reminders...</div>
-    <div id="photo" class="widget"><img id="shared-photo" src="" alt="Family Photo"></div>
-  </div>
-  <div class="footer">
-    <div id="weather" class="widget">
-      <div class="weather-flex">
+        <div id="clock" class="widget">Loading time...</div>
+        <div id="network-status" class="widget">Checking network...</div>
+        <div id="offline-indicator" class="widget hidden">Offline</div>
       </div>
     </div>
-    <div id="clock" class="widget">Loading time...</div>
-    <div id="network-status" class="widget">Checking network...</div>
-    <div id="offline-indicator" class="widget hidden">Offline</div>
   </div>
   <div id="recipe-modal" class="modal" style="display:none;">
     <div class="modal-content">
