@@ -2649,6 +2649,7 @@ body.dark-mode .meals-grid-header {
   border: 1px solid var(--color-gray);
   flex-grow: 1;
   overflow: auto;
+  height: 90%;
 }
 body.dark-mode .meals-grid {
   background-color: var(--color-gray);
@@ -2832,7 +2833,6 @@ body.dark-mode .meals-day-cell {
   overflow: hidden;
   padding: var(--space-md);
   transition: width 0.25s cubic-bezier(.4,0,.2,1);
-  height: 100%;
 }
 .side-panel.collapsed {
   width: 36px;
@@ -2879,7 +2879,8 @@ body.dark-mode .meals-day-cell {
 #meals-actions {
   display: flex;
   gap: var(--space-sm);
-  padding: var(--space-sm);
+  justify-content: space-between;
+  /* padding: var(--space-sm); */
 }
 .side-panel-header {
   display: flex;
@@ -3015,15 +3016,21 @@ body.dark-mode .side-panel-tab.active {
 .shuffle-meals-btn {
   display: inline-flex;
   align-items: center;
-  margin: var(--space-sm) 0 var(--space-sm) var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
-  font-size: var(--font-body);
+  font-size: var(--font-small);
   background: var(--color-primary);
   color: #fff;
   border: none;
   border-radius: var(--border-radius-btn);
   cursor: pointer;
   transition: filter 0.2s;
+  flex-direction: column;
+  width: 50%;
+  align-items: center;
+  justify-content: center;
+}
+.shuffle-meals-btn span {
+  font-size: var(--font-header);
+  margin-left: var(--space-xs);
 }
 .shuffle-meals-btn:hover {
   filter: brightness(0.9);
