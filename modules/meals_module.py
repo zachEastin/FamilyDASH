@@ -1,38 +1,55 @@
 import os
 import json
 from pathlib import Path
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, Response, request, jsonify
 from dotenv import load_dotenv
 import requests
-from datetime import datetime # Add datetime import
+from datetime import datetime
+import uuid
 
-# Load environment variables
 load_dotenv()
 SPOONACULAR_API_KEY = os.getenv("SPOONACULAR_API_KEY")
 
 meals_bp = Blueprint("meals", __name__, url_prefix="/api/meals")
+recipes_bp = Blueprint("recipes", __name__, url_prefix="/api/recipes")
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 DATA_DIR.mkdir(exist_ok=True)
 MEALS_FILE = DATA_DIR / "meals_data.json"
+RECIPES_FILE = DATA_DIR / "recipes.json"
 
-# Ensure the data file exists
 if not MEALS_FILE.exists():
     with open(MEALS_FILE, "w") as f:
         json.dump({}, f)
+if not RECIPES_FILE.exists():
+    with open(RECIPES_FILE, "w") as f:
+        json.dump({}, f)
+
 
 def load_meals():
     with open(MEALS_FILE, "r") as f:
         return json.load(f)
 
+
 def save_meals(data):
     with open(MEALS_FILE, "w") as f:
         json.dump(data, f, indent=2)
 
+
+def load_recipes():
+    with open(RECIPES_FILE, "r") as f:
+        return json.load(f)
+
+
+def save_recipes(data):
+    with open(RECIPES_FILE, "w") as f:
+        json.dump(data, f, indent=2)
+
+
 @meals_bp.route("/data", methods=["GET"])
 def get_meals():
-    data = load_meals()
-    return jsonify(data)
+    return jsonify(load_meals())
+
 
 @meals_bp.route("/update", methods=["POST"])
 def update_meal():
@@ -40,118 +57,115 @@ def update_meal():
     month = req.get("month")
     date = req.get("date")
     meal_type = req.get("mealType")
-    recipe = req.get("recipe")
-    if not (month and date and meal_type and recipe):
+    recipe_uuid = req.get("recipe_uuid")
+    servings = req.get("servings", 0)
+    if not (month and date and meal_type and recipe_uuid):
         return jsonify({"error": "Missing fields"}), 400
     data = load_meals()
     data.setdefault(month, {})
     data[month].setdefault(date, {})
-    data[month][date][meal_type] = recipe
+    data[month][date][meal_type] = {"recipe_uuid": recipe_uuid, "servings": servings}
     save_meals(data)
     return jsonify({"status": "ok"})
+
 
 @meals_bp.route("/today", methods=["GET"])
 def get_todays_meals():
     today_str = datetime.now().strftime("%Y-%m-%d")
     month_key = datetime.now().strftime("%Y-%m")
     data = load_meals()
-    
     todays_data = data.get(month_key, {}).get(today_str, {})
-    
-    # Ensure all meal types are present, defaulting to None or empty dict
-    response = {
+    return jsonify({
         "breakfast": todays_data.get("breakfast"),
         "lunch": todays_data.get("lunch"),
-        "dinner": todays_data.get("dinner")
-    }
-    return jsonify(response)
+        "dinner": todays_data.get("dinner"),
+    })
+
 
 @meals_bp.route("/shopping-list/today", methods=["GET"])
 def get_todays_shopping_list():
     today_str = datetime.now().strftime("%Y-%m-%d")
     month_key = datetime.now().strftime("%Y-%m")
     data = load_meals()
-    ingredients = []
-    
+    recipes = load_recipes()
+    aggregated = {}
     todays_meals = data.get(month_key, {}).get(today_str, {})
-    
     for meal in todays_meals.values():
         if isinstance(meal, dict):
-            ings = meal.get("ingredients")
-            if isinstance(ings, list):
-                ingredients.extend(ings)
-    return jsonify(sorted(list(set(ingredients))))
+            r_uuid = meal.get("recipe_uuid")
+            servings = meal.get("servings", 1)
+            recipe = recipes.get(r_uuid)
+            if not recipe:
+                continue
+            default = recipe.get("default_servings", 1) or 1
+            factor = servings / default
+            for ing in recipe.get("ingredients", []):
+                item = ing.get("item")
+                unit = ing.get("unit")
+                qty = ing.get("quantity", 0) * factor
+                key = (item, unit)
+                aggregated[key] = aggregated.get(key, 0) + qty
+    result = [{"item": k[0], "unit": k[1], "quantity": v} for k, v in aggregated.items()]
+    return jsonify(result)
+
 
 @meals_bp.route("/add-recipe", methods=["POST"])
 def add_recipe_to_meal():
     req = request.get_json()
-    date_str = req.get("date") # Expects "YYYY-MM-DD"
+    date_str = req.get("date")
     meal_type = req.get("mealType")
-    recipe = req.get("recipe") # Expects {title, ingredients[], tags[], isFavorite}
-
-    if not (date_str and meal_type and recipe and isinstance(recipe, dict) and "title" in recipe):
+    recipe = req.get("recipe")
+    servings = req.get("servings")
+    if not (date_str and meal_type and recipe and isinstance(recipe, dict)):
         return jsonify({"error": "Missing or invalid fields"}), 400
-
     try:
-        # Parse date_str to get month_key and day_key
         date_obj = datetime.strptime(date_str, "%Y-%m-%d")
         month_key = date_obj.strftime("%Y-%m")
         day_key = date_obj.strftime("%Y-%m-%d")
     except ValueError:
         return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
-
-    data = load_meals()
-    data.setdefault(month_key, {})
-    data[month_key].setdefault(day_key, {})
-    
-    # Ensure recipe structure is complete
-    full_recipe_data = {
+    r_uuid = str(uuid.uuid4())
+    recipe_obj = {
+        "uuid": r_uuid,
         "title": recipe.get("title"),
         "ingredients": recipe.get("ingredients", []),
         "tags": recipe.get("tags", []),
-        "isFavorite": recipe.get("isFavorite", False)
+        "isFavorite": recipe.get("isFavorite", False),
+        "source": recipe.get("source", "local"),
+        "default_servings": recipe.get("default_servings", servings or 1),
     }
-    data[month_key][day_key][meal_type] = full_recipe_data
-    
+    recipes = load_recipes()
+    recipes[r_uuid] = recipe_obj
+    save_recipes(recipes)
+    if servings is None:
+        servings = recipe_obj.get("default_servings", 1)
+    data = load_meals()
+    data.setdefault(month_key, {})
+    data[month_key].setdefault(day_key, {})
+    data[month_key][day_key][meal_type] = {"recipe_uuid": r_uuid, "servings": servings}
     save_meals(data)
-    return jsonify({"status": "ok", "message": f"Recipe '{full_recipe_data['title']}' added to {meal_type} on {date_str}"})
+    return jsonify({"status": "ok", "recipe_uuid": r_uuid})
+
 
 @meals_bp.route("/favorites/full", methods=["GET"])
 def get_full_favorites():
-    data = load_meals()
-    favorite_recipes = {} # Use a dict to store full recipes by title to avoid duplicates
-    for month_data in data.values():
-        for day_data in month_data.values():
-            for meal_type, meal_details in day_data.items():
-                if isinstance(meal_details, dict) and meal_details.get("isFavorite"):
-                    title = meal_details.get("title")
-                    if title and title not in favorite_recipes: # Add only if title exists and not already added
-                        favorite_recipes[title] = {
-                            "title": title,
-                            "ingredients": meal_details.get("ingredients", []),
-                            "tags": meal_details.get("tags", [])
-                            # isFavorite is implicitly true
-                        }
-    return jsonify(list(favorite_recipes.values()))
+    recipes = load_recipes()
+    favorites = [r for r in recipes.values() if r.get("isFavorite")]
+    return jsonify(favorites)
+
 
 @meals_bp.route("/favorites", methods=["GET"])
-def get_favorites():
-    data = load_meals()
-    favorites = set()
-    for month in data.values():
-        for day in month.values():
-            for meal in day.values():
-                if isinstance(meal, dict) and meal.get("isFavorite"):
-                    title = meal.get("title")
-                    if title:
-                        favorites.add(title)
-    return jsonify(sorted(list(favorites)))
+def get_favorites() -> Response:
+    recipes = load_recipes()
+    favorite_recipes: list[tuple[str, str]] = [(r.get("uuid"), r.get("title")) for r in recipes.values() if r.get("isFavorite")]
+    return jsonify(sorted(favorite_recipes))
+
 
 @meals_bp.route("/shopping-list", methods=["GET"])
 def get_shopping_list():
-    from datetime import datetime
     data = load_meals()
-    ingredients = []
+    recipes = load_recipes()
+    aggregated = {}
     start = request.args.get("start")
     end = request.args.get("end")
     date_filter = None
@@ -159,13 +173,11 @@ def get_shopping_list():
         try:
             start_dt = datetime.strptime(start, "%Y-%m-%d")
             end_dt = datetime.strptime(end, "%Y-%m-%d")
-            print("Start date:", start_dt, "End date:", end_dt)
             date_filter = (start_dt, end_dt)
         except Exception:
             date_filter = None
     for month_key, month in data.items():
         for day_key, day in month.items():
-            # day_key is 'YYYY-MM-DD' or similar
             if date_filter:
                 try:
                     day_dt = datetime.strptime(day_key, "%Y-%m-%d")
@@ -175,10 +187,22 @@ def get_shopping_list():
                     continue
             for meal in day.values():
                 if isinstance(meal, dict):
-                    ings = meal.get("ingredients")
-                    if isinstance(ings, list):
-                        ingredients.extend(ings)
-    return jsonify(sorted(set(ingredients)))
+                    r_uuid = meal.get("recipe_uuid")
+                    servings = meal.get("servings", 1)
+                    recipe = recipes.get(r_uuid)
+                    if not recipe:
+                        continue
+                    default = recipe.get("default_servings", 1) or 1
+                    factor = servings / default
+                    for ing in recipe.get("ingredients", []):
+                        item = ing.get("item")
+                        unit = ing.get("unit")
+                        qty = ing.get("quantity", 0) * factor
+                        key = (item, unit)
+                        aggregated[key] = aggregated.get(key, 0) + qty
+    result = [{"item": k[0], "unit": k[1], "quantity": v} for k, v in aggregated.items()]
+    return jsonify(result)
+
 
 @meals_bp.route("/search", methods=["GET"])
 def search_recipes():
@@ -189,13 +213,14 @@ def search_recipes():
     params = {
         "query": query,
         "apiKey": SPOONACULAR_API_KEY,
-        "number": 10
+        "number": 10,
     }
     resp = requests.get(url, params=params)
     try:
         return jsonify(resp.json())
     except Exception:
         return jsonify({"results": []})
+
 
 @meals_bp.route("/recipe", methods=["GET"])
 def get_recipe_details():
@@ -207,21 +232,77 @@ def get_recipe_details():
     try:
         resp = requests.get(url, params=params)
         data = resp.json()
-        # Format to local schema
         title = data.get("title", "")
-        # Ingredients: use originalString or name
         ingredients = [
             i.get("originalString") or i.get("original") or i.get("name", "")
             for i in data.get("extendedIngredients", [])
         ]
-        # Tags: combine dishTypes and diets
         tags = list(set(data.get("dishTypes", []) + data.get("diets", [])))
         recipe_obj = {
             "title": title,
             "ingredients": ingredients,
             "tags": tags,
-            "source": "spoonacular"
+            "source": "spoonacular",
         }
         return jsonify(recipe_obj)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@recipes_bp.route("", methods=["GET"])
+def list_recipes():
+    return jsonify(list(load_recipes().values()))
+
+
+@recipes_bp.route("/<recipe_uuid>", methods=["GET"])
+def get_recipe(recipe_uuid):
+    recipe = load_recipes().get(recipe_uuid)
+    if not recipe:
+        return jsonify({"error": "not found"}), 404
+    return jsonify(recipe)
+
+
+@recipes_bp.route("/add", methods=["POST"])
+def add_recipe():
+    data = request.get_json() or {}
+    r_uuid = str(uuid.uuid4())
+    recipe_obj = {
+        "uuid": r_uuid,
+        "title": data.get("title"),
+        "ingredients": data.get("ingredients", []),
+        "tags": data.get("tags", []),
+        "isFavorite": data.get("isFavorite", False),
+        "source": data.get("source", "local"),
+        "default_servings": data.get("default_servings", 1),
+    }
+    recipes = load_recipes()
+    recipes[r_uuid] = recipe_obj
+    save_recipes(recipes)
+    return jsonify(recipe_obj), 201
+
+
+@recipes_bp.route("/update", methods=["POST"])
+def update_recipe():
+    data = request.get_json() or {}
+    r_uuid = data.get("uuid")
+    if not r_uuid:
+        return jsonify({"error": "uuid required"}), 400
+    recipes = load_recipes()
+    if r_uuid not in recipes:
+        return jsonify({"error": "not found"}), 404
+    recipes[r_uuid].update({k: v for k, v in data.items() if k != "uuid"})
+    save_recipes(recipes)
+    return jsonify({"status": "ok"})
+
+
+@recipes_bp.route("/delete", methods=["POST"])
+def delete_recipe():
+    data = request.get_json() or {}
+    r_uuid = data.get("uuid")
+    if not r_uuid:
+        return jsonify({"error": "uuid required"}), 400
+    recipes = load_recipes()
+    if r_uuid in recipes:
+        recipes.pop(r_uuid)
+        save_recipes(recipes)
+    return jsonify({"status": "ok"})

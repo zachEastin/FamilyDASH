@@ -1,4 +1,3 @@
-
 // --- Favorite toggle logic in modal ---
 let isFavorite = false;
 const favoriteStar = document.getElementById("favorite-star");
@@ -239,11 +238,12 @@ function shuffleMealPlan() {
   // --- Fetch and render Favorites ---
   function renderFavorites(favorites) {
     favoritesList.innerHTML = '';
-    favorites.forEach(title => {
+    favorites.forEach(([uuid, title]) => {
       const div = document.createElement('div');
       div.className = 'recipe-item';
       div.setAttribute('draggable', 'true');
       div.setAttribute('data-title', title);
+      div.setAttribute('data-uuid', uuid);
       div.innerHTML = '<i class="fa fa-star"></i>' + title;
       favoritesList.appendChild(div);
     });
@@ -256,7 +256,6 @@ function shuffleMealPlan() {
   }
 
   // --- Fetch and render History ---
-  let allMealsData = null;
   function renderHistory(historyRecipes) {
     historyList.innerHTML = '';
     historyRecipes.forEach(recipe => {
@@ -264,6 +263,7 @@ function shuffleMealPlan() {
       div.className = 'recipe-item';
       div.setAttribute('draggable', 'true');
       div.setAttribute('data-title', recipe.title);
+      div.setAttribute('data-uuid', recipe.uuid);
       div.innerHTML = '<i class="fa fa-history"></i>' + recipe.title;
       div.dataset.recipe = JSON.stringify(recipe);
       historyList.appendChild(div);
@@ -271,43 +271,28 @@ function shuffleMealPlan() {
     makeRecipeItemsDraggable(); // Call here
   }
   function fetchHistory() {
-    fetch('/api/meals/data')
+    fetch('/api/recipes')
       .then(r => r.json())
-      .then(data => {
-        allMealsData = data;
-        const now = new Date();
-        const todayStr = now.toISOString().slice(0,10);
-        const recipesMap = new Map();
-        // Iterate all months and all days
-        Object.entries(data).forEach(([month, days]) => {
-          Object.entries(days).forEach(([date, meals]) => {
-            if (date > todayStr) return; // skip future days
-            Object.values(meals).forEach(meal => {
-              if (meal && meal.title && !recipesMap.has(meal.title)) {
-                recipesMap.set(meal.title, meal);
-              }
-            });
-          });
-        });
-        // Sort alphabetically by title
-        const recipes = Array.from(recipesMap.values()).sort((a,b) => a.title.localeCompare(b.title));
-        renderHistory(recipes);
-      });
+      .then(renderHistory);
   }
 
   // --- Drag and Drop Logic ---
   function handleDragStart(e) {
     const title = this.getAttribute('data-title');
-    const recipeData = this.dataset.recipe;
+    const uuid = this.getAttribute('data-uuid');
 
     if (title) {
-      e.dataTransfer.setData('text/plain', title);
+      e.dataTransfer.setData('text/plain', title); // For compatibility
+      e.dataTransfer.setData('application/x-recipe-title', title);
+    }
+    if (uuid) {
+      e.dataTransfer.setData('application/x-recipe-uuid', uuid);
+    }
+    // If the full recipe object is available (for history items), include it as JSON
+    if (this.dataset.recipe) {
+      e.dataTransfer.setData('application/json', this.dataset.recipe);
     }
 
-    // Also store full recipe if available
-    if (recipeData) {
-      e.dataTransfer.setData('application/json', recipeData);
-    }
     e.dataTransfer.effectAllowed = 'copy';
   }
   function makeRecipeItemsDraggable() {
@@ -317,16 +302,12 @@ function shuffleMealPlan() {
       item.addEventListener('dragstart', handleDragStart);
     });
   }
-  // --- Add drop target logic for meal slots ---
-  function handleMealSlotDragOver(e) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
-  }
   function handleMealSlotDrop(e) {
     e.preventDefault();
     const date = this.dataset.date;
     const mealType = this.dataset.mealType;
     let recipe = null;
+    const recipe_uuid = e.dataTransfer.getData('application/x-recipe-uuid');
     // Try to get full recipe object from dataTransfer
     let recipeJson = e.dataTransfer.getData('application/json');
     if (recipeJson) {
@@ -334,29 +315,29 @@ function shuffleMealPlan() {
     }
     if (!recipe) {
       // Fallback: look up by title in history or favorites
-      const title = e.dataTransfer.getData('text/plain');
+      const title = e.dataTransfer.getData('application/x-recipe-title');
       // Search history first
-      if (allMealsData && title) {
-        let foundRecipe = null;
-        // Iterate over all months in allMealsData
-        for (const monthData of Object.values(allMealsData)) {
-          // Iterate over all days in that month
-          for (const dayMeals of Object.values(monthData)) {
-            // Iterate over all meal types in that day
-            for (const meal of Object.values(dayMeals)) {
-              if (meal && meal.title === title) {
-                foundRecipe = meal; // Found the recipe with full details
-                break;
-              }
-            }
-            if (foundRecipe) break;
-          }
-          if (foundRecipe) break;
-        }
-        if (foundRecipe) {
-          recipe = foundRecipe; // Use the found recipe with full details
-        }
-      }
+      // if (allMealsData && title) {
+      //   let foundRecipe = null;
+      //   // Iterate over all months in allMealsData
+      //   for (const monthData of Object.values(allMealsData)) {
+      //     // Iterate over all days in that month
+      //     for (const dayMeals of Object.values(monthData)) {
+      //       // Iterate over all meal types in that day
+      //       for (const meal of Object.values(dayMeals)) {
+      //         if (meal && meal.title === title) {
+      //           foundRecipe = meal; // Found the recipe with full details
+      //           break;
+      //         }
+      //       }
+      //       if (foundRecipe) break;
+      //     }
+      //     if (foundRecipe) break;
+      //   }
+      //   if (foundRecipe) {
+      //     recipe = foundRecipe; // Use the found recipe with full details
+      //   }
+      // }
       // If not found after searching all history, fallback to minimal object
       if (!recipe && title) recipe = { title };
     }
@@ -368,7 +349,7 @@ function shuffleMealPlan() {
         month: date.slice(0,7),
         date,
         mealType,
-        recipe
+        recipe_uuid
       })
     })
       .then(r => r.json())
@@ -420,19 +401,9 @@ function shuffleMealPlan() {
     document.head.appendChild(style);
   }
 
-  // --- Refresh logic after meals view render ---
-  const actualRenderMealsMonthViewFunction = window.renderMealsMonthView; // Capture the global renderMealsMonthView
-
-  window.renderMealsMonthView = function(data) { // Explicitly override the global function
-    if (typeof actualRenderMealsMonthViewFunction === 'function') {
-      actualRenderMealsMonthViewFunction(data); // Call the original global rendering logic
-    } else {
-      console.error("The main renderMealsMonthView function was not found by the IIFE patch during execution.");
-      // This case should ideally not happen if the main function is defined globally.
-    }
-
-    // Enhancements from the IIFE:
-    patchMealSlotClicksWithModal(data); // This is a global function
+  // --- Logic to run after meals view is rendered ---
+  window.onMealsGridRendered = function(data, recipeMap) {
+    patchMealSlotClicksWithModal(data, recipeMap); // This is a global function
     makeMealSlotsDroppable();           // This function is defined within this IIFE
     fetchHistory();                     // This will eventually call renderHistory, which calls makeRecipeItemsDraggable
     fetchFavorites();                   // This will eventually call renderFavorites, which calls makeRecipeItemsDraggable
@@ -458,6 +429,18 @@ function shuffleMealPlan() {
   const tagInputs = form.querySelectorAll("input[name='tags']");
   let currentDate = null, currentMealType = null, currentMonth = null;
   let isFavorite = false;
+  let currentRecipeUuid = null;
+
+  function setModalFields(rec) {
+    titleInput.value = rec && rec.title ? rec.title : "";
+    ingredientsInput.value = rec && rec.ingredients ? (Array.isArray(rec.ingredients) ? rec.ingredients.join("\n") : rec.ingredients) : "";
+    isFavorite = rec && rec.isFavorite ? true : false;
+    updateFavoriteStar();
+    const tags = rec && rec.tags ? rec.tags : [];
+    tagInputs.forEach(input => {
+      input.checked = tags.includes(input.value);
+    });
+  }
 
   function showModal(recipe, date, mealType) {
     modal.style.display = "flex";
@@ -465,21 +448,15 @@ function shuffleMealPlan() {
     currentDate = date;
     currentMealType = mealType;
     currentMonth = date.slice(0, 7);
-    titleInput.value = recipe && recipe.title ? recipe.title : "";
-    ingredientsInput.value = recipe && recipe.ingredients ? (Array.isArray(recipe.ingredients) ? recipe.ingredients.join("\n") : recipe.ingredients) : "";
-    isFavorite = recipe && recipe.isFavorite ? true : false;
-    updateFavoriteStar();
-    // Tags
-    const tags = recipe && recipe.tags ? recipe.tags : [];
-    tagInputs.forEach(input => {
-      input.checked = tags.includes(input.value);
-    });
+    currentRecipeUuid = recipe && (recipe.uuid || recipe.recipe_uuid) || null;
+    setModalFields(recipe || {});
   }
   function hideModal() {
     modal.classList.remove("open");
     setTimeout(() => { modal.style.display = "none"; }, 200);
     form.reset();
     isFavorite = false;
+    currentRecipeUuid = null;
     updateFavoriteStar();
   }
   function updateFavoriteStar() {
@@ -516,62 +493,78 @@ function shuffleMealPlan() {
     e.preventDefault();
     hideModal();
   });
-  form.addEventListener("submit", function(e) {
+  form.addEventListener("submit", async function(e) {
     e.preventDefault();
     const title = titleInput.value.trim();
     if (!title) return;
     let ingredients = ingredientsInput.value.split(/\n|,/).map(s => s.trim()).filter(Boolean);
     const tags = Array.from(tagInputs).filter(i => i.checked).map(i => i.value);
-    const recipe = { title, ingredients, tags, isFavorite };
-    // POST to /api/meals/update
-    fetch("/api/meals/update", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const recipeData = { title, ingredients, tags, isFavorite };
+    try {
+      let recipe_uuid = currentRecipeUuid;
+      if (recipe_uuid) {
+        const r = await fetch("/api/recipes/update", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ uuid: recipe_uuid, ...recipeData })
+        });
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({}));
+          throw new Error(err.error || "Failed to update recipe");
+        }
+      } else {
+        const r = await fetch("/api/recipes/add", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(recipeData)
+        });
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({}));
+          throw new Error(err.error || "Failed to add recipe");
+        }
+        const data = await r.json();
+        recipe_uuid = data.uuid;
+      }
 
-      body: JSON.stringify({
-        month: currentMonth,
-        date: currentDate,
-        mealType: currentMealType,
-        recipe
-      })
-    })
-      .then(r => r.json())
-      .then(() => {
-        hideModal();
-        fetchAndRenderMealsMonthView();
+      const resp = await fetch("/api/meals/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          month: currentMonth,
+          date: currentDate,
+          mealType: currentMealType,
+          recipe_uuid
+        })
       });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to save recipe");
+      }
+      hideModal();
+      fetchAndRenderMealsMonthView();
+    } catch (err) {
+      alert("Error saving recipe: " + err.message);
+    }
   });
   // Expose for use in meals view
   window.openRecipeModal = showModal;
 })();
 
 // Patch meal-slot click handler to open modal with data
-function patchMealSlotClicksWithModal(mealsData) {
+function patchMealSlotClicksWithModal(mealsData, recipeMap) {
   document.querySelectorAll(".meal-slot").forEach(slot => {
     slot.addEventListener("click", function(e) {
       const date = slot.dataset.date;
       const mealType = slot.dataset.mealType;
       // Find recipe data if available
       let recipe = null;
-      if (mealsData) {
-        const month = date.slice(0, 7);
-        if (mealsData[month] && mealsData[month][date] && mealsData[month][date][mealType]) {
-          recipe = mealsData[month][date][mealType];
-        }
+      if (recipeMap) {
+        recipe = recipeMap[slot.dataset.recipeUuid];
       }
       window.openRecipeModal(recipe, date, mealType);
     });
   });
 
-}
-
-// --- Fix: Restore renderMealsMonthView to default if not already patched ---
-if (!window._origRenderMealsMonthView) {
-  window._origRenderMealsMonthView = renderMealsMonthView;
-}
-renderMealsMonthView = function(data) {
-  window._origRenderMealsMonthView(data);
-  if (data) patchMealSlotClicksWithModal(data);
 }
 
 // --- Ensure all helpers and functions are defined in global scope ---
@@ -594,77 +587,127 @@ function renderMealsMonthView(data) {
   let gridHeaderHtml = '<div class="meals-grid-header">';
   dayNames.forEach((name) => (gridHeaderHtml += `<div>${name}</div>`));
   gridHeaderHtml += "</div>";
-  let mealsGridHtml = '<div class="meals-grid">';
-  const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
-  let gridStartDate = new Date(firstDayOfMonth);
-  gridStartDate.setDate(gridStartDate.getDate() - gridStartDate.getDay());
 
   // Meals data is structured as { [month]: { [date]: { breakfast: {...}, lunch: {...}, dinner: {...} } } }
   // month = YYYY-MM, date = YYYY-MM-DD
   const mealsData = data || {};
+
+  // --- Collect all recipe_uuids for this grid ---
+  const recipeUuidSet = new Set();
+  const cellInfoArr = [];
+  const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+  let gridStartDate = new Date(firstDayOfMonth);
+  gridStartDate.setDate(gridStartDate.getDate() - gridStartDate.getDay());
   for (let i = 0; i < 42; i++) {
     const cellDate = new Date(gridStartDate);
     cellDate.setDate(gridStartDate.getDate() + i);
-    let cellClasses = "meals-day-cell";
-    if (cellDate.getMonth() !== currentMonth) cellClasses += " other-month";
-    if (
-      cellDate.getFullYear() === currentYear &&
-      cellDate.getMonth() === currentMonth &&
-      cellDate.getDate() === todayDate
-    )
-      cellClasses += " today";
     const dateStr = cellDate.toISOString().split("T")[0];
     const monthStr = `${cellDate.getFullYear()}-${String(cellDate.getMonth() + 1).padStart(2, "0")}`;
     const dayMeals = (mealsData[monthStr] && mealsData[monthStr][dateStr]) || {};
-    mealsGridHtml += `<div class="${cellClasses}" data-date="${dateStr}">`;
-    mealsGridHtml += `<div class="day-number">${cellDate.getDate()}</div>`;
-    mealsGridHtml += `<div class="meals-zones">`;
-    ["breakfast", "lunch", "dinner"].forEach((mealType, idx) => {
+    ["breakfast", "lunch", "dinner"].forEach((mealType) => {
       const meal = dayMeals[mealType];
-      const slotClass = ["top", "mid", "bottom"][idx];
-      let slotContent = meal && meal.title ? meal.title : "+";
-      // Add lock icon (FontAwesome), default unlocked
-      const locked = meal && meal.locked ? true : false;
-      const lockIcon = `<span class="meal-lock-icon fa ${locked ? 'fa-lock' : 'fa-unlock'}" data-locked="${locked}" title="${locked ? 'Unlock' : 'Lock'}"></span>`;
-      mealsGridHtml += `<div class="meal-slot ${mealType} ${slotClass}" data-date="${dateStr}" data-meal-type="${mealType}" data-locked="${locked}">${lockIcon}<span class="meal-slot-title">${slotContent}</span></div>`;
+      let recipe_uuid = meal && meal.recipe_uuid;
+      if (recipe_uuid) recipeUuidSet.add(recipe_uuid);
+      cellInfoArr.push({ dateStr, mealType, meal, recipe_uuid });
     });
-    mealsGridHtml += `</div></div>`;
   }
-  mealsGridHtml += "</div>";
-  mealsViewContainer.innerHTML = monthHeaderHtml + gridHeaderHtml + mealsGridHtml;
+  const recipeUuids = Array.from(recipeUuidSet);
 
-  // Add lock/unlock click handlers and manage lock state in memory
-  const mealSlotLocks = {};
-  document.querySelectorAll('.meal-slot').forEach(slot => {
-    const date = slot.dataset.date;
-    const mealType = slot.dataset.mealType;
-    const lockIcon = slot.querySelector('.meal-lock-icon');
-    // Initialize lock state from DOM or memory
-    const key = `${date}|${mealType}`;
-    let locked = slot.getAttribute('data-locked') === 'true';
-    if (mealSlotLocks[key] !== undefined) locked = mealSlotLocks[key];
-    slot.setAttribute('data-locked', locked);
-    if (lockIcon) {
-      lockIcon.classList.toggle('fa-lock', locked);
-      lockIcon.classList.toggle('fa-unlock', !locked);
-      lockIcon.setAttribute('data-locked', locked);
-      lockIcon.title = locked ? 'Unlock' : 'Lock';
-      lockIcon.onclick = (e) => {
-        e.stopPropagation();
-        locked = !locked;
-        mealSlotLocks[key] = locked;
-        slot.setAttribute('data-locked', locked);
+  // --- Fetch all recipes in parallel, then render grid ---
+  if (recipeUuids.length === 0) {
+    // No recipes, render with default titles
+    renderGrid({});
+    if (window.onMealsGridRendered) {
+      window.onMealsGridRendered(data, {}); // Pass the original mealsData
+    }
+  } else {
+    Promise.all(
+      recipeUuids.map(uuid => fetch(`/api/recipes/${uuid}`).then(r => r.ok ? r.json() : null))
+    ).then(recipeObjs => {
+      const recipeMap = {};
+      recipeObjs.forEach((rec, idx) => {
+        if (rec && rec.uuid) recipeMap[rec.uuid] = rec;
+      });
+      renderGrid(recipeMap);
+      if (window.onMealsGridRendered) {
+        window.onMealsGridRendered(data, recipeMap); // Pass the original mealsData
+      }
+    });
+  }
+
+  function renderGrid(recipeMap) {
+    let mealsGridHtml = '<div class="meals-grid">';
+    let cellIdx = 0;
+    let gridStartDate = new Date(firstDayOfMonth);
+    gridStartDate.setDate(gridStartDate.getDate() - gridStartDate.getDay());
+    for (let i = 0; i < 42; i++) {
+      const cellDate = new Date(gridStartDate);
+      cellDate.setDate(gridStartDate.getDate() + i);
+      let cellClasses = "meals-day-cell";
+      if (cellDate.getMonth() !== currentMonth) cellClasses += " other-month";
+      if (
+        cellDate.getFullYear() === currentYear &&
+        cellDate.getMonth() === currentMonth &&
+        cellDate.getDate() === todayDate
+      )
+        cellClasses += " today";
+      const dateStr = cellDate.toISOString().split("T")[0];
+      const monthStr = `${cellDate.getFullYear()}-${String(cellDate.getMonth() + 1).padStart(2, "0")}`;
+      const dayMeals = (mealsData[monthStr] && mealsData[monthStr][dateStr]) || {};
+      mealsGridHtml += `<div class="${cellClasses}" data-date="${dateStr}">`;
+      mealsGridHtml += `<div class="day-number">${cellDate.getDate()}</div>`;
+      mealsGridHtml += `<div class="meals-zones">`;
+      ["breakfast", "lunch", "dinner"].forEach((mealType, idx) => {
+        const meal = dayMeals[mealType];
+        const slotClass = ["top", "mid", "bottom"][idx];
+        let slotContent = "+";
+        let locked = false;
+        let recipe_uuid = meal && meal.recipe_uuid;
+        if (meal) {
+          locked = meal.locked ? true : false;
+          if (recipe_uuid && recipeMap[recipe_uuid]) {
+            slotContent = recipeMap[recipe_uuid].title || "+";
+          }
+        }
+        const lockIcon = `<span class="meal-lock-icon fa ${locked ? 'fa-lock' : 'fa-unlock'}" data-locked="${locked}" title="${locked ? 'Unlock' : 'Lock'}"></span>`;
+        mealsGridHtml += `<div class="meal-slot ${mealType} ${slotClass}" data-date="${dateStr}" data-meal-type="${mealType}" data-locked="${locked}" data-recipe-uuid="${recipe_uuid}">${lockIcon}<span class="meal-slot-title">${slotContent}</span></div>`;
+      });
+      mealsGridHtml += `</div></div>`;
+    }
+    mealsGridHtml += "</div>";
+    mealsViewContainer.innerHTML = monthHeaderHtml + gridHeaderHtml + mealsGridHtml;
+
+    // Add lock/unlock click handlers and manage lock state in memory
+    const mealSlotLocks = {};
+    document.querySelectorAll('.meal-slot').forEach(slot => {
+      const date = slot.dataset.date;
+      const mealType = slot.dataset.mealType;
+      const lockIcon = slot.querySelector('.meal-lock-icon');
+      // Initialize lock state from DOM or memory
+      const key = `${date}|${mealType}`;
+      let locked = slot.getAttribute('data-locked') === 'true';
+      if (mealSlotLocks[key] !== undefined) locked = mealSlotLocks[key];
+      slot.setAttribute('data-locked', locked);
+      if (lockIcon) {
         lockIcon.classList.toggle('fa-lock', locked);
         lockIcon.classList.toggle('fa-unlock', !locked);
         lockIcon.setAttribute('data-locked', locked);
         lockIcon.title = locked ? 'Unlock' : 'Lock';
-      };
-    }
-  });
-  window.mealSlotLocks = mealSlotLocks;
-  // Ensure meal slots are always droppable after rendering
-  if (typeof makeMealSlotsDroppable === 'function') {
-    makeMealSlotsDroppable();
+        lockIcon.onclick = (e) => {
+          e.stopPropagation();
+          locked = !locked;
+          mealSlotLocks[key] = locked;
+          slot.setAttribute('data-locked', locked);
+          lockIcon.classList.toggle('fa-lock', locked);
+          lockIcon.classList.toggle('fa-unlock', !locked);
+          lockIcon.setAttribute('data-locked', locked);
+          lockIcon.title = locked ? 'Unlock' : 'Lock';
+        };
+      }
+    });
+    window.mealSlotLocks = mealSlotLocks;
+    // Ensure meal slots are always droppable after rendering
+    // Only call after DOM is updated and grid is rendered
   }
 }
 
