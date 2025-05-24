@@ -1812,6 +1812,32 @@ body.dark-mode #weather-modal-forecast-graph {
   margin-left: -3px;
 }
 
+.snackbar {
+  position: fixed;
+  bottom: var(--space-lg);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--border-radius-card);
+  box-shadow: var(--elevation-1);
+  display: none;
+  align-items: center;
+  gap: var(--space-sm);
+  z-index: 3000;
+}
+.snackbar.show {
+  display: flex;
+}
+.snackbar-undo {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  font-family: var(--font-family);
+}
+
 /* Mobile and Touch Optimizations */
 @media (max-width: 768px) {
   :root {
@@ -3188,6 +3214,14 @@ body.dark-mode .meals-day-cell {
 #recipe-cancel:hover {
   filter: brightness(0.9);
 }
+#recipe-remove {
+  background: var(--color-accent-red);
+  color: var(--color-white);
+  border-radius: 6px;
+}
+#recipe-remove:hover {
+  filter: brightness(0.9);
+}
 #recipe-modal .modal-close {
   position: absolute;
   top: var(--space-sm);
@@ -3436,6 +3470,27 @@ body.dark-mode .side-panel-tab.active {
   border-radius: var(--border-radius-card);
   background: var(--color-bg-card);
   box-shadow: var(--elevation-1);
+}
+.meal-slot .delete-bg {
+  position: absolute;
+  inset: 0;
+  background: var(--color-accent-red);
+  color: var(--color-white);
+  display: flex;
+  align-items: center;
+  padding-left: var(--space-md);
+  z-index: 1;
+  pointer-events: none;
+  font-size: 28px;
+}
+.meal-slot .meal-slot-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.2s ease;
+  z-index: 2;
 }
 .meal-slot.breakfast { border-left: 4px solid var(--color-breakfast); }
 .meal-slot.lunch { border-left: 4px solid var(--color-lunch); }

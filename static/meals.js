@@ -401,6 +401,81 @@ function shuffleMealPlan() {
       handleMealSlotDrop.call(slot, e);
     });
   }
+
+  function makeMealSlotsSwipeable() {
+    document.querySelectorAll('.meal-slot').forEach(slot => {
+      const inner = slot.querySelector('.meal-slot-inner');
+      if (!inner) return;
+      let startX = 0;
+      let currentX = 0;
+      let dragging = false;
+
+      const endDrag = () => {
+        if (!dragging) return;
+        inner.style.transition = 'transform 0.2s ease';
+        const threshold = slot.offsetWidth * 0.4;
+        if (currentX > threshold) {
+          inner.style.transform = `translateX(${slot.offsetWidth}px)`;
+          setTimeout(() => removeMealSlot(slot), 150);
+        } else {
+          inner.style.transform = '';
+        }
+        dragging = false;
+      };
+
+      slot.addEventListener('pointerdown', e => {
+        startX = e.clientX;
+        currentX = 0;
+        dragging = true;
+        inner.style.transition = 'none';
+        slot.setPointerCapture(e.pointerId);
+      });
+      slot.addEventListener('pointermove', e => {
+        if (!dragging) return;
+        currentX = Math.max(0, e.clientX - startX);
+        inner.style.transform = `translateX(${currentX}px)`;
+      });
+      slot.addEventListener('pointerup', endDrag);
+      slot.addEventListener('pointercancel', endDrag);
+      slot.addEventListener('pointerleave', endDrag);
+    });
+  }
+
+  let lastRemoved = null;
+  function removeMealSlot(slot) {
+    const slotId = `${slot.dataset.date}|${slot.dataset.mealType}`;
+    const recipeUuid = slot.dataset.recipeUuid;
+    if (!recipeUuid) return;
+    const titleEl = slot.querySelector('.meal-slot-title');
+    lastRemoved = {
+      slot,
+      slotId,
+      recipe: { recipe_uuid: recipeUuid },
+      title: titleEl ? titleEl.textContent : ''
+    };
+    slot.dataset.recipeUuid = '';
+    slot.classList.add('empty-meal-slot');
+    if (titleEl) titleEl.textContent = '+';
+    fetch(`/api/mealslot/${encodeURIComponent(slotId)}`, { method: 'DELETE' });
+    showSnackbar('Recipe removed', undoLastRemoval);
+  }
+
+  function undoLastRemoval() {
+    if (!lastRemoved) return;
+    const { slot, slotId, recipe, title } = lastRemoved;
+    const titleEl = slot.querySelector('.meal-slot-title');
+    slot.dataset.recipeUuid = recipe.recipe_uuid;
+    slot.classList.remove('empty-meal-slot');
+    if (titleEl) titleEl.textContent = title;
+    fetch('/api/mealslot/restore', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slot_id: slotId, recipe })
+    });
+    lastRemoved = null;
+  }
+  window.removeMealSlot = removeMealSlot;
+  window.undoLastRemoval = undoLastRemoval;
   // Add debug CSS for dragover
   if (!document.getElementById('dragover-debug-style')) {
     const style = document.createElement('style');
@@ -413,6 +488,7 @@ function shuffleMealPlan() {
   window.onMealsGridRendered = function(data, recipeMap) {
     patchMealSlotClicksWithModal(data, recipeMap); // This is a global function
     makeMealSlotsDroppable();           // This function is defined within this IIFE
+    makeMealSlotsSwipeable();           // enable swipe to remove
     fetchHistory();                     // This will eventually call renderHistory, which calls makeRecipeItemsDraggable
     fetchFavorites();                   // This will eventually call renderFavorites, which calls makeRecipeItemsDraggable
   };
@@ -496,6 +572,14 @@ function shuffleMealPlan() {
     e.preventDefault();
     hideModal();
   });
+  const removeBtn = document.getElementById("recipe-remove");
+  if (removeBtn) {
+    removeBtn.addEventListener('click', () => {
+      hideModal();
+      const slot = document.querySelector(`.meal-slot[data-date="${currentDate}"][data-meal-type="${currentMealType}"]`);
+      if (slot) window.removeMealSlot(slot);
+    });
+  }
   // Close modal when clicking outside modal content
   modal.addEventListener("click", function(e) {
     if (e.target === modal) hideModal();
@@ -683,7 +767,9 @@ function renderMealsMonthView(data) {
           slotClasses += " empty-meal-slot";
         }
         const lockIcon = `<span class="meal-lock-icon material-symbols-outlined" data-locked="${locked}" title="${locked ? 'Unlock' : 'Lock'}">${locked ? 'lock' : 'lock_open'}</span>`;
-        mealsGridHtml += `<div class="${slotClasses}" data-date="${dateStr}" data-meal-type="${mealType}" data-locked="${locked}" data-recipe-uuid="${recipe_uuid}">${lockIcon}<span class="meal-slot-title">${slotContent}</span></div>`;
+        const deleteBg = `<div class="delete-bg"><span class="material-symbols-outlined">delete</span></div>`;
+        const inner = `<div class="meal-slot-inner">${lockIcon}<span class="meal-slot-title">${slotContent}</span></div>`;
+        mealsGridHtml += `<div class="${slotClasses}" data-date="${dateStr}" data-meal-type="${mealType}" data-locked="${locked}" data-recipe-uuid="${recipe_uuid}">${deleteBg}${inner}</div>`;
       });
       if (otherMonth) {
         mealsGridHtml += `</div>`;
