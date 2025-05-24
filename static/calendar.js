@@ -887,10 +887,22 @@ function renderMonthMultiDayBars(events, gridStart) {
   const cellHeight = cells[0].offsetHeight;
   overlay.innerHTML = "";
   const dayMs = 24 * 60 * 60 * 1000;
-  const rowStacks = Array(6)
-    .fill(0)
-    .map(() => []);
-  const bars = [];
+  const barHeight = 20;
+  const eventRows = new Map();
+  const rowRanges = [];
+
+  function assignRow(start, end, uid) {
+    for (let i = 0; ; i++) {
+      if (!rowRanges[i]) rowRanges[i] = [];
+      if (!rowRanges[i].some((r) => start < r.end && end > r.start)) {
+        rowRanges[i].push({ start, end });
+        eventRows.set(uid, i);
+        return i;
+      }
+    }
+  }
+
+  const pieces = [];
   events.forEach((ev) => {
     const start = new Date(ev.startDate || ev.start);
     const end = ev.endDate ? new Date(ev.endDate) : new Date(ev.end || ev.start);
@@ -900,10 +912,15 @@ function renderMonthMultiDayBars(events, gridStart) {
     if (eIdx < 0 || sIdx > 41) return;
     sIdx = Math.max(0, sIdx);
     eIdx = Math.min(41, eIdx);
-    const startRow = Math.floor(sIdx / 7);
-    const endRow = Math.floor(eIdx / 7);
     const startOffsetRaw = (start.getHours() + start.getMinutes() / 60) / 24;
     const endOffsetRaw = (end.getHours() + end.getMinutes() / 60) / 24;
+    const startFloat = sIdx + startOffsetRaw;
+    const endFloat = eIdx + endOffsetRaw;
+    const row = eventRows.has(ev.uid)
+      ? eventRows.get(ev.uid)
+      : assignRow(startFloat, endFloat, ev.uid || Symbol());
+    const startRow = Math.floor(sIdx / 7);
+    const endRow = Math.floor(eIdx / 7);
     for (let r = startRow; r <= endRow; r++) {
       const rowStart = r * 7;
       const rowEnd = rowStart + 6;
@@ -913,43 +930,45 @@ function renderMonthMultiDayBars(events, gridStart) {
       const endOffset = pieceEnd === eIdx ? endOffsetRaw : 1;
       const left = ((pieceStart - rowStart + startOffset) / 7) * 100;
       const right = ((pieceEnd - rowStart + endOffset) / 7) * 100;
-      let subRow = 0;
-      for (; subRow < rowStacks[r].length; subRow++) {
-        if (!rowStacks[r][subRow].some((b) => left < b.right && right > b.left))
-          break;
-      }
-      if (!rowStacks[r][subRow]) rowStacks[r][subRow] = [];
-      rowStacks[r][subRow].push({ left, right });
-      bars.push({
+      pieces.push({
+        uid: ev.uid || "",
+        title: ev.title,
+        color: ev.calendarColor || ev.color || "#1976d2",
+        row,
+        week: r,
         left,
         width: right - left,
-        top: r * cellHeight + subRow * 22,
-        color: ev.calendarColor || ev.color || "#1976d2",
-        title: ev.title,
-        uid: ev.uid || "",
-        row: r,
       });
     }
   });
-  bars.forEach((b) => {
+
+  // Calculate padding needed per week based on stacked rows
+  const weekPad = Array(6).fill(0);
+  pieces.forEach((p) => {
+    weekPad[p.week] = Math.max(weekPad[p.week], p.row + 1);
+  });
+
+  pieces.forEach((p) => {
     const bar = document.createElement("div");
     bar.className = "multiday-event-bar";
-    bar.dataset.eventUid = b.uid;
-    bar.style.left = b.left + "%";
-    bar.style.width = b.width + "%";
-    bar.style.top = b.top + "px";
-    bar.style.backgroundColor = b.color;
-    bar.textContent = b.title;
+    bar.dataset.eventUid = p.uid;
+    bar.style.left = p.left + "%";
+    bar.style.width = p.width + "%";
+    bar.style.top =
+      p.week * cellHeight + p.row * (barHeight + 2) + "px";
+    bar.style.backgroundColor = p.color;
+    bar.textContent = p.title;
     overlay.appendChild(bar);
   });
-  // add padding to cells based on stacked rows per week
-  rowStacks.forEach((stacks, r) => {
-    const height = stacks.length * 22;
+
+  weekPad.forEach((rows, r) => {
+    const height = rows * (barHeight + 2);
     for (let c = 0; c < 7; c++) {
       const idx = r * 7 + c;
       if (cells[idx]) cells[idx].style.paddingTop = height + "px";
     }
   });
+
   overlay
     .querySelectorAll(".multiday-event-bar")
     .forEach((bar) => {
