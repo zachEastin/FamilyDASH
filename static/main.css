@@ -4899,13 +4899,13 @@ body.dark-mode #weather-modal-forecast-graph {
 .analog-clock {
   width: min(90vw, 90vh, 100%);
   height: min(90vw, 90vh, 100%);
-  max-width: 500px;
-  max-height: 500px;
+  min-width: 500px;
+  min-height: 500px;
 }
 .clock-face {
   fill: none;
   stroke: var(--text-color);
-  stroke-width: 2;
+  stroke-width: 1;
 }
 .clock-tick {
   stroke: var(--text-color);

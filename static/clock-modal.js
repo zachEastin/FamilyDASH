@@ -263,17 +263,19 @@ function getAnalogClockHtml(style) {
     }
   }
   let ticks = "";
-  for (let i = 0; i < 60; i++) {
-    const ang = (i / 60) * Math.PI * 2;
-    const inner = i % 5 === 0 ? 88 : 92;
-    const outer = 96;
-    const x1 = 100 + inner * Math.sin(ang);
-    const y1 = 100 - inner * Math.cos(ang);
-    const x2 = 100 + outer * Math.sin(ang);
-    const y2 = 100 - outer * Math.cos(ang);
-    ticks += `<line class="clock-tick${
-      i % 5 === 0 ? " major" : ""
-    }" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`;
+  if (style !== "schedule") {
+    for (let i = 0; i < 60; i++) {
+      const ang = (i / 60) * Math.PI * 2;
+      const inner = i % 5 === 0 ? 88 : 92;
+      const outer = 96;
+      const x1 = 100 + inner * Math.sin(ang);
+      const y1 = 100 - inner * Math.cos(ang);
+      const x2 = 100 + outer * Math.sin(ang);
+      const y2 = 100 - outer * Math.cos(ang);
+      ticks += `<line class="clock-tick${
+        i % 5 === 0 ? " major" : ""
+      }" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`;
+    }
   }
   let arcs = "";
   let arcLabels = "";
