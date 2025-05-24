@@ -20,7 +20,7 @@ function saveClockPrefs() {
 }
 
 function createClockModal() {
-  if (document.getElementById('clock-modal-overlay')) return;
+  if (!document.getElementById('clock-modal-overlay')) return;
   const overlay = document.getElementById('clock-modal-overlay');
   overlay.addEventListener('click', e => {
     if (e.target === overlay) closeClockModal();
