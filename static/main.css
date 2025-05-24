@@ -916,6 +916,11 @@ body.dark-mode .week-calendar .no-events {
   margin-bottom: 16px;
 }
 
+.checklists-row h4 {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #aaa;
+}
+
 .reminder-item {
   display: flex;
   align-items: center;
@@ -1954,6 +1959,7 @@ body.dark-mode .weather-forecast-day-date {
   justify-content: center;
   gap: 20px;
   padding: 20px;
+  margin-bottom: 20px;
   background: rgba(33, 150, 243, 0.05);
   border-radius: 12px;
 }
