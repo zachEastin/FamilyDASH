@@ -2987,7 +2987,6 @@ body.dark-mode .meals-day-cell {
   font-weight: 600;
   font-size: var(--font-body);
   background: var(--color-bg-card);
-  padding: var(--space-sm) var(--space-md);
   border-bottom: 1px solid var(--color-gray);
   user-select: none;
   justify-content: space-between;
@@ -3002,7 +3001,7 @@ body.dark-mode .meals-day-cell {
   font-size: var(--font-small);
   font-weight: 500;
   color: var(--color-primary);
-  padding: var(--space-xs) var(--space-md);
+  padding: var(--space-sm) var(--space-md);
   border-radius: var(--border-radius-btn) var(--border-radius-btn) 0 0;
   cursor: pointer;
   opacity: 0.7;
@@ -3022,7 +3021,7 @@ body.dark-mode .meals-day-cell {
 .side-panel-content {
   flex: 1 1 auto;
   overflow-y: auto;
-  padding: var(--space-md);
+  padding-top: var(--space-md);
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
