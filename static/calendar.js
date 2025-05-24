@@ -244,17 +244,14 @@ function updateIcloudWeekView(data) {
   // Day headers
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   html += '<div class="day-headers">';
+  const currentDayIdx = now.getDay();
   for (let i = 0; i < 7; i++) {
-    html += `<div class="day-header">${
-      dayNames[i]
-    }<br><span style='font-size:0.8em'>${days[i].getMonth() + 1}/${days[
-      i
-    ].getDate()}</span></div>`;
+    const isTodayHeader = i === currentDayIdx;
+    html += `<div class="day-header${isTodayHeader ? " today" : ""}"><span class="day-name">${dayNames[i]}</span><span class="day-date">${days[i].getMonth() + 1}/${days[i].getDate()}</span></div>`;
   }
   html += "</div>";
   // Day cells
   html += '<div class="day-cells">';
-  const currentDayIdx = now.getDay();
   const currentHour = now.getHours() + now.getMinutes() / 60;
   for (let i = 0; i < 7; i++) {
     const isToday = i === currentDayIdx;
@@ -324,33 +321,27 @@ function updateIcloudWeekView(data) {
         // Set width and left offset for overlapping events
         const widthPct = 100 / colCount;
         const leftPct = colIdx * widthPct;
-        // Use event color if available
-        const bgColor = ev.color || "#1976d2";
-        const textColor = "#fff";
+        const cls = getCalendarClass(ev.calendar);
+        const icon = getCalendarIcon(cls);
+        const isNow =
+          isToday && currentHour >= startHour && currentHour < endHour;
+        const eventClasses = [
+          "event-block",
+          "event-vertical",
+          `event-${cls || "default"}`,
+        ];
+        if (isNow) eventClasses.push("event-now");
+        const style = `position:absolute; left:${leftPct}%; width:calc(${widthPct}% - 8px); top:${topPct}%; height:${heightPct}%;`;
+        const startStr = st.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        const endStr = et ? et.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+        const iconSpan = `<span class=\"event-icon material-symbols-outlined\">${icon}</span>`;
+        let contentHtml;
         if (showOnlyLabel) {
-          html += `<div class="event-block event-vertical" title="${
-            ev.title
-          }" data-event-uid="${ev.uid || ""}"
-            style="position:absolute; left:${leftPct}%; width:calc(${widthPct}% - 8px); top:${topPct}%; height:${heightPct}%; background:${bgColor}; color:${textColor}; display:flex; align-items:center; justify-content:center;">
-            <span class="event-title">${ev.title}</span>
-          </div>`;
+          contentHtml = `<span class=\"event-title\">${ev.title}</span>`;
         } else {
-          const startStr = st.toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          });
-          const endStr = et
-            ? et.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-            : "";
-          html += `<div class="event-block event-vertical" title="${
-            ev.title
-          }" data-event-uid="${ev.uid || ""}"
-            style="position:absolute; left:${leftPct}%; calc(${widthPct}% - 8px); top:${topPct}%; height:${heightPct}%; background:${bgColor}; color:${textColor}; display:flex; flex-direction:column; justify-content:space-between;">
-            <span class="event-time event-time-start">${startStr}</span>
-            <span class="event-title">${ev.title}</span>
-            <span class="event-time event-time-end">${endStr}</span>
-          </div>`;
+          contentHtml = `<div class=\"event-content\"><span class=\"event-title\">${ev.title}</span><span class=\"event-time-range\">${startStr}${endStr ? ` - ${endStr}` : ""}</span></div>`;
         }
+        html += `<div class=\"${eventClasses.join(" ")}\" title=\"${ev.title}\" data-event-uid=\"${ev.uid || ""}\" style=\"${style}\">${iconSpan}${contentHtml}</div>`;
       }
     }
     html += "</div>";
@@ -773,27 +764,42 @@ function generateStubWeekEvents() {
   weekStart.setHours(0, 0, 0, 0);
   const stubEvents = [];
   const eventTemplates = [
-    { title: "Morning Meeting", startHour: 9, endHour: 10 },
-    { title: "Lunch Break", startHour: 12, endHour: 13 },
-    { title: "Afternoon Focus", startHour: 14, endHour: 16 },
-    { title: "Evening Family", startHour: 18, endHour: 19 },
+    { title: "Morning Meeting", startHour: 9, endHour: 10, calendar: "work" },
+    { title: "Client Call", startHour: 9.5, endHour: 10.5, calendar: "work" },
+    { title: "Lunch Break", startHour: 12, endHour: 13, calendar: "personal" },
+    { title: "Kids Pickup", startHour: 15, endHour: 16, calendar: "family" },
+    { title: "Soccer Practice", startHour: 17, endHour: 18.5, calendar: "sports" },
+    { title: "Birthday Party", startHour: 19, endHour: 21, calendar: "birthday" },
   ];
   for (let d = 0; d < 7; d++) {
     for (let e = 0; e < eventTemplates.length; e++) {
-      // Stagger events for variety
       if ((d + e) % 2 === 0) {
         const day = new Date(weekStart);
         day.setDate(weekStart.getDate() + d);
         const start = new Date(day);
-        start.setHours(eventTemplates[e].startHour, 0, 0, 0);
+        start.setHours(eventTemplates[e].startHour, (eventTemplates[e].startHour % 1) * 60, 0, 0);
         const end = new Date(day);
-        end.setHours(eventTemplates[e].endHour, 0, 0, 0);
+        end.setHours(eventTemplates[e].endHour, (eventTemplates[e].endHour % 1) * 60, 0, 0);
         stubEvents.push({
           title: eventTemplates[e].title,
           start: start.toISOString(),
           end: end.toISOString(),
+          calendar: eventTemplates[e].calendar,
         });
       }
+    }
+    if (d === now.getDay()) {
+      const startNow = new Date(weekStart);
+      startNow.setDate(weekStart.getDate() + d);
+      const endNow = new Date(startNow);
+      startNow.setHours(now.getHours() - 1, 0, 0, 0);
+      endNow.setHours(now.getHours() + 1, 0, 0, 0);
+      stubEvents.push({
+        title: "Happening Now",
+        start: startNow.toISOString(),
+        end: endNow.toISOString(),
+        calendar: "work",
+      });
     }
   }
   return stubEvents;
@@ -814,15 +820,17 @@ function showEventDetailsModal(eventData) {
   const modalContent = document.createElement("div");
   modalContent.className = "event-details-modal-content";
 
-  // Darken the event color for the modal background
-  const eventColor = eventData.color || "#1976d2";
-  modalContent.style.backgroundColor = darkenColor(eventColor, 20); // Darken by 20%
-  // Ensure text color contrasts with the new background
-  modalContent.style.color = getContrastColor(
-    modalContent.style.backgroundColor
-  );
+  const cls = getCalendarClass(eventData.calendar);
+  const icon = getCalendarIcon(cls);
 
-  let contentHtml = `<h2>${eventData.title}</h2>`;
+  const header = document.createElement("div");
+  header.className = `event-details-header event-${cls || "default"}`;
+  header.innerHTML = `<span class="material-symbols-outlined event-details-icon">${icon}</span><h2>${eventData.title}</h2>`;
+
+  const body = document.createElement("div");
+  body.className = "event-details-body";
+
+  let contentHtml = "";
   const startDate = new Date(eventData.start);
   const endDate = eventData.end ? new Date(eventData.end) : null;
 
@@ -897,7 +905,7 @@ function showEventDetailsModal(eventData) {
     contentHtml += `</ul>`;
   }
 
-  modalContent.innerHTML = contentHtml;
+  body.innerHTML = contentHtml;
 
   const closeButton = document.createElement("button");
   closeButton.textContent = "Close";
@@ -908,8 +916,10 @@ function showEventDetailsModal(eventData) {
       once: true,
     });
   };
-  modalContent.appendChild(closeButton);
+  body.appendChild(closeButton);
 
+  modalContent.appendChild(header);
+  modalContent.appendChild(body);
   modal.appendChild(modalContent);
   document.body.appendChild(modal);
 
