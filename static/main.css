@@ -4829,3 +4829,60 @@ body.dark-mode #weather-modal-forecast-graph {
   color: #666;
   margin-left: -3px;
 }
+/* --- Clock Modal Styles --- */
+.clock-modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 3000;
+}
+.clock-modal-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.clock-modal-content {
+  background: var(--widget-bg);
+  color: var(--text-color);
+  border-radius: var(--border-radius-card);
+  box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+  width: 90vw;
+  height: 90vh;
+  max-width: 600px;
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  outline: none;
+}
+.clock-placeholder {
+  font-size: 5vw;
+}
+.clock-modal-hint {
+  position: absolute;
+  opacity: 0.4;
+  pointer-events: none;
+  color: var(--text-color);
+}
+.clock-modal-hint.vertical {
+  top: 50%;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(-50%);
+}
+.clock-modal-hint.horizontal {
+  bottom: 10px;
+  left: 50%;
+  display: flex;
+  gap: 4px;
+  transform: translateX(-50%);
+}
+
