@@ -315,8 +315,8 @@ function getAnalogClockHtml(style) {
       <g class="clock-numbers">${nums}</g>
       <g class="schedule-labels">${arcLabels}</g>
       <line class="clock-hand hour" x1="100" y1="100" x2="100" y2="68" />
-      <line class="clock-hand minute" x1="100" y1="100" x2="100" y2="48" />
-      <line class="clock-hand second" x1="100" y1="100" x2="100" y2="36" />
+      <line class="clock-hand minute" x1="100" y1="100" x2="100" y2="42" />
+      <line class="clock-hand second" x1="100" y1="100" x2="100" y2="20" />
     </svg>
     <div class="clock-date">${dateStr}</div>
     ${
