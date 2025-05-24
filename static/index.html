@@ -171,6 +171,10 @@
                 <span class="material-symbols-outlined">cancel</span>
                 <span>Cancel</span>
               </button>
+              <button type="button" id="recipe-remove">
+                <span class="material-symbols-outlined">delete</span>
+                <span>Remove</span>
+              </button>
           </div>
           
           </div>
@@ -189,8 +193,12 @@
         <input type="date" id="shopping-end-date">
         <button id="generate-shopping-list">Generate List</button>
       </div>
-      <ul id="shopping-list-output"></ul>
-    </div>
+  <ul id="shopping-list-output"></ul>
+  </div>
+  </div>
+  <div id="snackbar" class="snackbar" style="display:none;">
+    <span class="snackbar-message"></span>
+    <button class="snackbar-undo">Undo</button>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="/static/meals.js"></script>

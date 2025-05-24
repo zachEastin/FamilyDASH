@@ -425,6 +425,27 @@ function renderChores(id) {
       }
     });
 
-    list.appendChild(el);
+  list.appendChild(el);
   });
 }
+
+// --- Snackbar utility ---
+let snackbarTimer = null;
+function showSnackbar(message, undoCallback) {
+  const sb = document.getElementById('snackbar');
+  if (!sb) return;
+  sb.querySelector('.snackbar-message').textContent = message + ' –';
+  const btn = sb.querySelector('.snackbar-undo');
+  btn.onclick = () => {
+    clearTimeout(snackbarTimer);
+    sb.classList.remove('show');
+    if (undoCallback) undoCallback();
+  };
+  if (snackbarTimer) clearTimeout(snackbarTimer);
+  sb.classList.add('show');
+  snackbarTimer = setTimeout(() => {
+    sb.classList.remove('show');
+    snackbarTimer = null;
+  }, 5000);
+}
+window.showSnackbar = showSnackbar;
