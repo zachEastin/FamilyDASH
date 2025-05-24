@@ -37,16 +37,19 @@ function updateFavoriteStar() {
   function renderResults(results) {
     resultsContainer.innerHTML = '';
     if (!results || !results.length) {
-      resultsContainer.innerHTML = '<div style="color:#888;">No results found.</div>';
+      resultsContainer.innerHTML = '<div class="no-results">No results found.</div>';
       return;
-    }results.forEach(r => {
+    }
+    results.forEach(r => {
       const card = document.createElement('div');
       card.className = 'spoonacular-result-card';
-      card.style = 'display:flex;align-items:center;gap:0.5em;padding:0.3em 0;border-bottom:1px solid #eee;';
       card.innerHTML = `
-        <img src="${r.image || ''}" alt="" style="width:40px;height:40px;object-fit:cover;border-radius:4px;">
-        <span style="flex:1;">${r.title}</span>
-        <button type="button" class="spoonacular-import-btn" data-id="${r.id}">Import</button>
+        <img src="${r.image || ''}" alt="" class="result-thumb">
+        <span class="result-title">${r.title}</span>
+        <button type="button" class="spoonacular-import-btn" data-id="${r.id}">
+          <span class="material-symbols-outlined">file_download</span>
+          <span>Import</span>
+        </button>
       `;
       resultsContainer.appendChild(card);
     });

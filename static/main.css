@@ -11,6 +11,7 @@
   --color-accent-purple: #8B5CF6;
   --color-accent-orange: #F97316;
   --color-gray: #6B7280;
+  --color-white: #ffffff;
   --color-breakfast: #3B82F6;
   --color-lunch: #10B981;
   --color-dinner: #F97316;
@@ -62,6 +63,7 @@ body.dark-mode {
   --color-accent-purple: #8B5CF6;
   --color-accent-orange: #F97316;
   --color-gray: #6B7280;
+  --color-white: #ffffff;
   --color-breakfast: #3B82F6;
   --color-lunch: #10B981;
   --color-dinner: #F97316;
@@ -2827,54 +2829,96 @@ body.dark-mode .meals-day-cell {
 
 #recipe-modal.modal {
   position: fixed;
-  z-index: 1000;
-  left: 0; top: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.4);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 1000;
+}
+#recipe-modal.modal.open {
+  opacity: 1;
+  pointer-events: auto;
 }
 #recipe-modal .modal-content {
-  background: var(--widget-bg, #fff);
-  color: var(--text-color, #000);
-  border-radius: 10px;
-  padding: 24px 24px 16px 24px;
-  min-width: 320px;
-  max-width: 95vw;
-  box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+  background: var(--widget-bg);
+  color: var(--text-color);
+  border-radius: var(--border-radius-card);
+  box-shadow: var(--elevation-1);
+  padding: var(--space-lg);
+  width: 60vw;
+  height: 60vh;
+  overflow-y: auto;
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-lg);
+  font-family: var(--font-family);
+  transform: scale(0.92);
+  transition: transform 0.3s ease;
+}
+#recipe-modal.modal.open .modal-content {
+  transform: scale(1);
+}
+#recipe-modal h2 {
+  margin: 0;
+  font-size: var(--font-header);
+  font-weight: bold;
+}
+#recipe-modal form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+#recipe-modal .modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+@media (min-width: 600px) {
+  #recipe-modal .modal-body {
+    flex-direction: row;
+  }
+}
+#recipe-modal .modal-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
 }
 #recipe-modal label {
+  font-size: var(--font-body);
   font-weight: 500;
-  margin-top: 8px;
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--text-color);
 }
 #recipe-modal input[type="text"],
 #recipe-modal textarea {
-  width: 100%;
-  margin-top: 2px;
-  margin-bottom: 8px;
-  padding: 6px 8px;
-  border: 1px solid #bbb;
-  border-radius: 4px;
-  font-size: 1em;
-  background: #fff;
-  color: #222;
+  /* width: 100%; */
+  padding: var(--space-sm);
+  border: 1px solid var(--color-gray);
+  border-radius: var(--border-radius-btn);
+  background: var(--color-bg);
+  color: var(--text-color);
+  font-size: var(--font-body);
+  font-family: var(--font-family);
 }
-#recipe-modal textarea {
-  resize: vertical;
+#recipe-modal input[type="text"]:focus,
+#recipe-modal textarea:focus {
+  outline: 2px solid var(--color-primary);
 }
 #recipe-modal .favorite-toggle {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 8px 0 8px 0;
+  gap: var(--space-sm);
 }
 #favorite-star {
-  font-size: 1.5em;
+  font-size: 32px;
   color: var(--color-gray);
   cursor: pointer;
   transition: color 0.2s;
@@ -2882,30 +2926,134 @@ body.dark-mode .meals-day-cell {
 }
 #favorite-star.favorited {
   color: var(--color-accent-yellow);
-  text-shadow: 0 0 4px rgba(255, 255, 255, 0.6);
 }
-#recipe-modal .recipe-tags label {
-  margin-right: 12px;
-  font-weight: 400;
+#recipe-modal .tags-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+#recipe-modal .tag-chip {
+  display: flex;
+  align-items: center;
+}
+#recipe-modal .tag-chip input {
+  display: none;
+}
+#recipe-modal .tag-chip span {
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--border-radius-btn);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-gray);
+  font-size: var(--font-small);
+  color: var(--text-color);
+  cursor: pointer;
+  user-select: none;
+}
+#recipe-modal .tag-chip input:checked + span {
+  background: var(--color-primary);
+  color: var(--color-white);
+  border-color: var(--color-primary);
+}
+#recipe-modal .search-row {
+  display: flex;
+  gap: var(--space-sm);
+}
+#spoonacular-search-input {
+  flex: 1;
+}
+#spoonacular-results {
+  max-height: 280px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+.spoonacular-result-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  background: var(--color-bg-card);
+  border-radius: var(--border-radius-card);
+  box-shadow: var(--elevation-1);
+  padding: var(--space-sm);
+  transition: filter 0.2s;
+}
+.spoonacular-result-card:hover {
+  filter: brightness(0.97);
+}
+.spoonacular-result-card img {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: var(--border-radius-btn);
+}
+.spoonacular-result-card .result-title {
+  flex: 1;
+}
+.no-results {
+  color: var(--color-gray);
+  font-size: var(--font-small);
+  padding: var(--space-sm);
+}
+.spoonacular-import-btn {
+  background: var(--color-primary);
+  color: var(--color-white);
+  border: none;
+  border-radius: var(--border-radius-btn);
+  padding: var(--space-xs) var(--space-md);
+  font-size: var(--font-small);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  transition: background 0.2s;
+}
+.spoonacular-import-btn:hover {
+  filter: brightness(0.9);
 }
 #recipe-modal .modal-actions {
   display: flex;
-  gap: 12px;
-  margin-top: 12px;
+  gap: var(--space-md);
   justify-content: flex-end;
+}
+#recipe-modal .modal-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--font-body);
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--border-radius-btn);
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: var(--font-family);
+}
+#recipe-save {
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+#recipe-save:hover {
+  filter: brightness(0.9);
+}
+#recipe-cancel {
+  background: var(--color-gray);
+  color: var(--color-white);
+}
+#recipe-cancel:hover {
+  filter: brightness(0.9);
 }
 #recipe-modal .modal-close {
   position: absolute;
-  top: 8px;
-  right: 12px;
+  top: var(--space-sm);
+  right: var(--space-sm);
   background: none;
   border: none;
-  font-size: 1.5em;
-  color: #888;
+  font-size: 24px;
+  color: var(--color-gray);
   cursor: pointer;
 }
 #recipe-modal .modal-close:hover {
-  color: #c00;
+  color: var(--color-accent-red);
 }
 
 .meals-panel-wrapper {
