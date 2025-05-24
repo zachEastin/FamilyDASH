@@ -51,6 +51,8 @@
   --event-birthday-text: #111827;
   --event-default-bg: var(--color-gray);
   --event-default-text: #fff;
+  --clock-arc-margin: 8px;
+  --clock-arc-thickness: 14px;
 }
 body.dark-mode {
   --color-bg: #111827;
@@ -4854,7 +4856,7 @@ body.dark-mode #weather-modal-forecast-graph {
   box-shadow: 0 5px 20px rgba(0,0,0,0.2);
   width: 90vw;
   height: 90vh;
-  max-width: 600px;
+  max-width: 90vh;
   max-height: 90vh;
   display: flex;
   align-items: center;
@@ -4884,5 +4886,95 @@ body.dark-mode #weather-modal-forecast-graph {
   display: flex;
   gap: 4px;
   transform: translateX(-50%);
+}
+
+/* Analog Clock Styles */
+.analog-clock-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  gap: var(--space-sm);
+}
+.analog-clock {
+  width: min(90vw, 90vh, 100%);
+  height: min(90vw, 90vh, 100%);
+  min-width: 800px;
+  min-height: 800px;
+}
+.clock-face {
+  fill: none;
+  stroke: var(--text-color);
+  stroke-width: 1;
+}
+.clock-tick {
+  stroke: var(--text-color);
+  stroke-width: 1;
+}
+.clock-tick.major { stroke-width: 2; }
+.clock-num {
+  font-size: 12px;
+  fill: var(--text-color);
+}
+.clock-hand {
+  stroke: var(--text-color);
+  stroke-linecap: round;
+}
+.clock-hand.hour { stroke-width: 3; }
+.clock-hand.minute { stroke-width: 2; }
+.clock-hand.second { stroke-width: 1; stroke: var(--color-accent-red); }
+.schedule-arcs path {
+  fill: none;
+  stroke-width: var(--clock-arc-thickness);
+  stroke-linecap: round;
+  stroke-opacity: 0.7;
+}
+.schedule-label {
+  font-size: 5px;
+  fill: var(--text-color);
+  font-family: var(--font-family);
+  font-weight: 300;
+  pointer-events: none;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+.clock-date {
+  font-size: 1.2em;
+}
+.edit-schedule-btn {
+  padding: var(--space-xs) var(--space-sm);
+  border: none;
+  border-radius: var(--border-radius-btn);
+  background: var(--color-primary);
+  color: var(--color-white);
+  cursor: pointer;
+}
+.schedule-editor {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--widget-bg);
+  color: var(--text-color);
+  border-radius: var(--border-radius-card);
+  box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+  padding: var(--space-md);
+  z-index: 3050;
+  width: 80%;
+  max-width: 300px;
+}
+.schedule-editor .schedule-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-xs);
+}
+.schedule-editor .schedule-actions {
+  margin-top: var(--space-sm);
+  display: flex;
+  gap: var(--space-xs);
+  justify-content: flex-end;
 }
 
