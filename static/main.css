@@ -4901,8 +4901,8 @@ body.dark-mode #weather-modal-forecast-graph {
 .analog-clock {
   width: min(90vw, 90vh, 100%);
   height: min(90vw, 90vh, 100%);
-  min-width: 500px;
-  min-height: 500px;
+  min-width: 800px;
+  min-height: 800px;
 }
 .clock-face {
   fill: none;
@@ -4932,10 +4932,10 @@ body.dark-mode #weather-modal-forecast-graph {
   stroke-opacity: 0.7;
 }
 .schedule-label {
-  font-size: 10px;
+  font-size: 5px;
   fill: var(--text-color);
   font-family: var(--font-family);
-  font-weight: 500;
+  font-weight: 300;
   pointer-events: none;
   text-anchor: middle;
   dominant-baseline: middle;

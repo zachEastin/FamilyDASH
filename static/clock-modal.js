@@ -246,7 +246,7 @@ function getAnalogClockHtml(style) {
     for (let i = step; i <= maxNum; i += step) {
       const displayHour = is24Hour ? i : i;
       const ang = is24Hour ? (i / 24) * Math.PI * 2 : (i / 12) * Math.PI * 2;
-      const radius = is24Hour ? 85 : 80; // Slightly closer for 24h to fit more numbers
+      const radius = is24Hour ? 70 : 65; // reduced radius for numbers
       const x = 100 + radius * Math.sin(ang);
       const y = 100 - radius * Math.cos(ang);
 
@@ -264,8 +264,8 @@ function getAnalogClockHtml(style) {
   if (style !== "schedule") {
     for (let i = 0; i < 60; i++) {
       const ang = (i / 60) * Math.PI * 2;
-      const inner = i % 5 === 0 ? 88 : 92;
-      const outer = 96;
+      const inner = i % 5 === 0 ? 75 : 79; // reduced
+      const outer = 83; // reduced
       const x1 = 100 + inner * Math.sin(ang);
       const y1 = 100 - inner * Math.cos(ang);
       const x2 = 100 + outer * Math.sin(ang);
@@ -280,10 +280,9 @@ function getAnalogClockHtml(style) {
   let arcPaths = "";
   if (style === "schedule") {
     const schedule = loadSchedule();
-    // Use CSS variables for margin and thickness
-    const arcMargin = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--clock-arc-margin')) || 8;
-    const arcThickness = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--clock-arc-thickness')) || 14;
-    const baseRadius = 98 + arcMargin + arcThickness / 2; // Place arc just outside clock face
+    const arcMargin = 4; // reduced
+    const arcThickness = 2; // reduced
+    const baseRadius = 90; // reduced, fits inside 200x200
     const seg = Math.PI / 12;
     schedule.forEach((item, index) => {
       const [h, m] = item.time.split(":").map(Number);
@@ -311,13 +310,13 @@ function getAnalogClockHtml(style) {
         ${arcPaths}
       </defs>
       <g class="schedule-arcs">${arcs}</g>
-      <circle class="clock-face" cx="100" cy="100" r="98" />
+      <circle class="clock-face" cx="100" cy="100" r="80" />
       <g class="clock-ticks">${ticks}</g>
       <g class="clock-numbers">${nums}</g>
       <g class="schedule-labels">${arcLabels}</g>
-      <line class="clock-hand hour" x1="100" y1="100" x2="100" y2="60" />
-      <line class="clock-hand minute" x1="100" y1="100" x2="100" y2="40" />
-      <line class="clock-hand second" x1="100" y1="100" x2="100" y2="30" />
+      <line class="clock-hand hour" x1="100" y1="100" x2="100" y2="68" />
+      <line class="clock-hand minute" x1="100" y1="100" x2="100" y2="48" />
+      <line class="clock-hand second" x1="100" y1="100" x2="100" y2="36" />
     </svg>
     <div class="clock-date">${dateStr}</div>
     ${
