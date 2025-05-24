@@ -2849,9 +2849,8 @@ body.dark-mode .meals-day-cell {
   border-radius: var(--border-radius-card);
   box-shadow: var(--elevation-1);
   padding: var(--space-lg);
-  width: 95vw;
-  max-width: 540px;
-  max-height: 90vh;
+  width: 60vw;
+  height: 60vh;
   overflow-y: auto;
   position: relative;
   display: flex;
@@ -2900,7 +2899,7 @@ body.dark-mode .meals-day-cell {
 }
 #recipe-modal input[type="text"],
 #recipe-modal textarea {
-  width: 100%;
+  /* width: 100%; */
   padding: var(--space-sm);
   border: 1px solid var(--color-gray);
   border-radius: var(--border-radius-btn);
@@ -2963,7 +2962,7 @@ body.dark-mode .meals-day-cell {
   flex: 1;
 }
 #spoonacular-results {
-  max-height: 180px;
+  max-height: 280px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;

@@ -93,7 +93,7 @@
       <h2 id="recipe-modal-title" class="modal-title">Edit Recipe</h2>
       <form id="recipe-form" class="recipe-form" autocomplete="off">
         <div class="modal-body">
-          <!-- Left column: title, favorite and tags -->
+          <!-- Left column: title, favorite, tags, and search -->
           <div class="modal-col left">
             <label for="recipe-title">
               <span class="material-symbols-outlined">restaurant_menu</span>
@@ -118,16 +118,6 @@
                 <label class="tag-chip"><input type="checkbox" name="tags" value="gluten-free"><span>Gluten-Free</span></label>
               </div>
             </div>
-          </div>
-
-          <!-- Right column: ingredients and search -->
-          <div class="modal-col right">
-            <label for="recipe-ingredients">
-              <span class="material-symbols-outlined">list</span>
-              <span>Ingredients</span>
-            </label>
-            <textarea id="recipe-ingredients" name="ingredients" rows="5" placeholder="One per line or comma separated"></textarea>
-
             <div class="search-group">
               <label for="spoonacular-search-input">Search Recipes</label>
               <div class="search-row">
@@ -139,18 +129,27 @@
             </div>
             <div id="spoonacular-results" class="spoonacular-results"></div>
           </div>
-        </div>
 
-        <!-- Modal actions -->
-        <div class="modal-actions">
-          <button type="submit" id="recipe-save">
-            <span class="material-symbols-outlined">save</span>
-            <span>Save</span>
-          </button>
-          <button type="button" id="recipe-cancel">
-            <span class="material-symbols-outlined">cancel</span>
-            <span>Cancel</span>
-          </button>
+          <!-- Right column: ingredients -->
+          <div class="modal-col right">
+            <label for="recipe-ingredients">
+              <span class="material-symbols-outlined">list</span>
+              <span>Ingredients</span>
+            </label>
+            <textarea id="recipe-ingredients" name="ingredients" rows="23" placeholder="One per line or comma separated"></textarea>
+            <!-- Modal actions -->
+            <div class="modal-actions">
+              <button type="submit" id="recipe-save">
+                <span class="material-symbols-outlined">save</span>
+                <span>Save</span>
+              </button>
+              <button type="button" id="recipe-cancel">
+                <span class="material-symbols-outlined">cancel</span>
+                <span>Cancel</span>
+              </button>
+          </div>
+          
+          </div>
         </div>
       </form>
     </div>
