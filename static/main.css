@@ -1350,7 +1350,7 @@ body.dark-mode #network-status .network-label {
   left: 0;
   right: 0;
   bottom: 0;
-  width: calc(100vw - var(--sidebar-width) - 24px);
+  width: calc(100vw - var(--sidebar-width) - 44px);
   background: var(--widget-bg);
   display: flex;
   flex-direction: row;
