@@ -335,14 +335,14 @@ function renderChecklist(id) {
     el.className = 'reminder-item';
     if (item.priority) el.classList.add(`priority-${item.priority}`);
     if (item.done) el.classList.add('done');
+    el.tabIndex = 0;
+    el.setAttribute('role', 'checkbox');
+    el.setAttribute('aria-checked', item.done);
 
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.checked = item.done;
-    cb.addEventListener('change', () => {
-      item.done = cb.checked;
-      renderChecklist(id);
-    });
+    const check = document.createElement('span');
+    check.className = 'checkmark material-symbols-outlined';
+    check.textContent = 'check_circle';
+    el.appendChild(check);
 
     const titleSpan = document.createElement('span');
     titleSpan.className = 'reminder-title';
@@ -352,7 +352,6 @@ function renderChecklist(id) {
       titleSpan.textContent = item.title;
     }
 
-    el.appendChild(cb);
     el.appendChild(titleSpan);
 
     if (id === 'today' && item.dueDate) {
@@ -367,6 +366,18 @@ function renderChecklist(id) {
       noteSpan.textContent = ` - ${item.note}`;
       el.appendChild(noteSpan);
     }
+
+    const toggle = () => {
+      item.done = !item.done;
+      renderChecklist(id);
+    };
+    el.addEventListener('click', toggle);
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggle();
+      }
+    });
 
     const container = item.done ? done : pending;
     if (container) container.appendChild(el);
@@ -387,21 +398,33 @@ function renderChores(id) {
     const el = document.createElement('div');
     el.className = 'reminder-item chore-item';
     if (item.done) el.classList.add('done');
+    el.tabIndex = 0;
+    el.setAttribute('role', 'checkbox');
+    el.setAttribute('aria-checked', item.done);
 
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.checked = item.done;
-    cb.addEventListener('change', () => {
-      item.done = cb.checked;
-      el.classList.toggle('done', item.done);
-    });
+    const check = document.createElement('span');
+    check.className = 'checkmark material-symbols-outlined';
+    check.textContent = 'check_circle';
+    el.appendChild(check);
 
     const span = document.createElement('span');
     span.className = 'reminder-title';
     span.textContent = item.title;
 
-    el.appendChild(cb);
     el.appendChild(span);
+
+    const toggle = () => {
+      item.done = !item.done;
+      renderChores(id);
+    };
+    el.addEventListener('click', toggle);
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggle();
+      }
+    });
+
     list.appendChild(el);
   });
 }
