@@ -4918,7 +4918,6 @@ body.dark-mode #weather-modal-forecast-graph {
 .clock-hand {
   stroke: var(--text-color);
   stroke-linecap: round;
-  transform-origin: 100px 100px;
 }
 .clock-hand.hour { stroke-width: 3; }
 .clock-hand.minute { stroke-width: 2; }

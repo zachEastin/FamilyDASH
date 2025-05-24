@@ -116,28 +116,53 @@ function stopAnalogClock() {
 }
 
 function updateAnalogTime() {
-  const overlay = document.getElementById('clock-modal-overlay');
-  const hourHand = overlay.querySelector('.clock-hand.hour');
+  const overlay = document.getElementById("clock-modal-overlay");
+  const hourHand = overlay.querySelector(".clock-hand.hour");
   if (!hourHand) return;
   const now = new Date();
   const sec = now.getSeconds();
   const min = now.getMinutes() + sec / 60;
-  const hr = now.getHours() % 12 + min / 60;
-  hourHand.setAttribute('transform', `rotate(${hr * 30} 100 100)`);
-  const minHand = overlay.querySelector('.clock-hand.minute');
-  const secHand = overlay.querySelector('.clock-hand.second');
-  if (minHand) minHand.setAttribute('transform', `rotate(${min * 6} 100 100)`);
-  if (secHand) secHand.setAttribute('transform', `rotate(${sec * 6} 100 100)`);
-  const dateEl = overlay.querySelector('.clock-date');
-  if (dateEl) dateEl.textContent = now.toLocaleDateString(undefined, {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric'
-  });
+
+  // Check if we're in schedule mode for 24-hour display
+  const type = CLOCK_TYPES[clockTypeIndex];
+  const option = type.options[clockOptionIndex];
+  const is24Hour = type.id === "analog" && option === "schedule";
+
+  const hr = is24Hour
+    ? now.getHours() + min / 60
+    : (now.getHours() % 12) + min / 60;
+
+  const hourRotation = is24Hour ? hr * 15 : hr * 30; // 15 degrees per hour for 24h, 30 for 12h
+  hourHand.setAttribute("transform", `rotate(${hourRotation} 100 100)`);
+
+  const minHand = overlay.querySelector(".clock-hand.minute");
+  const secHand = overlay.querySelector(".clock-hand.second");
+  if (minHand) minHand.setAttribute("transform", `rotate(${min * 6} 100 100)`);
+  if (secHand) secHand.setAttribute("transform", `rotate(${sec * 6} 100 100)`);
+  const dateEl = overlay.querySelector(".clock-date");
+  if (dateEl)
+    dateEl.textContent = now.toLocaleDateString(undefined, {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+    });
 }
 
 function romanNumeral(n) {
-  const romans = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+  const romans = [
+    "I",
+    "II",
+    "III",
+    "IV",
+    "V",
+    "VI",
+    "VII",
+    "VIII",
+    "IX",
+    "X",
+    "XI",
+    "XII",
+  ];
   return romans[(n - 1) % 12];
 }
 
@@ -156,55 +181,76 @@ function arcPath(start, end, outer, inner, color) {
 
 function loadSchedule() {
   try {
-    const s = JSON.parse(localStorage.getItem('clockSchedule'));
+    const s = JSON.parse(localStorage.getItem("clockSchedule"));
     if (Array.isArray(s)) return s;
-  } catch(e) {}
+  } catch (e) {}
   return [
-    { time: '07:00', label: 'Wake Up', color: '#3B82F6' },
-    { time: '08:00', label: 'Breakfast', color: '#FACC15' },
-    { time: '12:00', label: 'Lunch', color: '#10B981' },
-    { time: '18:00', label: 'Dinner', color: '#F97316' },
-    { time: '22:00', label: 'Bedtime', color: '#8B5CF6' }
+    { time: "07:00", label: "Wake Up", color: "#3B82F6" },
+    { time: "08:00", label: "Breakfast", color: "#FACC15" },
+    { time: "12:00", label: "Lunch", color: "#10B981" },
+    { time: "18:00", label: "Dinner", color: "#F97316" },
+    { time: "22:00", label: "Bedtime", color: "#8B5CF6" },
   ];
 }
 
 function saveSchedule(s) {
-  localStorage.setItem('clockSchedule', JSON.stringify(s));
+  localStorage.setItem("clockSchedule", JSON.stringify(s));
 }
 
 function getAnalogClockHtml(style) {
-  const dateStr = new Date().toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric' });
-  const showNumbers = style === 'roman' || style === 'arabic';
-  let nums = '';
+  const dateStr = new Date().toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+  const showNumbers =
+    style === "roman" || style === "arabic" || style === "schedule";
+  const is24Hour = style === "schedule";
+  let nums = "";
   if (showNumbers) {
-    for (let i=1;i<=12;i++) {
-      const ang = (i/12) * Math.PI * 2;
-      const x = 100 + 80 * Math.sin(ang);
-      const y = 100 - 80 * Math.cos(ang);
-      const label = style === 'roman' ? romanNumeral(i) : i;
+    const maxNum = is24Hour ? 24 : 12;
+    const step = is24Hour ? 2 : 1; // Show every 2 hours for 24h mode to avoid clutter
+
+    for (let i = step; i <= maxNum; i += step) {
+      const displayHour = is24Hour ? i : i;
+      const ang = is24Hour ? (i / 24) * Math.PI * 2 : (i / 12) * Math.PI * 2;
+      const radius = is24Hour ? 85 : 80; // Slightly closer for 24h to fit more numbers
+      const x = 100 + radius * Math.sin(ang);
+      const y = 100 - radius * Math.cos(ang);
+
+      let label;
+      if (style === "roman" && !is24Hour) {
+        label = romanNumeral(displayHour);
+      } else {
+        label = displayHour;
+      }
+
       nums += `<text class="clock-num" x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle">${label}</text>`;
     }
   }
-  let ticks = '';
-  for (let i=0;i<60;i++) {
-    const ang = (i/60) * Math.PI * 2;
-    const inner = i%5===0 ? 88 : 92;
+  let ticks = "";
+  for (let i = 0; i < 60; i++) {
+    const ang = (i / 60) * Math.PI * 2;
+    const inner = i % 5 === 0 ? 88 : 92;
     const outer = 96;
     const x1 = 100 + inner * Math.sin(ang);
     const y1 = 100 - inner * Math.cos(ang);
     const x2 = 100 + outer * Math.sin(ang);
     const y2 = 100 - outer * Math.cos(ang);
-    ticks += `<line class="clock-tick${i%5===0?' major':''}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`;
+    ticks += `<line class="clock-tick${
+      i % 5 === 0 ? " major" : ""
+    }" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`;
   }
-  let arcs = '';
-  if (style === 'schedule') {
+  let arcs = "";
+  if (style === "schedule") {
     const schedule = loadSchedule();
-    const seg = Math.PI/6;
-    schedule.forEach(item=>{
-      const [h,m] = item.time.split(':').map(Number);
-      const mins = h*60 + m;
-      const ang = (mins/720) * Math.PI * 2;
-      arcs += arcPath(ang - seg/2, ang + seg/2, 98, 82, item.color);
+    // For 24-hour clock, use smaller segments and calculate based on 1440 minutes (24 hours)
+    const seg = Math.PI / 12; // Smaller segments for 24-hour clock
+    schedule.forEach((item) => {
+      const [h, m] = item.time.split(":").map(Number);
+      const mins = h * 60 + m;
+      const ang = (mins / 1440) * Math.PI * 2; // 1440 minutes = 24 hours
+      arcs += arcPath(ang - seg / 2, ang + seg / 2, 98, 82, item.color);
     });
   }
   return `
@@ -213,13 +259,16 @@ function getAnalogClockHtml(style) {
       <g class="schedule-arcs">${arcs}</g>
       <circle class="clock-face" cx="100" cy="100" r="98" />
       <g class="clock-ticks">${ticks}</g>
-      <g class="clock-numbers">${nums}</g>
-      <line class="clock-hand hour" x1="100" y1="100" x2="100" y2="60" />
+      <g class="clock-numbers">${nums}</g>      <line class="clock-hand hour" x1="100" y1="100" x2="100" y2="60" />
       <line class="clock-hand minute" x1="100" y1="100" x2="100" y2="40" />
-      <line class="clock-hand second" x1="100" y1="105" x2="100" y2="30" />
+      <line class="clock-hand second" x1="100" y1="100" x2="100" y2="30" />
     </svg>
     <div class="clock-date">${dateStr}</div>
-    ${style === 'schedule' ? '<button class="edit-schedule-btn">Edit Schedule</button>' : ''}
+    ${
+      style === "schedule"
+        ? '<button class="edit-schedule-btn">Edit Schedule</button>'
+        : ""
+    }
   </div>`;
 }
 
