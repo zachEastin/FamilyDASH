@@ -281,7 +281,7 @@ html, body {
   grid-row: 1 / 2;
   display: none;
   padding: 10px;
-  background: var(--widget-bg);
+  /* background: var(--widget-bg); */
   border-radius: 8px;
   overflow: hidden;
 }
