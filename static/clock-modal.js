@@ -200,17 +200,15 @@ function romanNumeral(n) {
   return romans[(n - 1) % 12];
 }
 
-function arcPath(start, end, outer, inner, color) {
-  const large = end - start > Math.PI ? 1 : 0;
-  const sx = 100 + outer * Math.sin(start);
-  const sy = 100 - outer * Math.cos(start);
-  const ex = 100 + outer * Math.sin(end);
-  const ey = 100 - outer * Math.cos(end);
-  const ix = 100 + inner * Math.sin(end);
-  const iy = 100 - inner * Math.cos(end);
-  const sx2 = 100 + inner * Math.sin(start);
-  const sy2 = 100 - inner * Math.cos(start);
-  return `<path d="M ${sx} ${sy} A ${outer} ${outer} 0 ${large} 1 ${ex} ${ey} L ${ix} ${iy} A ${inner} ${inner} 0 ${large} 0 ${sx2} ${sy2} Z" fill="${color}" />`;
+function arcPath(start, end, radius, thickness, color) {
+  // Draw an arc as a stroked path with rounded ends (pill-like)
+  const r = radius;
+  const sx = 100 + r * Math.sin(start);
+  const sy = 100 - r * Math.cos(start);
+  const ex = 100 + r * Math.sin(end);
+  const ey = 100 - r * Math.cos(end);
+  // SVG arc path for stroke
+  return `<path d="M ${sx} ${sy} A ${r} ${r} 0 ${end - start > Math.PI ? 1 : 0} 1 ${ex} ${ey}" stroke="${color}" stroke-width="${thickness}" fill="none" stroke-linecap="round" />`;
 }
 
 function loadSchedule() {
@@ -282,16 +280,18 @@ function getAnalogClockHtml(style) {
   let arcPaths = "";
   if (style === "schedule") {
     const schedule = loadSchedule();
-    // For 24-hour clock, use smaller segments and calculate based on 1440 minutes (24 hours)
-    const seg = Math.PI / 12; // Smaller segments for 24-hour clock
+    // Use CSS variables for margin and thickness
+    const arcMargin = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--clock-arc-margin')) || 8;
+    const arcThickness = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--clock-arc-thickness')) || 14;
+    const baseRadius = 98 + arcMargin + arcThickness / 2; // Place arc just outside clock face
+    const seg = Math.PI / 12;
     schedule.forEach((item, index) => {
       const [h, m] = item.time.split(":").map(Number);
       const mins = h * 60 + m;
-      const ang = (mins / 1440) * Math.PI * 2; // 1440 minutes = 24 hours
-      arcs += arcPath(ang - seg / 2, ang + seg / 2, 98, 82, item.color);
-
+      const ang = (mins / 1440) * Math.PI * 2;
+      arcs += arcPath(ang - seg / 2, ang + seg / 2, baseRadius, arcThickness, item.color);
       // Create a path for the text to follow along the arc
-      const labelRadius = 90; // Position label between inner and outer arc radius
+      const labelRadius = baseRadius; // Place label at arc center
       const pathId = `schedule-arc-path-${index}`;
       const startAng = ang - seg / 2;
       const endAng = ang + seg / 2;
@@ -300,14 +300,8 @@ function getAnalogClockHtml(style) {
       const endX = 100 + labelRadius * Math.sin(endAng);
       const endY = 100 - labelRadius * Math.cos(endAng);
       const large = endAng - startAng > Math.PI ? 1 : 0;
-
-      // Create path for text to follow
       arcPaths += `<path id="${pathId}" d="M ${startX} ${startY} A ${labelRadius} ${labelRadius} 0 ${large} 1 ${endX} ${endY}" fill="none" stroke="none" />`;
-
-      // Add curved text following the arc path
-      arcLabels += `<text class="schedule-label">
-        <textPath href="#${pathId}" startOffset="50%">${item.label}</textPath>
-      </text>`;
+      arcLabels += `<text class="schedule-label"><textPath href="#${pathId}" startOffset="50%">${item.label}</textPath></text>`;
     });
   }
   return `

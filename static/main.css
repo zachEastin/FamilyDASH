@@ -51,6 +51,8 @@
   --event-birthday-text: #111827;
   --event-default-bg: var(--color-gray);
   --event-default-text: #fff;
+  --clock-arc-margin: 8px;
+  --clock-arc-thickness: 14px;
 }
 body.dark-mode {
   --color-bg: #111827;
@@ -4854,7 +4856,7 @@ body.dark-mode #weather-modal-forecast-graph {
   box-shadow: 0 5px 20px rgba(0,0,0,0.2);
   width: 90vw;
   height: 90vh;
-  max-width: 600px;
+  max-width: 90vh;
   max-height: 90vh;
   display: flex;
   align-items: center;
@@ -4923,7 +4925,12 @@ body.dark-mode #weather-modal-forecast-graph {
 .clock-hand.hour { stroke-width: 3; }
 .clock-hand.minute { stroke-width: 2; }
 .clock-hand.second { stroke-width: 1; stroke: var(--color-accent-red); }
-.schedule-arcs path { opacity: 0.5; }
+.schedule-arcs path {
+  fill: none;
+  stroke-width: var(--clock-arc-thickness);
+  stroke-linecap: round;
+  stroke-opacity: 0.7;
+}
 .schedule-label {
   font-size: 10px;
   fill: var(--text-color);
