@@ -86,40 +86,71 @@
   </div>
   <div id="recipe-modal" class="modal" style="display:none;">
     <div class="modal-content">
-      <button class="modal-close" id="recipe-modal-close" title="Close">&times;</button>
-      <h2 id="recipe-modal-title">Edit Recipe</h2>
-      <form id="recipe-form" autocomplete="off">
-        <label for="recipe-title">Title</label>
-        <input type="text" id="recipe-title" name="title" required>
+      <!-- Close button -->
+      <button class="modal-close" id="recipe-modal-close" title="Close">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+      <h2 id="recipe-modal-title" class="modal-title">Edit Recipe</h2>
+      <form id="recipe-form" class="recipe-form" autocomplete="off">
+        <div class="modal-body">
+          <!-- Left column: title, favorite and tags -->
+          <div class="modal-col left">
+            <label for="recipe-title">
+              <span class="material-symbols-outlined">restaurant_menu</span>
+              <span>Title</span>
+            </label>
+            <input type="text" id="recipe-title" name="title" required>
 
-        <label for="recipe-ingredients">Ingredients</label>
-        <textarea id="recipe-ingredients" name="ingredients" rows="3" placeholder="One per line or comma separated"></textarea>
+            <div class="favorite-toggle">
+              <span id="favorite-star" class="material-symbols-outlined" title="Mark as favorite" tabindex="0">star_outline</span>
+              <span class="favorite-label">Favorite</span>
+            </div>
 
-        <div class="favorite-toggle">
-          <span id="favorite-star" class="material-symbols-outlined" title="Mark as favorite" tabindex="0">star_outline</span>
-          <span>Favorite</span>
-        </div>
-
-        <div class="recipe-tags">
-          <label>Tags:</label>
-          <label><input type="checkbox" name="tags" value="vegetarian"> Vegetarian</label>
-          <label><input type="checkbox" name="tags" value="quick"> Quick</label>
-          <label><input type="checkbox" name="tags" value="slow-cooker"> Slow Cooker</label>
-        </div>
-
-        <div class="spoonacular-search-section">
-          <label for="spoonacular-search-input">Search Recipes (Spoonacular)</label>
-          <div style="display:flex;gap:0.5em;align-items:center;">
-            <input type="text" id="spoonacular-search-input" placeholder="e.g. chicken, pasta..." style="flex:1;">
-            <button type="button" id="spoonacular-search-button">Search</button>
+            <div class="tags-group">
+              <span class="tags-label">Tags:</span>
+              <div class="tags-chips">
+                <label class="tag-chip"><input type="checkbox" name="tags" value="quick"><span>Quick</span></label>
+                <label class="tag-chip"><input type="checkbox" name="tags" value="vegetarian"><span>Vegetarian</span></label>
+                <label class="tag-chip"><input type="checkbox" name="tags" value="kid-friendly"><span>Kid-Friendly</span></label>
+                <label class="tag-chip"><input type="checkbox" name="tags" value="dairy-free"><span>Dairy-Free</span></label>
+                <label class="tag-chip"><input type="checkbox" name="tags" value="spicy"><span>Spicy</span></label>
+                <label class="tag-chip"><input type="checkbox" name="tags" value="slow-cooker"><span>Slow Cooker</span></label>
+                <label class="tag-chip"><input type="checkbox" name="tags" value="gluten-free"><span>Gluten-Free</span></label>
+              </div>
+            </div>
           </div>
-          <div id="spoonacular-results" style="max-height:180px;overflow-y:auto;margin-top:0.5em;"></div>
-        </div>
-        <!-- Spoonacular search section ends here -->
 
+          <!-- Right column: ingredients and search -->
+          <div class="modal-col right">
+            <label for="recipe-ingredients">
+              <span class="material-symbols-outlined">list</span>
+              <span>Ingredients</span>
+            </label>
+            <textarea id="recipe-ingredients" name="ingredients" rows="5" placeholder="One per line or comma separated"></textarea>
+
+            <div class="search-group">
+              <label for="spoonacular-search-input">Search Recipes</label>
+              <div class="search-row">
+                <input type="text" id="spoonacular-search-input" placeholder="e.g. chicken, pasta...">
+                <button type="button" id="spoonacular-search-button">
+                  <span class="material-symbols-outlined">search</span>
+                </button>
+              </div>
+            </div>
+            <div id="spoonacular-results" class="spoonacular-results"></div>
+          </div>
+        </div>
+
+        <!-- Modal actions -->
         <div class="modal-actions">
-          <button type="submit" id="recipe-save">Save</button>
-          <button type="button" id="recipe-cancel">Cancel</button>
+          <button type="submit" id="recipe-save">
+            <span class="material-symbols-outlined">save</span>
+            <span>Save</span>
+          </button>
+          <button type="button" id="recipe-cancel">
+            <span class="material-symbols-outlined">cancel</span>
+            <span>Cancel</span>
+          </button>
         </div>
       </form>
     </div>
