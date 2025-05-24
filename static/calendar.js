@@ -208,6 +208,7 @@ function updateIcloudWeekView(data) {
   const cal = document.getElementById("week-view-container");
   // --- Week view calendar ---
   const events = Array.isArray(data.events) ? data.events : [];
+  const multiDayEvents = [];
   // Get start of this week (Sunday)
   const now = new Date();
   const weekStart = new Date(now);
@@ -227,6 +228,12 @@ function updateIcloudWeekView(data) {
   for (const ev of events) {
     if (!ev.start) continue;
     const evStart = new Date(ev.start);
+    const evEnd = ev.end ? new Date(ev.end) : null;
+    const isMulti = evEnd && evStart.toDateString() !== evEnd.toDateString();
+    if (isMulti) {
+      multiDayEvents.push(ev);
+      continue;
+    }
     // Only show events in this week
     for (let i = 0; i < 7; i++) {
       const day = days[i];
@@ -252,6 +259,7 @@ function updateIcloudWeekView(data) {
     ].getDate()}</span></div>`;
   }
   html += "</div>";
+  html += '<div class="week-multiday-container"></div>';
   // Day cells
   html += '<div class="day-cells">';
   const currentDayIdx = now.getDay();
@@ -357,6 +365,8 @@ function updateIcloudWeekView(data) {
   }
   html += "</div></div>";
   cal.innerHTML = html;
+
+  renderWeekMultiDayBars(multiDayEvents, weekStart);
 
   // Add event listeners for event blocks
   document.querySelectorAll("#week-view-container .event-block").forEach((block) => {
@@ -560,6 +570,11 @@ function updateIcloudMonthView(data) {
         };
       })
     : [];
+  const multiDayEvents = events.filter((ev) => {
+    const sd = new Date(ev.startDate);
+    const ed = ev.endDate ? new Date(ev.endDate) : null;
+    return ed && sd.toDateString() !== ed.toDateString();
+  });
 
   const now = new Date();
   const currentMonth = now.getMonth();
@@ -670,8 +685,9 @@ function updateIcloudMonthView(data) {
     monthGridHtml += `</div></div>`; // Close month-day-cell-events and month-day-cell
   }
   monthGridHtml += "</div>"; // Close month-grid
-
-  monthViewContainer.innerHTML = monthHeaderHtml + gridHeaderHtml + monthGridHtml;
+  const wrappedGrid = `<div class="month-grid-wrapper" style="position:relative">${monthGridHtml}<div class="month-multiday-overlay"></div></div>`;
+  monthViewContainer.innerHTML = monthHeaderHtml + gridHeaderHtml + wrappedGrid;
+  renderMonthMultiDayBars(multiDayEvents, gridStartDate);
 
   // After rendering, handle event overflow for each day cell
   monthViewContainer.querySelectorAll(".month-day-cell-events").forEach((eventList) => {
@@ -797,6 +813,152 @@ function generateStubWeekEvents() {
     }
   }
   return stubEvents;
+}
+
+function renderWeekMultiDayBars(events, weekStart) {
+  const container = document.querySelector(
+    "#week-view-container .week-multiday-container"
+  );
+  const dayCells = document.querySelector(
+    "#week-view-container .day-cells"
+  );
+  if (!container || !dayCells) return;
+  const dayMs = 24 * 60 * 60 * 1000;
+  container.innerHTML = "";
+  const rows = [];
+  const barHeight = 20;
+  events.forEach((ev) => {
+    const start = new Date(ev.start);
+    const end = ev.end ? new Date(ev.end) : start;
+    let startIdx = Math.floor((start - weekStart) / dayMs);
+    let endIdx = Math.floor((end - weekStart) / dayMs);
+    if (endIdx < 0 || startIdx > 6) return;
+    startIdx = Math.max(0, startIdx);
+    endIdx = Math.min(6, endIdx);
+    const startOffset =
+      startIdx === Math.floor((start - weekStart) / dayMs)
+        ? (start.getHours() + start.getMinutes() / 60) / 24
+        : 0;
+    const endOffset =
+      endIdx === Math.floor((end - weekStart) / dayMs)
+        ? (end.getHours() + end.getMinutes() / 60) / 24
+        : 1;
+    const left = ((startIdx + startOffset) / 7) * 100;
+    const right = ((endIdx + endOffset) / 7) * 100;
+    const width = right - left;
+    let rowIdx = 0;
+    for (; rowIdx < rows.length; rowIdx++) {
+      if (!rows[rowIdx].some((r) => left < r.right && right > r.left)) break;
+    }
+    if (!rows[rowIdx]) rows[rowIdx] = [];
+    rows[rowIdx].push({ left, right });
+    const bar = document.createElement("div");
+    bar.className = "multiday-event-bar";
+    bar.dataset.eventUid = ev.uid || "";
+    bar.style.left = left + "%";
+    bar.style.width = width + "%";
+    bar.style.top = rowIdx * (barHeight + 2) + "px";
+    bar.style.backgroundColor = ev.color || "#1976d2";
+    bar.textContent = ev.title;
+    container.appendChild(bar);
+  });
+  const containerHeight = rows.length * (barHeight + 2);
+  container.style.height = containerHeight + "px";
+  dayCells.style.marginTop = containerHeight + "px";
+  container
+    .querySelectorAll(".multiday-event-bar")
+    .forEach((bar) => {
+      bar.addEventListener("click", (e) => {
+        const uid = e.currentTarget.dataset.eventUid;
+        const ev = events.find((ev) => ev.uid === uid);
+        if (ev) showEventDetailsModal(ev);
+      });
+    });
+}
+
+function renderMonthMultiDayBars(events, gridStart) {
+  const grid = document.querySelector("#month-view-container .month-grid");
+  const overlay = document.querySelector(
+    "#month-view-container .month-multiday-overlay"
+  );
+  if (!grid || !overlay) return;
+  const cells = grid.querySelectorAll(".month-day-cell");
+  if (!cells.length) return;
+  const cellHeight = cells[0].offsetHeight;
+  overlay.innerHTML = "";
+  const dayMs = 24 * 60 * 60 * 1000;
+  const rowStacks = Array(6)
+    .fill(0)
+    .map(() => []);
+  const bars = [];
+  events.forEach((ev) => {
+    const start = new Date(ev.startDate || ev.start);
+    const end = ev.endDate ? new Date(ev.endDate) : new Date(ev.end || ev.start);
+    end.setMilliseconds(end.getMilliseconds() - 1);
+    let sIdx = Math.floor((start - gridStart) / dayMs);
+    let eIdx = Math.floor((end - gridStart) / dayMs);
+    if (eIdx < 0 || sIdx > 41) return;
+    sIdx = Math.max(0, sIdx);
+    eIdx = Math.min(41, eIdx);
+    const startRow = Math.floor(sIdx / 7);
+    const endRow = Math.floor(eIdx / 7);
+    const startOffsetRaw = (start.getHours() + start.getMinutes() / 60) / 24;
+    const endOffsetRaw = (end.getHours() + end.getMinutes() / 60) / 24;
+    for (let r = startRow; r <= endRow; r++) {
+      const rowStart = r * 7;
+      const rowEnd = rowStart + 6;
+      const pieceStart = Math.max(sIdx, rowStart);
+      const pieceEnd = Math.min(eIdx, rowEnd);
+      const startOffset = pieceStart === sIdx ? startOffsetRaw : 0;
+      const endOffset = pieceEnd === eIdx ? endOffsetRaw : 1;
+      const left = ((pieceStart - rowStart + startOffset) / 7) * 100;
+      const right = ((pieceEnd - rowStart + endOffset) / 7) * 100;
+      let subRow = 0;
+      for (; subRow < rowStacks[r].length; subRow++) {
+        if (!rowStacks[r][subRow].some((b) => left < b.right && right > b.left))
+          break;
+      }
+      if (!rowStacks[r][subRow]) rowStacks[r][subRow] = [];
+      rowStacks[r][subRow].push({ left, right });
+      bars.push({
+        left,
+        width: right - left,
+        top: r * cellHeight + subRow * 22,
+        color: ev.calendarColor || ev.color || "#1976d2",
+        title: ev.title,
+        uid: ev.uid || "",
+        row: r,
+      });
+    }
+  });
+  bars.forEach((b) => {
+    const bar = document.createElement("div");
+    bar.className = "multiday-event-bar";
+    bar.dataset.eventUid = b.uid;
+    bar.style.left = b.left + "%";
+    bar.style.width = b.width + "%";
+    bar.style.top = b.top + "px";
+    bar.style.backgroundColor = b.color;
+    bar.textContent = b.title;
+    overlay.appendChild(bar);
+  });
+  // add padding to cells based on stacked rows per week
+  rowStacks.forEach((stacks, r) => {
+    const height = stacks.length * 22;
+    for (let c = 0; c < 7; c++) {
+      const idx = r * 7 + c;
+      if (cells[idx]) cells[idx].style.paddingTop = height + "px";
+    }
+  });
+  overlay
+    .querySelectorAll(".multiday-event-bar")
+    .forEach((bar) => {
+      bar.addEventListener("click", (e) => {
+        const uid = e.currentTarget.dataset.eventUid;
+        const ev = events.find((ev) => (ev.uid || "") === uid);
+        if (ev) showEventDetailsModal(ev);
+      });
+    });
 }
 
 

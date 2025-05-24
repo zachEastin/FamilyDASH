@@ -1664,6 +1664,41 @@ body.dark-mode #weather-modal-forecast-graph {
   margin-left: -3px;
 }
 
+/* Multi-day event styles */
+.week-multiday-container {
+  position: relative;
+  width: 100%;
+  transition: height 0.3s ease;
+}
+
+.month-grid-wrapper {
+  position: relative;
+}
+
+.month-multiday-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.multiday-event-bar {
+  position: absolute;
+  height: 20px;
+  background: var(--event-default-bg);
+  color: var(--event-default-text);
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-size: 0.75em;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: left 0.3s, width 0.3s, top 0.3s;
+}
+
 /* Mobile and Touch Optimizations */
 @media (max-width: 768px) {
   :root {

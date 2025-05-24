@@ -199,6 +199,36 @@ def get_icloud_data():
                         "attendees": attendees_list,
                     }
                 )
+
+        # Insert a couple of multi-day events that span across the grid
+        multi_timed_start = today.replace(hour=6, minute=0, second=0, microsecond=0)
+        multi_timed_end = multi_timed_start + timedelta(days=2, hours=6)
+        stub_events.append(
+            {
+                "uid": "stub-multi-timed",
+                "title": "Conference Trip",
+                "start": multi_timed_start.isoformat(),
+                "end": multi_timed_end.isoformat(),
+                "calendar": random.choice(calendar_names),
+                "color": random.choice(list(calendar_colors.values())),
+                "notes": "Offsite conference with sessions",
+            }
+        )
+
+        multi_all_start = today.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
+        multi_all_end = multi_all_start + timedelta(days=4)
+        stub_events.append(
+            {
+                "uid": "stub-multi-all-day",
+                "title": "Family Vacation",
+                "start": multi_all_start.isoformat(),
+                "end": multi_all_end.isoformat(),
+                "calendar": random.choice(calendar_names),
+                "color": random.choice(list(calendar_colors.values())),
+                "allDay": True,
+                "notes": "Trip with overlap",
+            }
+        )
         stub_data = {
             "user": os.getenv("ICLOUD_USERNAME", "dev_user"),
             "calendars": [{"name": name, "color": calendar_colors[name]} for name in calendar_names],
