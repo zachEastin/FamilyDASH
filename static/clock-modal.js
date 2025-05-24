@@ -61,42 +61,76 @@ function cycleClockOption(dir) {
 }
 
 function setupInteractionHandlers(el) {
-  el.addEventListener('wheel', e => {
+  el.addEventListener("wheel", (e) => {
     if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
       cycleClockType(e.deltaY > 0 ? 1 : -1);
     } else {
       cycleClockOption(e.deltaX > 0 ? 1 : -1);
     }
   });
-  let startX = 0, startY = 0;
-  el.addEventListener('touchstart', e => {
-    const t = e.touches[0];
-    startX = t.clientX;
-    startY = t.clientY;
-  }, {passive:true});
-  el.addEventListener('touchend', e => {
+
+  // Add keyboard support for arrow keys
+  el.addEventListener("keydown", (e) => {
+    switch (e.key) {
+      case "ArrowUp":
+        e.preventDefault();
+        cycleClockType(-1);
+        break;
+      case "ArrowDown":
+        e.preventDefault();
+        cycleClockType(1);
+        break;
+      case "ArrowLeft":
+        e.preventDefault();
+        cycleClockOption(-1);
+        break;
+      case "ArrowRight":
+        e.preventDefault();
+        cycleClockOption(1);
+        break;
+      case "Escape":
+        e.preventDefault();
+        closeClockModal();
+        break;
+    }
+  });
+
+  let startX = 0,
+    startY = 0;
+  el.addEventListener(
+    "touchstart",
+    (e) => {
+      const t = e.touches[0];
+      startX = t.clientX;
+      startY = t.clientY;
+    },
+    { passive: true }
+  );
+  el.addEventListener("touchend", (e) => {
     const t = e.changedTouches[0];
     const dx = t.clientX - startX;
     const dy = t.clientY - startY;
     if (Math.abs(dx) > Math.abs(dy)) {
-      if (dx > 30) cycleClockOption(-1); else if (dx < -30) cycleClockOption(1);
+      if (dx > 30) cycleClockOption(-1);
+      else if (dx < -30) cycleClockOption(1);
     } else {
-      if (dy > 30) cycleClockType(-1); else if (dy < -30) cycleClockType(1);
+      if (dy > 30) cycleClockType(-1);
+      else if (dy < -30) cycleClockType(1);
     }
   });
 }
 
 function renderClockModal() {
-  const overlay = document.getElementById('clock-modal-overlay');
-  const display = overlay.querySelector('.clock-modal-display');
+  const overlay = document.getElementById("clock-modal-overlay");
+  const display = overlay.querySelector(".clock-modal-display");
   const type = CLOCK_TYPES[clockTypeIndex];
   const option = type.options[clockOptionIndex];
   stopAnalogClock();
-  if (type.id === 'analog') {
+  if (type.id === "analog") {
     display.innerHTML = getAnalogClockHtml(option);
     startAnalogClock();
-    const editBtn = display.querySelector('.edit-schedule-btn');
-    if (editBtn) editBtn.addEventListener('click', openScheduleEditor);
+    const editBtn = display.querySelector(".edit-schedule-btn");
+    if (editBtn) editBtn.addEventListener("click", openScheduleEditor);
   } else {
     display.innerHTML = `<div class="clock-placeholder">${type.id} - ${option}</div>`;
   }
@@ -242,24 +276,50 @@ function getAnalogClockHtml(style) {
     }" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`;
   }
   let arcs = "";
+  let arcLabels = "";
+  let arcPaths = "";
   if (style === "schedule") {
     const schedule = loadSchedule();
     // For 24-hour clock, use smaller segments and calculate based on 1440 minutes (24 hours)
     const seg = Math.PI / 12; // Smaller segments for 24-hour clock
-    schedule.forEach((item) => {
+    schedule.forEach((item, index) => {
       const [h, m] = item.time.split(":").map(Number);
       const mins = h * 60 + m;
       const ang = (mins / 1440) * Math.PI * 2; // 1440 minutes = 24 hours
       arcs += arcPath(ang - seg / 2, ang + seg / 2, 98, 82, item.color);
+
+      // Create a path for the text to follow along the arc
+      const labelRadius = 90; // Position label between inner and outer arc radius
+      const pathId = `schedule-arc-path-${index}`;
+      const startAng = ang - seg / 2;
+      const endAng = ang + seg / 2;
+      const startX = 100 + labelRadius * Math.sin(startAng);
+      const startY = 100 - labelRadius * Math.cos(startAng);
+      const endX = 100 + labelRadius * Math.sin(endAng);
+      const endY = 100 - labelRadius * Math.cos(endAng);
+      const large = endAng - startAng > Math.PI ? 1 : 0;
+
+      // Create path for text to follow
+      arcPaths += `<path id="${pathId}" d="M ${startX} ${startY} A ${labelRadius} ${labelRadius} 0 ${large} 1 ${endX} ${endY}" fill="none" stroke="none" />`;
+
+      // Add curved text following the arc path
+      arcLabels += `<text class="schedule-label">
+        <textPath href="#${pathId}" startOffset="50%">${item.label}</textPath>
+      </text>`;
     });
   }
   return `
   <div class="analog-clock-wrapper">
     <svg class="analog-clock" viewBox="0 0 200 200">
+      <defs>
+        ${arcPaths}
+      </defs>
       <g class="schedule-arcs">${arcs}</g>
       <circle class="clock-face" cx="100" cy="100" r="98" />
       <g class="clock-ticks">${ticks}</g>
-      <g class="clock-numbers">${nums}</g>      <line class="clock-hand hour" x1="100" y1="100" x2="100" y2="60" />
+      <g class="clock-numbers">${nums}</g>
+      <g class="schedule-labels">${arcLabels}</g>
+      <line class="clock-hand hour" x1="100" y1="100" x2="100" y2="60" />
       <line class="clock-hand minute" x1="100" y1="100" x2="100" y2="40" />
       <line class="clock-hand second" x1="100" y1="100" x2="100" y2="30" />
     </svg>

@@ -4897,9 +4897,10 @@ body.dark-mode #weather-modal-forecast-graph {
   gap: var(--space-sm);
 }
 .analog-clock {
-  width: 80%;
-  height: auto;
-  max-height: 80vh;
+  width: min(90vw, 90vh, 100%);
+  height: min(90vw, 90vh, 100%);
+  max-width: 500px;
+  max-height: 500px;
 }
 .clock-face {
   fill: none;
@@ -4923,6 +4924,15 @@ body.dark-mode #weather-modal-forecast-graph {
 .clock-hand.minute { stroke-width: 2; }
 .clock-hand.second { stroke-width: 1; stroke: var(--color-accent-red); }
 .schedule-arcs path { opacity: 0.5; }
+.schedule-label {
+  font-size: 10px;
+  fill: var(--text-color);
+  font-family: var(--font-family);
+  font-weight: 500;
+  pointer-events: none;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
 .clock-date {
   font-size: 1.2em;
 }
