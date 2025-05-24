@@ -1,3 +1,5 @@
+let checklistData = { today: [], tasks: [], shopping: [], chores: [] };
+
 document.addEventListener("DOMContentLoaded", () => {
   const socket = io();
 
@@ -28,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
   socket.on("icloud_update", (data) => {
     updateIcloudWeekView(data);
     updateIcloudMonthView(data);
-    // updateIcloudReminders(data);
+    updateChecklists(data);
     // updateIcloudPhotos(data);
   });
 
@@ -53,7 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
     .then((r) => {
       updateIcloudWeekView(r.data);
       updateIcloudMonthView(r.data);
-      // updateIcloudReminders(r.data);
+      updateChecklists(r.data);
       // updateIcloudPhotos(r.data);
     });
     fetchAndRenderMealsMonthView();
@@ -66,29 +68,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // Move widgets to footer after DOM is loaded
   moveWidgetsToFooter();
 
-  // Sort pending reminders by due date (soonest first)
-  const pendingList = document.querySelector(
-    ".reminders-list.pending-reminders"
-  );
-  if (pendingList) {
-    const items = Array.from(pendingList.querySelectorAll(".reminder-item"));
-    items.sort((a, b) => {
-      // Extract date string in MM/DD/YYYY format
-      const dateStrA = a
-        .querySelector(".reminder-due-date")
-        .textContent.match(/\d{1,2}\/\d{1,2}\/\d{4}/)[0];
-      const dateStrB = b
-        .querySelector(".reminder-due-date")
-        .textContent.match(/\d{1,2}\/\d{1,2}\/\d{4}/)[0];
-      // Parse as MM/DD/YYYY (US format)
-      const [monthA, dayA, yearA] = dateStrA.split("/").map(Number);
-      const [monthB, dayB, yearB] = dateStrB.split("/").map(Number);
-      const dateA = new Date(yearA, monthA - 1, dayA);
-      const dateB = new Date(yearB, monthB - 1, dayB);
-      return dateA - dateB;
-    });
-    items.forEach((item) => pendingList.appendChild(item));
-  }
 });
 
 // Helper: format unix timestamp to local time
@@ -321,9 +300,108 @@ function showMealPlanning() {
   if (mealsWrapper) {
     mealsWrapper.style.display = 'flex';
   }
-  
+
   // Also trigger the existing meal planning setup if it exists
   if (typeof setupMealPlanning === 'function') {
     setupMealPlanning();
   }
+}
+
+function updateChecklists(data) {
+  if (!data) return;
+  checklistData.today = data.today || [];
+  checklistData.tasks = data.tasks || [];
+  checklistData.shopping = data.shopping || [];
+  checklistData.chores = data.chores || [];
+
+  renderChecklist('today');
+  renderChecklist('tasks');
+  renderChecklist('shopping');
+  renderChores('chores');
+}
+
+function renderChecklist(id) {
+  const card = document.getElementById(`checklist-${id}`);
+  if (!card) return;
+  const pending = card.querySelector('.pending-list');
+  const done = card.querySelector('.done-list');
+  if (pending) pending.innerHTML = '';
+  if (done) {
+    done.innerHTML = '<h4>Completed</h4>';
+  }
+  const items = checklistData[id] || [];
+  items.forEach((item) => {
+    const el = document.createElement('div');
+    el.className = 'reminder-item';
+    if (item.priority) el.classList.add(`priority-${item.priority}`);
+    if (item.done) el.classList.add('done');
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = item.done;
+    cb.addEventListener('change', () => {
+      item.done = cb.checked;
+      renderChecklist(id);
+    });
+
+    const titleSpan = document.createElement('span');
+    titleSpan.className = 'reminder-title';
+    if (id === 'shopping') {
+      titleSpan.textContent = item.item + (item.quantity ? ` - ${item.quantity}` : '');
+    } else {
+      titleSpan.textContent = item.title;
+    }
+
+    el.appendChild(cb);
+    el.appendChild(titleSpan);
+
+    if (id === 'today' && item.dueDate) {
+      const dueSpan = document.createElement('span');
+      dueSpan.className = 'reminder-due-date';
+      dueSpan.textContent = ` (Due: ${new Date(item.dueDate).toLocaleDateString()})`;
+      el.appendChild(dueSpan);
+    }
+    if (id === 'tasks' && item.note) {
+      const noteSpan = document.createElement('span');
+      noteSpan.className = 'reminder-due-date';
+      noteSpan.textContent = ` - ${item.note}`;
+      el.appendChild(noteSpan);
+    }
+
+    const container = item.done ? done : pending;
+    if (container) container.appendChild(el);
+  });
+
+  if (done) {
+    done.style.display = done.children.length > 1 ? 'flex' : 'none';
+  }
+}
+
+function renderChores(id) {
+  const card = document.getElementById(`checklist-${id}`);
+  if (!card) return;
+  const list = card.querySelector('.chores-list');
+  if (!list) return;
+  list.innerHTML = '';
+  checklistData[id].forEach((item) => {
+    const el = document.createElement('div');
+    el.className = 'reminder-item chore-item';
+    if (item.done) el.classList.add('done');
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = item.done;
+    cb.addEventListener('change', () => {
+      item.done = cb.checked;
+      el.classList.toggle('done', item.done);
+    });
+
+    const span = document.createElement('span');
+    span.className = 'reminder-title';
+    span.textContent = item.title;
+
+    el.appendChild(cb);
+    el.appendChild(span);
+    list.appendChild(el);
+  });
 }

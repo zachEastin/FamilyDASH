@@ -203,43 +203,60 @@ def get_icloud_data():
             "user": os.getenv("ICLOUD_USERNAME", "dev_user"),
             "calendars": [{"name": name, "color": calendar_colors[name]} for name in calendar_names],
             "events": stub_events,
-            "reminders": [
+            "today": [
                 {
                     "title": "Book flight to Bali",
-                    "due": (today + timedelta(days=1)).date().isoformat(),
+                    "dueDate": (today + timedelta(days=1)).date().isoformat(),
                     "priority": "high",
                     "done": False,
                 },
                 {
                     "title": "Call Mom for her birthday",
-                    "due": (today + timedelta(days=2)).date().isoformat(),
+                    "dueDate": (today + timedelta(days=2)).date().isoformat(),
                     "priority": "medium",
                     "done": False,
                 },
                 {
                     "title": "Buy groceries for the week",
-                    "due": (today + timedelta(days=0)).date().isoformat(),
+                    "dueDate": (today).date().isoformat(),
                     "priority": "high",
                     "done": False,
                 },
                 {
                     "title": "Finish project proposal",
-                    "due": (today + timedelta(days=3)).date().isoformat(),
+                    "dueDate": (today + timedelta(days=3)).date().isoformat(),
                     "priority": "high",
                     "done": False,
                 },
                 {
                     "title": "Schedule dentist appointment",
-                    "due": (today + timedelta(days=5)).date().isoformat(),
+                    "dueDate": (today + timedelta(days=5)).date().isoformat(),
                     "priority": "low",
                     "done": True,
                 },
                 {
                     "title": "Pay credit card bill",
-                    "due": (today - timedelta(days=1)).date().isoformat(),
+                    "dueDate": (today - timedelta(days=1)).date().isoformat(),
                     "priority": "medium",
                     "done": True,
                 },
+            ],
+            "tasks": [
+                {"title": "Paint garage", "note": "Buy primer", "done": False},
+                {"title": "Organize attic", "note": "", "done": False},
+                {"title": "Fix bike tire", "note": "", "done": True},
+            ],
+            "shopping": [
+                {"item": "Milk", "quantity": "2 gallons", "done": False},
+                {"item": "Eggs", "quantity": "1 dozen", "done": False},
+                {"item": "Coffee", "quantity": "1 bag", "done": True},
+            ],
+            "chores": [
+                {"title": "Unload dishwasher", "done": False},
+                {"title": "Feed the cat", "done": False},
+                {"title": "Make beds", "done": False},
+                {"title": "Sweep kitchen", "done": False},
+                {"title": "Laundry", "done": True},
             ],
             "photo": None,
         }
@@ -249,7 +266,17 @@ def get_icloud_data():
         return jsonify({"status": "2fa_required"})
     # Stub when credentials not provided
     if not os.getenv("ICLOUD_USERNAME") or not os.getenv("ICLOUD_PASSWORD"):
-        return jsonify({"status": "ok", "data": {"events": [], "reminders": [], "photo": None}})
+        return jsonify({
+            "status": "ok",
+            "data": {
+                "events": [],
+                "today": [],
+                "tasks": [],
+                "shopping": [],
+                "chores": [],
+                "photo": None,
+            },
+        })
 
     now = time.time()
     try:
@@ -260,10 +287,15 @@ def get_icloud_data():
                 events.append(
                     {"title": event.get("title"), "start": event.get("startDate"), "end": event.get("endDate")}
                 )
-            # Fetch reminders
+            # Fetch reminders for "Today" list
             reminders = []
             for reminder in _ICLOUD_API.reminders.get():
-                reminders.append({"title": reminder.get("title"), "due": reminder.get("dueDate")})
+                reminders.append({
+                    "title": reminder.get("title"),
+                    "dueDate": reminder.get("dueDate"),
+                    "priority": reminder.get("priority"),
+                    "done": reminder.get("completed", False),
+                })
             # Fetch photos from shared album
             photo_url = None
             album_name = os.getenv("ICLOUD_SHARED_ALBUM")
@@ -296,7 +328,10 @@ def get_icloud_data():
                         "user": user,
                         "calendars": calendars,
                         "events": events,
-                        "reminders": reminders,
+                        "today": reminders,
+                        "tasks": [],
+                        "shopping": [],
+                        "chores": [],
                         "photo": photo_url,
                     },
                 }
@@ -304,5 +339,12 @@ def get_icloud_data():
         data = _ICLOUD_CACHE["data"]
     except Exception:
         logging.exception("Error fetching iCloud data")
-        data = {"events": [], "reminders": [], "photo": None}
+        data = {
+            "events": [],
+            "today": [],
+            "tasks": [],
+            "shopping": [],
+            "chores": [],
+            "photo": None,
+        }
     return jsonify({"status": "ok", "data": data})

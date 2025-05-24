@@ -871,15 +871,42 @@ body.dark-mode .week-calendar .no-events {
   grid-column: 2 / 3;
   grid-row: 1 / 2;
   display: flex;
-  flex-direction: column;
-  overflow-y: auto; /* Allow scrolling within reminders if content overflows */
-  max-height: 100%; /* Ensure it doesn't overflow its grid cell */
+  padding: 0;
+  background: none;
 }
 
-#reminders h3 {
+.checklists-row {
+  display: flex;
+  gap: var(--space-md);
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+.checklist-card {
+  flex: 1 1 25%;
+  min-width: 220px;
+  background: var(--color-bg-card);
+  padding: var(--space-md);
+  border-radius: var(--border-radius-card);
+  box-shadow: var(--elevation-1);
+  display: flex;
+  flex-direction: column;
+}
+
+.checklist-card h3 {
   margin-top: 0;
-  margin-bottom: 8px;
-  font-size: 1.2em;
+  margin-bottom: var(--space-md);
+  font-size: var(--font-header);
+  font-weight: bold;
+}
+
+.pending-list, .done-list, .chores-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  overflow-y: auto;
 }
 
 .reminders-list {
@@ -931,6 +958,15 @@ body.dark-mode .reminder-item.done {
 
 body.dark-mode .reminder-item.done .reminder-title {
   color: #aaa;
+}
+
+.chore-item.done {
+  opacity: 0.5;
+  filter: brightness(0.8);
+}
+
+.chore-item.done .reminder-title {
+  text-decoration: none;
 }
 
 .reminder-due-date {
@@ -1390,7 +1426,7 @@ body.dark-mode #network-status .network-label {
   left: 0;
   right: 0;
   bottom: 0;
-  width: calc(100vw - var(--sidebar-width) - 24px);
+  width: calc(100vw - var(--sidebar-width) - 44px);
   background: var(--widget-bg);
   display: flex;
   flex-direction: row;
