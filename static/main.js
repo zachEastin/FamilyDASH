@@ -1,3 +1,40 @@
+const defaultPrefs = {
+  theme: "auto",
+  screensaver: "off",
+  screensaverDelay: 10,
+  startWeekOn: "sunday",
+  showHolidays: false,
+  palette: "Classic",
+  calendarColors: {}
+};
+
+let prefs = loadPrefs();
+let lastSunData = null;
+let lastIcloudData = null;
+const calendarsData = [
+  { name: "Home" },
+  { name: "Work" },
+  { name: "School" },
+  { name: "Family" },
+  { name: "Events" },
+  { name: "Birthdays" }
+];
+let calendars = calendarsData.map(c => {
+  const color = prefs.calendarColors[c.name] || null;
+  return { name: c.name, color, manual: !!prefs.calendarColors[c.name] };
+});
+window.calendars = calendars;
+window.prefs = prefs;
+
+const colorPalettes = {
+  "Classic": ["#3B82F6", "#10B981", "#8B5CF6", "#F97316", "#EF4444", "#FACC15"],
+  "Modern Pastels": ["#6EE7B7", "#C4B5FD", "#FDBA74", "#7DD3FC", "#FCA5A5", "#FDE68A"],
+  "Muted Earth": ["#A3A380", "#D97B66", "#F2E2C6", "#64748B", "#7C3AED", "#D1D5DB"],
+  "Serene Ocean": ["#1E6091", "#37A0A3", "#F08A5D", "#EAD2AC", "#907F9F", "#CCD6DD"],
+  "Jewel Tones": ["#2D5D7B", "#3E8E7E", "#C44900", "#9D4EDD", "#FFB703", "#465362"],
+  "Soft Neutrals": ["#8D99AE", "#A3B18A", "#D4A5A5", "#BFC0C0", "#C9ADA7", "#344A53"]
+};
+
 let checklistData = { today: [], tasks: [], shopping: [], chores: [] };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -28,6 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
   socket.on("lighting_update", (data) => updateLighting(data));
   socket.on("sun_update", (data) => updateSunTheme(data));
   socket.on("icloud_update", (data) => {
+    lastIcloudData = data;
     updateIcloudWeekView(data);
     updateIcloudMonthView(data);
     updateChecklists(data);
@@ -53,6 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
     fetch("/api/icloud/data")
     .then((r) => r.json())
     .then((r) => {
+      lastIcloudData = r.data;
       updateIcloudWeekView(r.data);
       updateIcloudMonthView(r.data);
       updateChecklists(r.data);
@@ -63,6 +102,7 @@ document.addEventListener("DOMContentLoaded", () => {
   addTouchHandlers();
   // setupCalendarTabs();
   createDayModal();
+  setupSettingsModal();
   // renderMealsMonthView();
 
   // Move widgets to footer after DOM is loaded
@@ -160,16 +200,14 @@ function updateLighting(data) {
 }
 
 function updateSunTheme(data) {
+  lastSunData = data;
   const now = new Date();
   const sunrise = new Date(data.sunrise);
   const sunset = new Date(data.sunset);
-  if (now >= sunrise && now < sunset) {
-    document.body.classList.add("light-mode");
-    document.body.classList.remove("dark-mode");
-  } else {
-    document.body.classList.add("dark-mode");
-    document.body.classList.remove("light-mode");
-  }
+  let theme = now >= sunrise && now < sunset ? "light" : "dark";
+  if (prefs.theme !== "auto") theme = prefs.theme;
+  document.body.classList.toggle("light-mode", theme === "light");
+  document.body.classList.toggle("dark-mode", theme === "dark");
 }
 
 // Helper function to darken a hex color
@@ -425,6 +463,183 @@ function renderChores(id) {
       }
     });
 
-    list.appendChild(el);
+  list.appendChild(el);
   });
 }
+
+// --- Preferences Logic ---
+function loadPrefs() {
+  try {
+    return JSON.parse(localStorage.getItem("dashboardPrefs")) || { ...defaultPrefs };
+  } catch (e) {
+    return { ...defaultPrefs };
+  }
+}
+
+function savePrefs() {
+  localStorage.setItem("dashboardPrefs", JSON.stringify(prefs));
+}
+
+function assignAutoColors() {
+  const palette = colorPalettes[prefs.palette] || [];
+  const used = new Set(calendars.filter(c => c.manual).map(c => c.color));
+  let idx = 0;
+  calendars.forEach(c => {
+    if (!c.manual) {
+      while (idx < palette.length && used.has(palette[idx])) idx++;
+      c.color = palette[idx % palette.length];
+      used.add(c.color);
+      idx++;
+    }
+  });
+  prefs.calendarColors = {};
+  calendars.forEach(c => { if (c.manual) prefs.calendarColors[c.name] = c.color; });
+  savePrefs();
+  window.calendars = calendars;
+}
+
+function renderPaletteOptions() {
+  const container = document.getElementById("palette-container");
+  if (!container) return;
+  container.innerHTML = "";
+  Object.entries(colorPalettes).forEach(([name, colors]) => {
+    const opt = document.createElement("div");
+    opt.className = "palette-option" + (prefs.palette === name ? " selected" : "");
+    opt.tabIndex = 0;
+    opt.dataset.name = name;
+    opt.innerHTML = `<div class="palette-title">${name}</div><div class="palette-swatches">${colors.map(c => `<span class="color-swatch" style="background:${c}"></span>`).join("")}</div>`;
+    const select = () => {
+      prefs.palette = name;
+      calendars.forEach(c => { if (!c.manual) c.color = null; });
+      assignAutoColors();
+      renderPaletteOptions();
+      renderCalendarColorControls();
+    };
+    opt.addEventListener("click", select);
+    opt.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(); }});
+    container.appendChild(opt);
+  });
+}
+
+function renderCalendarColorControls() {
+  const list = document.getElementById("calendar-color-list");
+  if (!list) return;
+  const palette = colorPalettes[prefs.palette] || [];
+  list.innerHTML = "";
+  const used = new Set(calendars.map(c => c.color));
+  calendars.forEach(cal => {
+    if (!cal.color) cal.color = palette[0];
+    const row = document.createElement("div");
+    row.className = "calendar-color-row";
+    const label = document.createElement("div");
+    label.textContent = cal.name;
+    row.appendChild(label);
+    const swatchRow = document.createElement("div");
+    swatchRow.className = "calendar-color-swatches";
+    palette.forEach(color => {
+      const sw = document.createElement("div");
+      sw.className = "color-swatch" + (cal.color === color ? " selected" : "");
+      if (used.has(color) && cal.color !== color) sw.classList.add("used");
+      sw.style.background = color;
+      sw.tabIndex = 0;
+      sw.setAttribute("role", "button");
+      sw.setAttribute("aria-label", `${color} for ${cal.name}`);
+      const select = () => {
+        used.delete(cal.color);
+        cal.color = color;
+        cal.manual = true;
+        used.add(color);
+        prefs.calendarColors[cal.name] = color;
+        savePrefs();
+        renderCalendarColorControls();
+      };
+      sw.addEventListener("click", select);
+      sw.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(); }});
+      swatchRow.appendChild(sw);
+    });
+    row.appendChild(swatchRow);
+    if (!cal.manual) {
+      const badge = document.createElement("span");
+      badge.className = "auto-badge";
+      badge.textContent = "auto";
+      row.appendChild(badge);
+    }
+    list.appendChild(row);
+  });
+}
+
+function setupSettingsModal() {
+  const modal = document.getElementById("settings-modal");
+  const openBtn = document.getElementById("open-settings-button");
+  const closeBtn = document.getElementById("settings-close");
+  if (!modal || !openBtn) return;
+
+  const themeSelect = modal.querySelector("#pref-theme");
+  const screenSelect = modal.querySelector("#pref-screensaver");
+  const delayInput = modal.querySelector("#pref-screensaver-delay");
+  const delayLabel = modal.querySelector("#delay-label");
+  const startWeek = modal.querySelector("#pref-start-week");
+  const showHolidays = modal.querySelector("#pref-show-holidays");
+  const reassign = modal.querySelector("#reassign-colors");
+
+  const applyValues = () => {
+    themeSelect.value = prefs.theme;
+    screenSelect.value = prefs.screensaver;
+    delayInput.value = prefs.screensaverDelay;
+    delayLabel.textContent = prefs.screensaverDelay;
+    startWeek.value = prefs.startWeekOn;
+    showHolidays.checked = prefs.showHolidays;
+  };
+
+  applyValues();
+
+  const show = () => {
+    applyValues();
+    renderPaletteOptions();
+    renderCalendarColorControls();
+    modal.style.display = "flex";
+    requestAnimationFrame(() => modal.classList.add("open"));
+  };
+  const hide = () => {
+    modal.classList.remove("open");
+    setTimeout(() => { modal.style.display = "none"; }, 200);
+  };
+
+  openBtn.addEventListener("click", show);
+  closeBtn.addEventListener("click", hide);
+  modal.addEventListener("click", e => { if (e.target === modal) hide(); });
+
+  const tabs = modal.querySelectorAll(".settings-tab");
+  const sections = modal.querySelectorAll(".settings-section");
+  tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      tabs.forEach(t => t.classList.remove("active"));
+      sections.forEach(s => s.classList.remove("active"));
+      tab.classList.add("active");
+      modal.querySelector(`.settings-section[data-section="${tab.dataset.section}"]`).classList.add("active");
+    });
+  });
+
+  themeSelect.addEventListener("change", e => { prefs.theme = e.target.value; savePrefs(); applyTheme(); });
+  screenSelect.addEventListener("change", e => { prefs.screensaver = e.target.value; savePrefs(); });
+  delayInput.addEventListener("input", e => { delayLabel.textContent = e.target.value; });
+  delayInput.addEventListener("change", e => { prefs.screensaverDelay = parseInt(e.target.value,10); savePrefs(); });
+  startWeek.addEventListener("change", e => { prefs.startWeekOn = e.target.value; savePrefs(); });
+  showHolidays.addEventListener("change", e => { prefs.showHolidays = e.target.checked; savePrefs(); updateIcloudMonthView(lastIcloudData || {}); });
+  if (reassign) {
+    reassign.addEventListener("click", () => {
+      calendars.forEach(c => { if (!c.manual) c.color = null; });
+      assignAutoColors();
+      renderCalendarColorControls();
+    });
+  }
+}
+
+function applyTheme() {
+  if (!lastSunData) return;
+  updateSunTheme(lastSunData);
+}
+
+assignAutoColors();
+
+

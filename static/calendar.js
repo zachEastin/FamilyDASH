@@ -6,6 +6,11 @@
 //   const weekViewContainer = document.getElementById("week-view-container");
 //   const monthViewContainer = document.getElementById("month-view-container");
 //   const mealsViewContainer = document.getElementById("meals-view-container");
+
+const holidayStubs = {
+  "2023-12-25": "Christmas",
+  "2023-12-31": "New Year's Eve",
+};
 //   const monthSubtabs = document.getElementById("month-subtabs");
 //   const shuffleMealsButton = document.getElementById("shuffle-meals-button");
 //   const shoppingListButton = document.getElementById("open-shopping-list-button");
@@ -208,10 +213,12 @@ function updateIcloudWeekView(data) {
   const cal = document.getElementById("week-view-container");
   // --- Week view calendar ---
   const events = Array.isArray(data.events) ? data.events : [];
-  // Get start of this week (Sunday)
   const now = new Date();
+  const prefs = JSON.parse(localStorage.getItem("dashboardPrefs") || "{}");
+  const startMonday = prefs.startWeekOn === "monday";
   const weekStart = new Date(now);
-  weekStart.setDate(now.getDate() - now.getDay());
+  const offset = startMonday ? (now.getDay() + 6) % 7 : now.getDay();
+  weekStart.setDate(now.getDate() - offset);
   weekStart.setHours(0, 0, 0, 0);
   // Build days array
   const days = [];
@@ -242,9 +249,10 @@ function updateIcloudWeekView(data) {
   // Render week grid
   let html = '<div class="week-calendar">';
   // Day headers
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const dayNamesOrig = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const dayNames = startMonday ? dayNamesOrig.slice(1).concat(dayNamesOrig[0]) : dayNamesOrig;
   html += '<div class="day-headers">';
-  const currentDayIdx = now.getDay();
+  const currentDayIdx = startMonday ? (now.getDay() + 6) % 7 : now.getDay();
   for (let i = 0; i < 7; i++) {
     const isTodayHeader = i === currentDayIdx;
     html += `<div class="day-header${isTodayHeader ? " today" : ""}"><span class="day-name">${dayNames[i]}</span><span class="day-date">${days[i].getMonth() + 1}/${days[i].getDate()}</span></div>`;
@@ -331,7 +339,11 @@ function updateIcloudWeekView(data) {
           `event-${cls || "default"}`,
         ];
         if (isNow) eventClasses.push("event-now");
-        const style = `position:absolute; left:${leftPct}%; width:calc(${widthPct}% - 8px); top:${topPct}%; height:${heightPct}%;`;
+        let style = `position:absolute; left:${leftPct}%; width:calc(${widthPct}% - 8px); top:${topPct}%; height:${heightPct}%;`;
+        const cColor = (window.calendars || []).find(c => c.name === ev.calendar)?.color;
+        if (cColor) {
+          style += ` background-color:${cColor}; color:${getContrastColor(cColor)};`;
+        }
         const startStr = st.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
         const endStr = et ? et.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
         const iconSpan = `<span class=\"event-icon material-symbols-outlined\">${icon}</span>`;
@@ -394,10 +406,11 @@ function updateIcloudMonthView(data) {
         }
         // Color: use ev.color or fallback
         let calendarColor =
+          (window.calendars || []).find((c) => c.name === ev.calendar)?.color ||
           ev.color ||
           (ev.calendar &&
-          data.calendars &&
-          Array.isArray(data.calendars)
+            data.calendars &&
+            Array.isArray(data.calendars)
             ? (data.calendars.find((c) => c.name === ev.calendar) || {}).color
             : undefined) || "#1976d2";
         return {
@@ -422,7 +435,10 @@ function updateIcloudMonthView(data) {
   )}</h2></div>`;
 
   // Day names header for the grid
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const prefs = JSON.parse(localStorage.getItem("dashboardPrefs") || "{}");
+  const startMonday = prefs.startWeekOn === "monday";
+  const dayNamesOrig = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const dayNames = startMonday ? dayNamesOrig.slice(1).concat(dayNamesOrig[0]) : dayNamesOrig;
   let gridHeaderHtml = '<div class="month-grid-header">';
   dayNames.forEach((name) => (gridHeaderHtml += `<div>${name}</div>`));
   gridHeaderHtml += "</div>";
@@ -434,7 +450,8 @@ function updateIcloudMonthView(data) {
 
   // Calculate the start of the grid (Sunday of the week the 1st falls in)
   let gridStartDate = new Date(firstDayOfMonth);
-  gridStartDate.setDate(gridStartDate.getDate() - gridStartDate.getDay());
+  const startOffset = startMonday ? (firstDayOfMonth.getDay() + 6) % 7 : firstDayOfMonth.getDay();
+  gridStartDate.setDate(gridStartDate.getDate() - startOffset);
 
   const allEventsForModal = {}; // Store events per day for the modal
 
@@ -460,7 +477,12 @@ function updateIcloudMonthView(data) {
     if (otherMonth) {
       monthGridHtml += `<div class="other-month">`;
     }
-    monthGridHtml += `<div class="day-number">${cellDate.getDate()}</div>`;
+    monthGridHtml += `<div class="day-number">${cellDate.getDate()}`;
+    const prefs = JSON.parse(localStorage.getItem("dashboardPrefs") || "{}");
+    if (prefs.showHolidays && holidayStubs[dayKey]) {
+      monthGridHtml += `<span class="holiday-label"> ${holidayStubs[dayKey]}</span>`;
+    }
+    monthGridHtml += `</div>`;
     monthGridHtml += `<div class="all-day-events-row">`;
 
     // Filter and sort events for this specific day
