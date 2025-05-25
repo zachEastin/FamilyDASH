@@ -1,12 +1,16 @@
 // Clock Modal functionality
 const CLOCK_TYPES = [
-  { id: 'analog', options: ['ticks', 'roman', 'arabic', 'schedule'] },
-  { id: 'digital', options: ['24h', '12h'] },
-  { id: 'world',  options: ['timezone', 'map'] }
+  { id: "analog", options: ["ticks", "roman", "arabic", "schedule"] },
+  {
+    id: "digital",
+    options: ["led", "words", "font1", "font2", "weather"],
+  },
+  { id: "world", options: ["timezone", "map"] },
 ];
 let clockTypeIndex = 0;
 let clockOptionIndex = 0;
 let clockInterval = null;
+let currentDigitalStyle = null;
 
 function loadClockPrefs() {
   const t = parseInt(localStorage.getItem('clockTypeIndex')); 
@@ -44,6 +48,7 @@ function closeClockModal() {
   const overlay = document.getElementById('clock-modal-overlay');
   overlay.classList.remove('open');
   stopAnalogClock();
+  stopDigitalClock();
   const editor = overlay.querySelector('.schedule-editor');
   if (editor) editor.remove();
 }
@@ -126,11 +131,15 @@ function renderClockModal() {
   const type = CLOCK_TYPES[clockTypeIndex];
   const option = type.options[clockOptionIndex];
   stopAnalogClock();
+  stopDigitalClock();
   if (type.id === "analog") {
     display.innerHTML = getAnalogClockHtml(option);
     startAnalogClock();
     const editBtn = display.querySelector(".edit-schedule-btn");
     if (editBtn) editBtn.addEventListener("click", openScheduleEditor);
+  } else if (type.id === "digital") {
+    display.innerHTML = getDigitalClockHtml(option);
+    startDigitalClock(option);
   } else {
     display.innerHTML = `<div class="clock-placeholder">${type.id} - ${option}</div>`;
   }
@@ -325,6 +334,113 @@ function getAnalogClockHtml(style) {
         : ""
     }
   </div>`;
+}
+
+// ----- Digital Clock -----
+function getDigitalClockHtml(style) {
+  const dateStr = new Date().toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+  let weather = "";
+  if (style === "weather") {
+    weather =
+      '<div class="digital-weather"><span class="weather-temp">72\u00B0</span><span class="weather-icon">\u2600\uFE0F</span></div>';
+  }
+  return `
+  <div class="digital-clock-wrapper ${style}">
+    <div class="clock-date">${dateStr}</div>
+    <div class="digital-time"></div>
+    ${weather}
+  </div>`;
+}
+
+function startDigitalClock(style) {
+  currentDigitalStyle = style;
+  updateDigitalTime();
+  clockInterval = setInterval(updateDigitalTime, 1000);
+}
+
+function stopDigitalClock() {
+  if (clockInterval) {
+    clearInterval(clockInterval);
+    clockInterval = null;
+  }
+}
+
+function numberToWords(n) {
+  const ones = [
+    "ZERO",
+    "ONE",
+    "TWO",
+    "THREE",
+    "FOUR",
+    "FIVE",
+    "SIX",
+    "SEVEN",
+    "EIGHT",
+    "NINE",
+  ];
+  const teens = [
+    "TEN",
+    "ELEVEN",
+    "TWELVE",
+    "THIRTEEN",
+    "FOURTEEN",
+    "FIFTEEN",
+    "SIXTEEN",
+    "SEVENTEEN",
+    "EIGHTEEN",
+    "NINETEEN",
+  ];
+  const tens = ["", "", "TWENTY", "THIRTY", "FORTY", "FIFTY"];
+  if (n < 10) return ones[n];
+  if (n < 20) return teens[n - 10];
+  const t = Math.floor(n / 10);
+  const o = n % 10;
+  return tens[t] + (o ? "-" + ones[o] : "");
+}
+
+function timeToWords(date) {
+  const hr = date.getHours() % 12 || 12;
+  const min = date.getMinutes();
+  const ampm = date.getHours() < 12 ? "AM" : "PM";
+  let phrase = "IT IS " + numberToWords(hr);
+  if (min === 0) {
+    phrase += " O'CLOCK";
+  } else {
+    phrase += " " + numberToWords(min);
+  }
+  return phrase + " " + ampm;
+}
+
+function updateDigitalTime() {
+  const overlay = document.getElementById("clock-modal-overlay");
+  const timeEl = overlay.querySelector(".digital-time");
+  if (!timeEl) return;
+  const now = new Date();
+  const hr12 = now.getHours() % 12 || 12;
+  const min = now.getMinutes();
+  const sec = now.getSeconds();
+  const ampm = now.getHours() < 12 ? "AM" : "PM";
+  const dateEl = overlay.querySelector(".clock-date");
+  if (dateEl)
+    dateEl.textContent = now.toLocaleDateString(undefined, {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+    });
+  if (currentDigitalStyle === "words") {
+    timeEl.classList.add("word-clock");
+    timeEl.textContent = timeToWords(now);
+  } else {
+    timeEl.classList.remove("word-clock");
+    const t = `${hr12.toString().padStart(2, "0")}:${min
+      .toString()
+      .padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
+    timeEl.textContent = `${t} ${ampm}`;
+  }
 }
 
 function openScheduleEditor() {

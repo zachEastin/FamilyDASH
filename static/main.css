@@ -4978,3 +4978,45 @@ body.dark-mode #weather-modal-forecast-graph {
   justify-content: flex-end;
 }
 
+/* Digital Clock Styles */
+.digital-clock-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  gap: var(--space-sm);
+  font-size: 8vw;
+}
+
+.digital-time {
+  font-size: 1em;
+}
+
+.digital-clock-wrapper.led .digital-time {
+  font-family: "Courier New", monospace;
+  color: #0f0;
+  text-shadow: 0 0 6px #0f0;
+}
+
+.digital-clock-wrapper.font1 .digital-time {
+  font-family: "Arial", sans-serif;
+}
+
+.digital-clock-wrapper.font2 .digital-time {
+  font-family: "Georgia", serif;
+}
+
+.word-clock {
+  font-family: var(--font-family);
+  text-align: center;
+}
+
+.digital-weather {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 0.5em;
+}
+
