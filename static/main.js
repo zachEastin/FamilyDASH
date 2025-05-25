@@ -275,72 +275,73 @@ function initializeSidebarNavigation() {
 }
 
 function handleSectionChange(section) {
+  if (!section) return;
   // Hide all calendar-related containers first
-  const weekContainer = document.getElementById('week-view-container');
-  const monthContainer = document.getElementById('month-view-container');
-  const mealsWrapper = document.getElementById('meals-panel-wrapper');
-  const remindersWrapper = document.getElementById('reminders');
-  const photoWrapper = document.getElementById('photo');
-  const calendarWrapper = document.getElementById('calendar');
-  
-  if (weekContainer) weekContainer.parentElement.style.display = 'none';
-  if (monthContainer) monthContainer.parentElement.style.display = 'none';
-  if (mealsWrapper) mealsWrapper.parentElement.style.display = 'none';
+  const weekContainer = document.getElementById("week-view-container");
+  const monthContainer = document.getElementById("month-view-container");
+  const mealsWrapper = document.getElementById("meals-panel-wrapper");
+  const remindersWrapper = document.getElementById("reminders");
+  const photoWrapper = document.getElementById("photo");
+  const calendarWrapper = document.getElementById("calendar");
 
-  if (calendarWrapper) calendarWrapper.style.display = 'none';
-  if (weekContainer) weekContainer.style.display = 'none';
-  if (monthContainer) monthContainer.style.display = 'none';
-  if (mealsWrapper) mealsWrapper.style.display = 'none';
-  if (remindersWrapper) remindersWrapper.style.display = 'none';
-  if (photoWrapper) photoWrapper.style.display = 'none';
+  if (weekContainer) weekContainer.parentElement.style.display = "none";
+  if (monthContainer) monthContainer.parentElement.style.display = "none";
+  if (mealsWrapper) mealsWrapper.parentElement.style.display = "none";
 
-  switch(section) {
-    case 'week-calendar':
+  if (calendarWrapper) calendarWrapper.style.display = "none";
+  if (weekContainer) weekContainer.style.display = "none";
+  if (monthContainer) monthContainer.style.display = "none";
+  if (mealsWrapper) mealsWrapper.style.display = "none";
+  if (remindersWrapper) remindersWrapper.style.display = "none";
+  if (photoWrapper) photoWrapper.style.display = "none";
+
+  switch (section) {
+    case "week-calendar":
       showWeekView();
-      weekContainer.parentElement.style.display = 'flex';
-      calendarWrapper.style.display = 'inherit';
+      weekContainer.parentElement.style.display = "flex";
+      calendarWrapper.style.display = "inherit";
       break;
-    case 'month-calendar':
+    case "month-calendar":
       showMonthView();
-      monthContainer.parentElement.style.display = 'flex';
-      calendarWrapper.style.display = 'inherit';
+      monthContainer.parentElement.style.display = "flex";
+      calendarWrapper.style.display = "inherit";
       break;
-      case 'meal-planning':
-        showMealPlanning();
-        mealsWrapper.parentElement.style.display = 'flex';
-        calendarWrapper.style.display = 'inherit';
+    case "meal-planning":
+      showMealPlanning();
+      mealsWrapper.parentElement.style.display = "flex";
+      calendarWrapper.style.display = "inherit";
       break;
-    case 'reminders':
-      remindersWrapper.style.display = 'flex';
+    case "reminders":
+      remindersWrapper.style.display = "flex";
       break;
-    case 'photos':
-      photoWrapper.style.display = 'flex';
+    case "photos":
+      photoWrapper.style.display = "flex";
       break;
   }
 }
 
 function showWeekView() {
-  const weekContainer = document.getElementById('week-view-container');
+  const weekContainer = document.getElementById("week-view-container");
   if (weekContainer) {
-    weekContainer.style.display = 'flex';
+    weekContainer.style.display = "flex";
   }
 }
 
 function showMonthView() {
-  const monthContainer = document.getElementById('month-view-container');
+  const monthContainer = document.getElementById("month-view-container");
   if (monthContainer) {
-    monthContainer.style.display = 'flex';
+    monthContainer.style.display = "flex";
   }
 }
 
 function showMealPlanning() {
-  const mealsWrapper = document.getElementById('meals-panel-wrapper');
+  const mealsWrapper = document.getElementById("meals-panel-wrapper");
   if (mealsWrapper) {
-    mealsWrapper.style.display = 'flex';
+    mealsWrapper.style.display = "flex";
   }
 
   // Also trigger the existing meal planning setup if it exists
-  if (typeof setupMealPlanning === 'function') {
+  if (typeof setupMealPlanning === "function") {
     setupMealPlanning();
   }
 }
@@ -352,55 +353,58 @@ function updateChecklists(data) {
   checklistData.shopping = data.shopping || [];
   checklistData.chores = data.chores || [];
 
-  renderChecklist('today');
-  renderChecklist('tasks');
-  renderChecklist('shopping');
-  renderChores('chores');
+  renderChecklist("today");
+  renderChecklist("tasks");
+  renderChecklist("shopping");
+  renderChores("chores");
 }
 
 function renderChecklist(id) {
   const card = document.getElementById(`checklist-${id}`);
   if (!card) return;
-  const pending = card.querySelector('.pending-list');
-  const done = card.querySelector('.done-list');
-  if (pending) pending.innerHTML = '';
+  const pending = card.querySelector(".pending-list");
+  const done = card.querySelector(".done-list");
+  if (pending) pending.innerHTML = "";
   if (done) {
-    done.innerHTML = '<h4>Completed</h4>';
+    done.innerHTML = "<h4>Completed</h4>";
   }
   const items = checklistData[id] || [];
   items.forEach((item) => {
-    const el = document.createElement('div');
-    el.className = 'reminder-item';
+    const el = document.createElement("div");
+    el.className = "reminder-item";
     if (item.priority) el.classList.add(`priority-${item.priority}`);
-    if (item.done) el.classList.add('done');
+    if (item.done) el.classList.add("done");
     el.tabIndex = 0;
-    el.setAttribute('role', 'checkbox');
-    el.setAttribute('aria-checked', item.done);
+    el.setAttribute("role", "checkbox");
+    el.setAttribute("aria-checked", item.done);
 
-    const check = document.createElement('span');
-    check.className = 'checkmark material-symbols-outlined';
-    check.textContent = 'check_circle';
+    const check = document.createElement("span");
+    check.className = "checkmark material-symbols-outlined";
+    check.textContent = "check_circle";
     el.appendChild(check);
 
-    const titleSpan = document.createElement('span');
-    titleSpan.className = 'reminder-title';
-    if (id === 'shopping') {
-      titleSpan.textContent = item.item + (item.quantity ? ` - ${item.quantity}` : '');
+    const titleSpan = document.createElement("span");
+    titleSpan.className = "reminder-title";
+    if (id === "shopping") {
+      titleSpan.textContent =
+        item.item + (item.quantity ? ` - ${item.quantity}` : "");
     } else {
       titleSpan.textContent = item.title;
     }
 
     el.appendChild(titleSpan);
 
-    if (id === 'today' && item.dueDate) {
-      const dueSpan = document.createElement('span');
-      dueSpan.className = 'reminder-due-date';
-      dueSpan.textContent = ` (Due: ${new Date(item.dueDate).toLocaleDateString()})`;
+    if (id === "today" && item.dueDate) {
+      const dueSpan = document.createElement("span");
+      dueSpan.className = "reminder-due-date";
+      dueSpan.textContent = ` (Due: ${new Date(
+        item.dueDate
+      ).toLocaleDateString()})`;
       el.appendChild(dueSpan);
     }
-    if (id === 'tasks' && item.note) {
-      const noteSpan = document.createElement('span');
-      noteSpan.className = 'reminder-due-date';
+    if (id === "tasks" && item.note) {
+      const noteSpan = document.createElement("span");
+      noteSpan.className = "reminder-due-date";
       noteSpan.textContent = ` - ${item.note}`;
       el.appendChild(noteSpan);
     }
@@ -409,9 +413,9 @@ function renderChecklist(id) {
       item.done = !item.done;
       renderChecklist(id);
     };
-    el.addEventListener('click', toggle);
-    el.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
+    el.addEventListener("click", toggle);
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         toggle();
       }
@@ -422,31 +426,31 @@ function renderChecklist(id) {
   });
 
   if (done) {
-    done.style.display = done.children.length > 1 ? 'flex' : 'none';
+    done.style.display = done.children.length > 1 ? "flex" : "none";
   }
 }
 
 function renderChores(id) {
   const card = document.getElementById(`checklist-${id}`);
   if (!card) return;
-  const list = card.querySelector('.chores-list');
+  const list = card.querySelector(".chores-list");
   if (!list) return;
-  list.innerHTML = '';
+  list.innerHTML = "";
   checklistData[id].forEach((item) => {
-    const el = document.createElement('div');
-    el.className = 'reminder-item chore-item';
-    if (item.done) el.classList.add('done');
+    const el = document.createElement("div");
+    el.className = "reminder-item chore-item";
+    if (item.done) el.classList.add("done");
     el.tabIndex = 0;
-    el.setAttribute('role', 'checkbox');
-    el.setAttribute('aria-checked', item.done);
+    el.setAttribute("role", "checkbox");
+    el.setAttribute("aria-checked", item.done);
 
-    const check = document.createElement('span');
-    check.className = 'checkmark material-symbols-outlined';
-    check.textContent = 'check_circle';
+    const check = document.createElement("span");
+    check.className = "checkmark material-symbols-outlined";
+    check.textContent = "check_circle";
     el.appendChild(check);
 
-    const span = document.createElement('span');
-    span.className = 'reminder-title';
+    const span = document.createElement("span");
+    span.className = "reminder-title";
     span.textContent = item.title;
 
     el.appendChild(span);
@@ -455,22 +459,24 @@ function renderChores(id) {
       item.done = !item.done;
       renderChores(id);
     };
-    el.addEventListener('click', toggle);
-    el.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
+    el.addEventListener("click", toggle);
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         toggle();
       }
     });
 
-  list.appendChild(el);
+    list.appendChild(el);
   });
 }
 
 // --- Preferences Logic ---
 function loadPrefs() {
   try {
-    return JSON.parse(localStorage.getItem("dashboardPrefs")) || { ...defaultPrefs };
+    return (
+      JSON.parse(localStorage.getItem("dashboardPrefs")) || { ...defaultPrefs }
+    );
   } catch (e) {
     return { ...defaultPrefs };
   }
@@ -482,9 +488,9 @@ function savePrefs() {
 
 function assignAutoColors() {
   const palette = colorPalettes[prefs.palette] || [];
-  const used = new Set(calendars.filter(c => c.manual).map(c => c.color));
+  const used = new Set(calendars.filter((c) => c.manual).map((c) => c.color));
   let idx = 0;
-  calendars.forEach(c => {
+  calendars.forEach((c) => {
     if (!c.manual) {
       while (idx < palette.length && used.has(palette[idx])) idx++;
       c.color = palette[idx % palette.length];
@@ -493,7 +499,9 @@ function assignAutoColors() {
     }
   });
   prefs.calendarColors = {};
-  calendars.forEach(c => { if (c.manual) prefs.calendarColors[c.name] = c.color; });
+  calendars.forEach((c) => {
+    if (c.manual) prefs.calendarColors[c.name] = c.color;
+  });
   savePrefs();
   window.calendars = calendars;
 }
@@ -504,30 +512,58 @@ function renderPaletteOptions() {
   container.innerHTML = "";
   Object.entries(colorPalettes).forEach(([name, colors]) => {
     const opt = document.createElement("div");
-    opt.className = "palette-option" + (prefs.palette === name ? " selected" : "");
+    opt.className =
+      "palette-option" + (prefs.palette === name ? " selected" : "");
     opt.tabIndex = 0;
     opt.dataset.name = name;
-    opt.innerHTML = `<div class="palette-title">${name}</div><div class="palette-swatches">${colors.map(c => `<span class="color-swatch" style="background:${c}"></span>`).join("")}</div>`;
+    opt.innerHTML = `<div class="palette-title">${name}</div><div class="palette-swatches">${colors
+      .map((c) => `<span class="color-swatch" style="background:${c}"></span>`)
+      .join("")}</div>`;
     const select = () => {
       prefs.palette = name;
-      calendars.forEach(c => { if (!c.manual) c.color = null; });
+      calendars.forEach((c) => {
+        if (!c.manual) c.color = null;
+      });
       assignAutoColors();
       renderPaletteOptions();
       renderCalendarColorControls();
+      updateIcloudWeekView(lastIcloudData || {});
+      updateIcloudMonthView(lastIcloudData || {});
     };
     opt.addEventListener("click", select);
-    opt.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(); }});
+    opt.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        select();
+      }
+    });
     container.appendChild(opt);
   });
 }
 
+/**
+ * Renders the calendar color controls UI, allowing users to select and assign colors to different calendars.
+ *
+ * - Populates the color selection interface for each calendar using the current color palette.
+ * - Ensures each calendar has a color assigned, defaulting to the first palette color if missing.
+ * - Prevents duplicate color assignments by marking used colors and disabling their selection for other calendars.
+ * - Updates preferences and re-renders the controls when a color is selected.
+ * - Adds accessibility features for keyboard navigation and ARIA labels.
+ * - Displays an "auto" badge for calendars that have not been manually assigned a color.
+ *
+ * Assumes the existence of global variables:
+ *   - `colorPalettes`: An object mapping palette names to arrays of color strings.
+ *   - `prefs`: An object containing user preferences, including the selected palette and calendar color assignments.
+ *   - `calendars`: An array of calendar objects, each with `name`, `color`, and `manual` properties.
+ *   - `savePrefs()`: A function to persist user preferences.
+ */
 function renderCalendarColorControls() {
   const list = document.getElementById("calendar-color-list");
   if (!list) return;
   const palette = colorPalettes[prefs.palette] || [];
   list.innerHTML = "";
-  const used = new Set(calendars.map(c => c.color));
-  calendars.forEach(cal => {
+  const used = new Set(calendars.map((c) => c.color));
+  calendars.forEach((cal) => {
     if (!cal.color) cal.color = palette[0];
     const row = document.createElement("div");
     row.className = "calendar-color-row";
@@ -536,7 +572,7 @@ function renderCalendarColorControls() {
     row.appendChild(label);
     const swatchRow = document.createElement("div");
     swatchRow.className = "calendar-color-swatches";
-    palette.forEach(color => {
+    palette.forEach((color) => {
       const sw = document.createElement("div");
       sw.className = "color-swatch" + (cal.color === color ? " selected" : "");
       if (used.has(color) && cal.color !== color) sw.classList.add("used");
@@ -552,9 +588,16 @@ function renderCalendarColorControls() {
         prefs.calendarColors[cal.name] = color;
         savePrefs();
         renderCalendarColorControls();
+        updateIcloudWeekView(lastIcloudData || {});
+        updateIcloudMonthView(lastIcloudData || {});
       };
       sw.addEventListener("click", select);
-      sw.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(); }});
+      sw.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          select();
+        }
+      });
       swatchRow.appendChild(sw);
     });
     row.appendChild(swatchRow);
