@@ -33,6 +33,12 @@
           <span class="nav-label">Photos</span>
         </button>
       </div>
+      <div class="sidebar-footer">
+        <button id="open-settings-button" class="nav-button" title="Preferences">
+          <span class="material-symbols-outlined">settings</span>
+          <span class="nav-label">Settings</span>
+        </button>
+      </div>
     </nav>
     <div class="main-container">
       <!-- <div id="dashboard" class="grid"> -->
@@ -190,6 +196,54 @@
         <button id="generate-shopping-list">Generate List</button>
       </div>
       <ul id="shopping-list-output"></ul>
+    </div>
+  </div>
+  <div id="settings-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <button class="modal-close" id="settings-close" title="Close">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+      <div class="settings-nav">
+        <button class="settings-tab active" data-section="general">General</button>
+        <button class="settings-tab" data-section="calendar">Calendar</button>
+      </div>
+      <div class="settings-section active" data-section="general">
+        <div class="form-row">
+          <label for="pref-theme">Theme</label>
+          <select id="pref-theme">
+            <option value="auto">Auto</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="pref-screensaver">Screensaver</label>
+          <select id="pref-screensaver">
+            <option value="off">Off</option>
+            <option value="photos">Photos</option>
+            <option value="clock">Clock</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="pref-screensaver-delay">Delay <span id="delay-label"></span> min</label>
+          <input type="range" id="pref-screensaver-delay" min="1" max="30" value="10">
+        </div>
+      </div>
+      <div class="settings-section" data-section="calendar">
+        <div class="form-row">
+          <label for="pref-start-week">Start week on</label>
+          <select id="pref-start-week">
+            <option value="sunday">Sunday</option>
+            <option value="monday">Monday</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label><input type="checkbox" id="pref-show-holidays"> Show holidays</label>
+        </div>
+        <div id="palette-container" class="palette-container"></div>
+        <div id="calendar-color-list"></div>
+        <button id="reassign-colors" class="reassign-btn">Re-assign colors</button>
+      </div>
     </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
