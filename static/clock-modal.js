@@ -11,6 +11,63 @@ let clockTypeIndex = 0;
 let clockOptionIndex = 0;
 let clockInterval = null;
 let currentDigitalStyle = null;
+const WORD_CLOCK_GRID = [
+  "ITLISASAMPM",
+  "ACQUARTERDC",
+  "TWENTYXFIVE",
+  "HALFSTENFTO",
+  "PASTERUNINE",
+  "ONESIXTHREE",
+  "FOURFIVETWO",
+  "EIGHTELEVEN",
+  "SEVENTWELVE",
+  "TENSEOCLOCK",
+];
+
+const WORD_POSITIONS = {
+  IT: [ [0,0],[0,1] ],
+  IS: [ [0,3],[0,4] ],
+  A: [ [1,0] ],
+  AM: [ [0,7],[0,8] ],
+  PM: [ [0,9],[0,10] ],
+  QUARTER: [[1,2],[1,3],[1,4],[1,5],[1,6],[1,7],[1,8]],
+  TWENTY: [[2,0],[2,1],[2,2],[2,3],[2,4],[2,5]],
+  FIVE_MIN: [[2,7],[2,8],[2,9],[2,10]],
+  FIVE_HR: [[6,4],[6,5],[6,6],[6,7]],
+  TEN_MIN: [[3,5],[3,6],[3,7]],
+  TEN_HR: [[9,0],[9,1],[9,2]],
+  HALF: [[3,0],[3,1],[3,2],[3,3]],
+  TO: [[3,9],[3,10]],
+  PAST: [[4,0],[4,1],[4,2],[4,3]],
+  ONE: [[5,0],[5,1],[5,2]],
+  TWO: [[6,8],[6,9],[6,10]],
+  THREE: [[5,6],[5,7],[5,8],[5,9],[5,10]],
+  FOUR: [[6,0],[6,1],[6,2],[6,3]],
+  SIX: [[5,3],[5,4],[5,5]],
+  SEVEN: [[8,0],[8,1],[8,2],[8,3],[8,4]],
+  EIGHT: [[7,0],[7,1],[7,2],[7,3],[7,4]],
+  NINE: [[4,7],[4,8],[4,9],[4,10]],
+  ELEVEN: [[7,5],[7,6],[7,7],[7,8],[7,9],[7,10]],
+  TWELVE: [[8,5],[8,6],[8,7],[8,8],[8,9],[8,10]],
+  OCLOCK: [[9,5],[9,6],[9,7],[9,8],[9,9],[9,10]],
+};
+
+const HOUR_WORDS = {
+  1: 'ONE',
+  2: 'TWO',
+  3: 'THREE',
+  4: 'FOUR',
+  5: 'FIVE_HR',
+  6: 'SIX',
+  7: 'SEVEN',
+  8: 'EIGHT',
+  9: 'NINE',
+ 10: 'TEN_HR',
+ 11: 'ELEVEN',
+ 12: 'TWELVE',
+};
+
+let wordClockLetters = [];
 
 function loadClockPrefs() {
   const t = parseInt(localStorage.getItem('clockTypeIndex')); 
@@ -338,6 +395,21 @@ function getAnalogClockHtml(style) {
 
 // ----- Digital Clock -----
 function getDigitalClockHtml(style) {
+  if (style === "words") {
+    let letters = "";
+    WORD_CLOCK_GRID.forEach((row) => {
+      row.split("").forEach((ch) => {
+        letters += `<span class="letter">${ch}</span>`;
+      });
+    });
+    const dots = `<span class="dot"></span>`.repeat(4);
+    return `
+    <div class="wordclock-wrapper">
+      <div class="wordclock-grid">${letters}</div>
+      <div class="wordclock-dots">${dots}</div>
+    </div>`;
+  }
+
   const dateStr = new Date().toLocaleDateString(undefined, {
     weekday: "long",
     month: "long",
@@ -358,8 +430,14 @@ function getDigitalClockHtml(style) {
 
 function startDigitalClock(style) {
   currentDigitalStyle = style;
-  updateDigitalTime();
-  clockInterval = setInterval(updateDigitalTime, 1000);
+  if (style === "words") {
+    setupWordClock();
+    updateWordClock();
+    clockInterval = setInterval(updateWordClock, 60000);
+  } else {
+    updateDigitalTime();
+    clockInterval = setInterval(updateDigitalTime, 1000);
+  }
 }
 
 function stopDigitalClock() {
@@ -418,7 +496,7 @@ function timeToWords(date) {
 function updateDigitalTime() {
   const overlay = document.getElementById("clock-modal-overlay");
   const timeEl = overlay.querySelector(".digital-time");
-  if (!timeEl) return;
+  if (!timeEl || currentDigitalStyle === "words") return;
   const now = new Date();
   const hr12 = now.getHours() % 12 || 12;
   const min = now.getMinutes();
@@ -431,16 +509,121 @@ function updateDigitalTime() {
       month: "long",
       day: "numeric",
     });
-  if (currentDigitalStyle === "words") {
-    timeEl.classList.add("word-clock");
-    timeEl.textContent = timeToWords(now);
-  } else {
-    timeEl.classList.remove("word-clock");
-    const t = `${hr12.toString().padStart(2, "0")}:${min
-      .toString()
-      .padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
-    timeEl.textContent = `${t} ${ampm}`;
+  const t = `${hr12.toString().padStart(2, "0")}:${min
+    .toString()
+    .padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
+  timeEl.textContent = `${t} ${ampm}`;
+}
+
+function setupWordClock() {
+  const overlay = document.getElementById("clock-modal-overlay");
+  const grid = overlay.querySelector(".wordclock-grid");
+  if (!grid) return;
+  const letters = grid.querySelectorAll(".letter");
+  wordClockLetters = [];
+  let idx = 0;
+  for (let r = 0; r < WORD_CLOCK_GRID.length; r++) {
+    const row = [];
+    for (let c = 0; c < WORD_CLOCK_GRID[r].length; c++) {
+      row.push(letters[idx++]);
+    }
+    wordClockLetters.push(row);
   }
+}
+
+function clearWordClock() {
+  wordClockLetters.flat().forEach((el) => el.classList.remove("lit"));
+}
+
+function highlightWord(key) {
+  const coords = WORD_POSITIONS[key];
+  if (!coords) return;
+  coords.forEach(([r, c]) => {
+    const el = wordClockLetters[r]?.[c];
+    if (el) el.classList.add("lit");
+  });
+}
+
+function getWordClockWords(date) {
+  let hr = date.getHours();
+  const min = date.getMinutes();
+  let rounded = Math.round(min / 5) * 5;
+  if (rounded === 60) {
+    rounded = 0;
+    hr += 1;
+  }
+  let hourForWord = hr % 12 || 12;
+  if (rounded > 30) hourForWord = (hourForWord % 12) + 1;
+  const words = ["IT", "IS"];
+
+  if (rounded === 0) {
+    words.push(HOUR_WORDS[hourForWord]);
+    words.push("OCLOCK");
+  } else if (rounded <= 30) {
+    switch (rounded) {
+      case 5:
+        words.push("FIVE_MIN");
+        break;
+      case 10:
+        words.push("TEN_MIN");
+        break;
+      case 15:
+        words.push("A", "QUARTER");
+        break;
+      case 20:
+        words.push("TWENTY");
+        break;
+      case 25:
+        words.push("TWENTY", "FIVE_MIN");
+        break;
+      case 30:
+        words.push("HALF");
+        break;
+    }
+    words.push("PAST");
+    words.push(HOUR_WORDS[hourForWord]);
+  } else {
+    const to = 60 - rounded;
+    switch (to) {
+      case 5:
+        words.push("FIVE_MIN");
+        break;
+      case 10:
+        words.push("TEN_MIN");
+        break;
+      case 15:
+        words.push("A", "QUARTER");
+        break;
+      case 20:
+        words.push("TWENTY");
+        break;
+      case 25:
+        words.push("TWENTY", "FIVE_MIN");
+        break;
+    }
+    words.push("TO");
+    words.push(HOUR_WORDS[hourForWord]);
+  }
+
+  words.push(date.getHours() < 12 ? "AM" : "PM");
+  return words;
+}
+
+function updateWordClock() {
+  const overlay = document.getElementById("clock-modal-overlay");
+  const grid = overlay.querySelector(".wordclock-grid");
+  if (!grid) return;
+  clearWordClock();
+  const now = new Date();
+  const words = getWordClockWords(now);
+  words.forEach(highlightWord);
+
+  const extra = now.getMinutes() % 5;
+  const dots = overlay.querySelectorAll(".wordclock-dots .dot");
+  dots.forEach((d, i) => {
+    if (i < extra) d.classList.add("lit");
+    else d.classList.remove("lit");
+  });
 }
 
 function openScheduleEditor() {
