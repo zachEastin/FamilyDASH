@@ -152,6 +152,7 @@ body.dark-mode .sidebar {
   opacity: 0.6;
   min-height: 70px;
   touch-action: manipulation;
+  width: 100%;
 }
 
 .nav-button i {
