@@ -4,6 +4,7 @@ __pycache__/
 .venv/
 cookies/
 *.pyc
+
 node_modules/
 venv/
 package-lock.json

@@ -198,6 +198,19 @@
       <ul id="shopping-list-output"></ul>
     </div>
   </div>
+  <div id="clock-modal-overlay" class="clock-modal-overlay" role="dialog" aria-modal="true">
+    <div class="clock-modal-content" tabindex="-1">
+      <div class="clock-modal-display"></div>
+      <div class="clock-modal-hint vertical">
+        <span class="material-symbols-outlined">expand_less</span>
+        <span class="material-symbols-outlined">expand_more</span>
+      </div>
+      <div class="clock-modal-hint horizontal">
+        <span class="material-symbols-outlined">chevron_left</span>
+        <span class="material-symbols-outlined">chevron_right</span>
+      </div>
+    </div>
+  </div>
   <div id="settings-modal" class="modal" style="display:none;">
     <div class="modal-content">
       <button class="modal-close" id="settings-close" title="Close">
@@ -250,6 +263,7 @@
   <script src="/static/meals.js"></script>
   <script src="/static/calendar.js"></script>
   <script src="/static/weather.js"></script>
+  <script src="/static/clock-modal.js"></script>
   <script src="/static/main.js"></script>
 </body>
 </html>
