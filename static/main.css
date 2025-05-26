@@ -5250,7 +5250,8 @@ body.dark-mode .wordclock-wrapper {
 
 .letter.lit {
   color: #F9FAFB;
-  font-weight: 700;
+  font-weight: 900;
+  font-size: 40px;
 }
 
 .wordclock-dots {
