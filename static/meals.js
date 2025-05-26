@@ -177,14 +177,14 @@ function shuffleMealPlan() {
 
 // --- Meals Side Panel Logic (Tabbed) ---
 (function setupMealsSidePanel() {
-  const mealsPanelWrapper = document.querySelector('.meals-panel-wrapper');
+  const mealsPanelWrapper = document.querySelector(".meals-panel-wrapper");
   // const mealsViewContainer = document.getElementById('meals-view-container');
-  const sidePanel = document.getElementById('meals-side-panel');
-  const favoritesTab = document.getElementById('favorites-tab');
-  const historyTab = document.getElementById('history-tab');
-  const favoritesList = document.getElementById('favorites-list');
-  const historyList = document.getElementById('history-list');
-  const panelToggle = sidePanel.querySelector('.side-panel-toggle');
+  const sidePanel = document.getElementById("meals-side-panel");
+  const favoritesTab = document.getElementById("favorites-tab");
+  const historyTab = document.getElementById("history-tab");
+  const favoritesList = document.getElementById("favorites-list");
+  const historyList = document.getElementById("history-list");
+  const panelToggle = sidePanel.querySelector(".side-panel-toggle");
 
   // Show/hide wrapper when Meals tab is active
   // function showMealsPanelWrapper() {
@@ -220,94 +220,99 @@ function shuffleMealPlan() {
   // }
 
   // Collapse/expand logic
-  panelToggle.addEventListener('click', function(e) {
+  panelToggle.addEventListener("click", function (e) {
     e.stopPropagation();
-    sidePanel.classList.toggle('collapsed');
+    sidePanel.classList.toggle("collapsed");
   });
-  sidePanel.querySelector('.side-panel-header').addEventListener('dblclick', function() {
-    sidePanel.classList.toggle('collapsed');
-  });
+  sidePanel
+    .querySelector(".side-panel-header")
+    .addEventListener("dblclick", function () {
+      sidePanel.classList.toggle("collapsed");
+    });
 
   // Tab switching logic
-  favoritesTab.addEventListener('click', function() {
-    favoritesTab.classList.add('active');
-    historyTab.classList.remove('active');
-    favoritesList.style.display = '';
-    historyList.style.display = 'none';
+  favoritesTab.addEventListener("click", function () {
+    favoritesTab.classList.add("active");
+    historyTab.classList.remove("active");
+    favoritesList.style.display = "";
+    historyList.style.display = "none";
   });
-  historyTab.addEventListener('click', function() {
-    historyTab.classList.add('active');
-    favoritesTab.classList.remove('active');
-    historyList.style.display = '';
-    favoritesList.style.display = 'none';
+  historyTab.addEventListener("click", function () {
+    historyTab.classList.add("active");
+    favoritesTab.classList.remove("active");
+    historyList.style.display = "";
+    favoritesList.style.display = "none";
     fetchHistory(); // Ensure history is refreshed when tab is activated
   });
 
   // --- Fetch and render Favorites ---
   function renderFavorites(favorites) {
-    favoritesList.innerHTML = '';
+    favoritesList.innerHTML = "";
     favorites.forEach(([uuid, title]) => {
-      const div = document.createElement('div');
-      div.className = 'recipe-item';
-      div.setAttribute('draggable', 'true');
-      div.setAttribute('data-title', title);
-      div.setAttribute('data-uuid', uuid);
-      div.innerHTML = '<span class="material-symbols-outlined star-icon">star</span>' + title;
+      const div = document.createElement("div");
+      div.className = "recipe-item";
+      div.setAttribute("draggable", "true");
+      div.setAttribute("data-title", title);
+      div.setAttribute("data-uuid", uuid);
+      div.innerHTML =
+        '<span class="material-symbols-outlined star-icon">star</span>' + title;
       favoritesList.appendChild(div);
     });
     makeRecipeItemsDraggable(); // Call here
   }
   function fetchFavorites() {
-    fetch('/api/meals/favorites')
-      .then(r => r.json())
+    fetch("/api/meals/favorites")
+      .then((r) => r.json())
       .then(renderFavorites);
   }
 
   // --- Fetch and render History ---
   function renderHistory(historyRecipes) {
-    historyList.innerHTML = '';
-    historyRecipes.forEach(recipe => {
-      const div = document.createElement('div');
-      div.className = 'recipe-item';
-      div.setAttribute('draggable', 'true');
-      div.setAttribute('data-title', recipe.title);
-      div.setAttribute('data-uuid', recipe.uuid);
-      div.innerHTML = '<span class="material-symbols-outlined history-icon">history</span>' + recipe.title;
+    historyList.innerHTML = "";
+    historyRecipes.forEach((recipe) => {
+      const div = document.createElement("div");
+      div.className = "recipe-item";
+      div.setAttribute("draggable", "true");
+      div.setAttribute("data-title", recipe.title);
+      div.setAttribute("data-uuid", recipe.uuid);
+      div.innerHTML =
+        '<span class="material-symbols-outlined history-icon">history</span>' +
+        recipe.title;
       div.dataset.recipe = JSON.stringify(recipe);
       historyList.appendChild(div);
     });
     makeRecipeItemsDraggable(); // Call here
   }
   function fetchHistory() {
-    fetch('/api/recipes')
-      .then(r => r.json())
+    fetch("/api/recipes")
+      .then((r) => r.json())
       .then(renderHistory);
   }
 
   // --- Drag and Drop Logic ---
   function handleDragStart(e) {
-    const title = this.getAttribute('data-title');
-    const uuid = this.getAttribute('data-uuid');
+    const title = this.getAttribute("data-title");
+    const uuid = this.getAttribute("data-uuid");
 
     if (title) {
-      e.dataTransfer.setData('text/plain', title); // For compatibility
-      e.dataTransfer.setData('application/x-recipe-title', title);
+      e.dataTransfer.setData("text/plain", title); // For compatibility
+      e.dataTransfer.setData("application/x-recipe-title", title);
     }
     if (uuid) {
-      e.dataTransfer.setData('application/x-recipe-uuid', uuid);
+      e.dataTransfer.setData("application/x-recipe-uuid", uuid);
     }
     // If the full recipe object is available (for history items), include it as JSON
     if (this.dataset.recipe) {
-      e.dataTransfer.setData('application/json', this.dataset.recipe);
+      e.dataTransfer.setData("application/json", this.dataset.recipe);
     }
 
-    e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.effectAllowed = "copy";
   }
   function makeRecipeItemsDraggable() {
-    const items = document.querySelectorAll('.recipe-item');
-    items.forEach(item => {
-      item.removeEventListener('dragstart', handleDragStart); // Avoid duplicate listeners
-      item.addEventListener('dragstart', handleDragStart);
+    const items = document.querySelectorAll(".recipe-item");
+    items.forEach((item) => {
+      item.removeEventListener("dragstart", handleDragStart); // Avoid duplicate listeners
+      item.addEventListener("dragstart", handleDragStart);
     });
   }
   function handleMealSlotDrop(e) {
@@ -315,15 +320,17 @@ function shuffleMealPlan() {
     const date = this.dataset.date;
     const mealType = this.dataset.mealType;
     let recipe = null;
-    const recipe_uuid = e.dataTransfer.getData('application/x-recipe-uuid');
+    const recipe_uuid = e.dataTransfer.getData("application/x-recipe-uuid");
     // Try to get full recipe object from dataTransfer
-    let recipeJson = e.dataTransfer.getData('application/json');
+    let recipeJson = e.dataTransfer.getData("application/json");
     if (recipeJson) {
-      try { recipe = JSON.parse(recipeJson); } catch {}
+      try {
+        recipe = JSON.parse(recipeJson);
+      } catch {}
     }
     if (!recipe) {
       // Fallback: look up by title in history or favorites
-      const title = e.dataTransfer.getData('application/x-recipe-title');
+      const title = e.dataTransfer.getData("application/x-recipe-title");
       // Search history first
       // if (allMealsData && title) {
       //   let foundRecipe = null;
@@ -350,17 +357,17 @@ function shuffleMealPlan() {
       if (!recipe && title) recipe = { title };
     }
     // POST to /api/meals/update
-    fetch('/api/meals/update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    fetch("/api/meals/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        month: date.slice(0,7),
+        month: date.slice(0, 7),
         date,
         mealType,
-        recipe_uuid
-      })
+        recipe_uuid,
+      }),
     })
-      .then(r => r.json())
+      .then((r) => r.json())
       .then(() => {
         fetchAndRenderMealsMonthView();
         fetchHistory();
@@ -368,135 +375,158 @@ function shuffleMealPlan() {
       });
   }
   function makeMealSlotsDroppable() {
-    const grid = document.querySelector('.meals-grid');
+    const grid = document.querySelector(".meals-grid");
     if (!grid) return;
 
     // Remove previous listeners if any
     grid.ondragover = null;
     grid.ondrop = null;
 
-    grid.addEventListener('dragover', function(e) {
-      const slot = e.target.closest('.meal-slot');
+    grid.addEventListener("dragover", function (e) {
+      const slot = e.target.closest(".meal-slot");
       if (slot) {
         e.preventDefault();
-        e.dataTransfer.dropEffect = 'copy';
-        slot.classList.add('dragover-debug');
+        e.dataTransfer.dropEffect = "copy";
+        slot.classList.add("dragover-debug");
       }
     });
 
-    grid.addEventListener('dragleave', function(e) {
-      const slot = e.target.closest('.meal-slot');
+    grid.addEventListener("dragleave", function (e) {
+      const slot = e.target.closest(".meal-slot");
       if (slot) {
-        slot.classList.remove('dragover-debug');
+        slot.classList.remove("dragover-debug");
       }
     });
 
-    grid.addEventListener('drop', function(e) {
-      const slot = e.target.closest('.meal-slot');
+    grid.addEventListener("drop", function (e) {
+      const slot = e.target.closest(".meal-slot");
       if (!slot) {
         return;
       }
       e.preventDefault();
-      slot.classList.remove('dragover-debug');
+      slot.classList.remove("dragover-debug");
       handleMealSlotDrop.call(slot, e);
     });
   }
-
   function makeMealSlotsSwipeable() {
-    document.querySelectorAll('.meal-slot').forEach(slot => {
-      const inner = slot.querySelector('.meal-slot-inner');
+    document.querySelectorAll(".meal-slot").forEach((slot) => {
+      const inner = slot.querySelector(".meal-slot-inner");
       if (!inner) return;
       let startX = 0;
       let currentX = 0;
-      let dragging = false;
-
-      const endDrag = () => {
+      let dragging = false;      const endDrag = () => {
         if (!dragging) return;
-        inner.style.transition = 'transform 0.2s ease';
+
+        inner.style.transition = "transform 0.2s ease";
         const threshold = slot.offsetWidth * 0.4;
+        const significantDrag = currentX > 10; // Track if there was significant movement
+
         if (currentX > threshold) {
-          inner.style.transform = `translateX(${slot.offsetWidth}px)`;
-          setTimeout(() => removeMealSlot(slot), 150);
+          const recipeUuid = slot.dataset.recipeUuid;
+          // If there's a recipe to remove, slide out and remove it
+          if (recipeUuid) {
+            inner.style.transform = `translateX(${slot.offsetWidth}px)`;
+            setTimeout(() => removeMealSlot(slot), 150);
+          } else {
+            // If it's an empty slot, just slide back to normal position
+            inner.style.transform = "";
+          }
         } else {
-          inner.style.transform = '';
+          inner.style.transform = "";
         }
+
+        // Set a flag to prevent click events if there was significant dragging
+        if (significantDrag) {
+          slot.dataset.justDragged = "true";
+          setTimeout(() => {
+            delete slot.dataset.justDragged;
+          }, 100);
+        }
+
         dragging = false;
       };
 
-      slot.addEventListener('pointerdown', e => {
+      slot.addEventListener("pointerdown", (e) => {
         startX = e.clientX;
         currentX = 0;
         dragging = true;
-        inner.style.transition = 'none';
+        inner.style.transition = "none";
         slot.setPointerCapture(e.pointerId);
       });
-      slot.addEventListener('pointermove', e => {
+      slot.addEventListener("pointermove", (e) => {
         if (!dragging) return;
         currentX = Math.max(0, e.clientX - startX);
         inner.style.transform = `translateX(${currentX}px)`;
       });
-      slot.addEventListener('pointerup', endDrag);
-      slot.addEventListener('pointercancel', endDrag);
-      slot.addEventListener('pointerleave', endDrag);
+      slot.addEventListener("pointerup", endDrag);
+      slot.addEventListener("pointercancel", endDrag);
+      slot.addEventListener("pointerleave", endDrag);
     });
   }
 
-  let lastRemoved = null;
-  function removeMealSlot(slot) {
+  let lastRemoved = null;  function removeMealSlot(slot) {
     const slotId = `${slot.dataset.date}|${slot.dataset.mealType}`;
     const recipeUuid = slot.dataset.recipeUuid;
     if (!recipeUuid) return;
-    const titleEl = slot.querySelector('.meal-slot-title');
+    const titleEl = slot.querySelector(".meal-slot-title");
     lastRemoved = {
       slot,
       slotId,
       recipe: { recipe_uuid: recipeUuid },
-      title: titleEl ? titleEl.textContent : ''
+      title: titleEl ? titleEl.textContent : "",
     };
-    slot.dataset.recipeUuid = '';
-    slot.classList.add('empty-meal-slot');
-    if (titleEl) titleEl.textContent = '+';
-    fetch(`/api/mealslot/${encodeURIComponent(slotId)}`, { method: 'DELETE' });
-    showSnackbar('Recipe removed', undoLastRemoval);
+    slot.dataset.recipeUuid = "";
+    slot.classList.add("empty-meal-slot");
+    if (titleEl) titleEl.textContent = "+";
+    
+    // Reset the visual state after removal
+    const inner = slot.querySelector(".meal-slot-inner");
+    if (inner) {
+      inner.style.transition = "transform 0.2s ease";
+      inner.style.transform = "";
+    }
+    
+    fetch(`/api/mealslot/${encodeURIComponent(slotId)}`, { method: "DELETE" });
+    showSnackbar("Recipe removed", undoLastRemoval);
   }
 
   function undoLastRemoval() {
     if (!lastRemoved) return;
     const { slot, slotId, recipe, title } = lastRemoved;
-    const titleEl = slot.querySelector('.meal-slot-title');
+    const titleEl = slot.querySelector(".meal-slot-title");
     slot.dataset.recipeUuid = recipe.recipe_uuid;
-    slot.classList.remove('empty-meal-slot');
+    slot.classList.remove("empty-meal-slot");
     if (titleEl) titleEl.textContent = title;
-    fetch('/api/mealslot/restore', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slot_id: slotId, recipe })
+    fetch("/api/mealslot/restore", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slot_id: slotId, recipe }),
     });
     lastRemoved = null;
   }
   window.removeMealSlot = removeMealSlot;
   window.undoLastRemoval = undoLastRemoval;
   // Add debug CSS for dragover
-  if (!document.getElementById('dragover-debug-style')) {
-    const style = document.createElement('style');
-    style.id = 'dragover-debug-style';
+  if (!document.getElementById("dragover-debug-style")) {
+    const style = document.createElement("style");
+    style.id = "dragover-debug-style";
     style.textContent = `.dragover-debug { outline: 2px dashed red !important; background: #ff000033 !important; }`;
     document.head.appendChild(style);
   }
 
   // --- Logic to run after meals view is rendered ---
-  window.onMealsGridRendered = function(data, recipeMap) {
+  window.onMealsGridRendered = function (data, recipeMap) {
     patchMealSlotClicksWithModal(data, recipeMap); // This is a global function
-    makeMealSlotsDroppable();           // This function is defined within this IIFE
-    makeMealSlotsSwipeable();           // enable swipe to remove
-    fetchHistory();                     // This will eventually call renderHistory, which calls makeRecipeItemsDraggable
-    fetchFavorites();                   // This will eventually call renderFavorites, which calls makeRecipeItemsDraggable
+    makeMealSlotsDroppable(); // This function is defined within this IIFE
+    makeMealSlotsSwipeable(); // enable swipe to remove
+    fetchHistory(); // This will eventually call renderHistory, which calls makeRecipeItemsDraggable
+    fetchFavorites(); // This will eventually call renderFavorites, which calls makeRecipeItemsDraggable
   };
 
   // Initial load if panel is visible
-  if (mealsPanelWrapper && !mealsPanelWrapper.classList.contains('hidden')) {
+  if (mealsPanelWrapper && !mealsPanelWrapper.classList.contains("hidden")) {
     fetchFavorites(); // This will eventually call renderFavorites, which calls makeRecipeItemsDraggable
-    fetchHistory();   // This will eventually call renderHistory, which calls makeRecipeItemsDraggable
+    fetchHistory(); // This will eventually call renderHistory, which calls makeRecipeItemsDraggable
   }
 })();
 
@@ -511,33 +541,44 @@ function shuffleMealPlan() {
   const ingredientsInput = document.getElementById("recipe-ingredients");
   const favoriteStar = document.getElementById("favorite-star");
   const tagInputs = form.querySelectorAll("input[name='tags']");
-  let currentDate = null, currentMealType = null, currentMonth = null;
+  let currentDate = null,
+    currentMealType = null,
+    currentMonth = null;
   let isFavorite = false;
   let currentRecipeUuid = null;
 
   function setModalFields(rec) {
     titleInput.value = rec && rec.title ? rec.title : "";
-    ingredientsInput.value = rec && rec.ingredients ? (Array.isArray(rec.ingredients) ? rec.ingredients.join("\n") : rec.ingredients) : "";
+    ingredientsInput.value =
+      rec && rec.ingredients
+        ? Array.isArray(rec.ingredients)
+          ? rec.ingredients.join("\n")
+          : rec.ingredients
+        : "";
     isFavorite = rec && rec.isFavorite ? true : false;
     updateFavoriteStar();
     const tags = rec && rec.tags ? rec.tags : [];
-    tagInputs.forEach(input => {
+    tagInputs.forEach((input) => {
       input.checked = tags.includes(input.value);
     });
   }
 
   function showModal(recipe, date, mealType) {
     modal.style.display = "flex";
-    setTimeout(() => { modal.classList.add("open"); }, 10);
+    setTimeout(() => {
+      modal.classList.add("open");
+    }, 10);
     currentDate = date;
     currentMealType = mealType;
     currentMonth = date.slice(0, 7);
-    currentRecipeUuid = recipe && (recipe.uuid || recipe.recipe_uuid) || null;
+    currentRecipeUuid = (recipe && (recipe.uuid || recipe.recipe_uuid)) || null;
     setModalFields(recipe || {});
   }
   function hideModal() {
     modal.classList.remove("open");
-    setTimeout(() => { modal.style.display = "none"; }, 200);
+    setTimeout(() => {
+      modal.style.display = "none";
+    }, 200);
     form.reset();
     isFavorite = false;
     currentRecipeUuid = null;
@@ -562,7 +603,7 @@ function shuffleMealPlan() {
   });
   // Show/hide favorite star based on modal context
   function showFavoriteStar(show) {
-    favoriteStar.parentElement.style.display = show ? '' : 'none';
+    favoriteStar.parentElement.style.display = show ? "" : "none";
   }
   // Always show favorite toggle in modal
   showFavoriteStar(true);
@@ -574,22 +615,29 @@ function shuffleMealPlan() {
   });
   const removeBtn = document.getElementById("recipe-remove");
   if (removeBtn) {
-    removeBtn.addEventListener('click', () => {
+    removeBtn.addEventListener("click", () => {
       hideModal();
-      const slot = document.querySelector(`.meal-slot[data-date="${currentDate}"][data-meal-type="${currentMealType}"]`);
+      const slot = document.querySelector(
+        `.meal-slot[data-date="${currentDate}"][data-meal-type="${currentMealType}"]`
+      );
       if (slot) window.removeMealSlot(slot);
     });
   }
   // Close modal when clicking outside modal content
-  modal.addEventListener("click", function(e) {
+  modal.addEventListener("click", function (e) {
     if (e.target === modal) hideModal();
   });
-  form.addEventListener("submit", async function(e) {
+  form.addEventListener("submit", async function (e) {
     e.preventDefault();
     const title = titleInput.value.trim();
     if (!title) return;
-    let ingredients = ingredientsInput.value.split(/\n|,/).map(s => s.trim()).filter(Boolean);
-    const tags = Array.from(tagInputs).filter(i => i.checked).map(i => i.value);
+    let ingredients = ingredientsInput.value
+      .split(/\n|,/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const tags = Array.from(tagInputs)
+      .filter((i) => i.checked)
+      .map((i) => i.value);
     const recipeData = { title, ingredients, tags, isFavorite };
     try {
       let recipe_uuid = currentRecipeUuid;
@@ -597,7 +645,7 @@ function shuffleMealPlan() {
         const r = await fetch("/api/recipes/update", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ uuid: recipe_uuid, ...recipeData })
+          body: JSON.stringify({ uuid: recipe_uuid, ...recipeData }),
         });
         if (!r.ok) {
           const err = await r.json().catch(() => ({}));
@@ -607,7 +655,7 @@ function shuffleMealPlan() {
         const r = await fetch("/api/recipes/add", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(recipeData)
+          body: JSON.stringify(recipeData),
         });
         if (!r.ok) {
           const err = await r.json().catch(() => ({}));
@@ -624,8 +672,8 @@ function shuffleMealPlan() {
           month: currentMonth,
           date: currentDate,
           mealType: currentMealType,
-          recipe_uuid
-        })
+          recipe_uuid,
+        }),
       });
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({}));
@@ -643,8 +691,15 @@ function shuffleMealPlan() {
 
 // Patch meal-slot click handler to open modal with data
 function patchMealSlotClicksWithModal(mealsData, recipeMap) {
-  document.querySelectorAll(".meal-slot").forEach(slot => {
-    slot.addEventListener("click", function(e) {
+  document.querySelectorAll(".meal-slot").forEach((slot) => {
+    slot.addEventListener("click", function (e) {
+      // Prevent modal from opening if we just finished dragging
+      if (slot.dataset.justDragged) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+
       const date = slot.dataset.date;
       const mealType = slot.dataset.mealType;
       // Find recipe data if available
@@ -655,7 +710,6 @@ function patchMealSlotClicksWithModal(mealsData, recipeMap) {
       window.openRecipeModal(recipe, date, mealType);
     });
   });
-
 }
 
 // --- Ensure all helpers and functions are defined in global scope ---
