@@ -11,7 +11,7 @@ from modules.time_module import time_bp, get_time
 from modules.network_module import network_bp, get_network
 from modules.lighting_module import lighting_bp, get_lighting
 from modules.sun_module import sun_bp, get_sun
-from modules.meals_module import meals_bp, recipes_bp
+from modules.meals_module import meals_bp, recipes_bp, mealslot_bp
 from modules.worldclock_module import worldclock_bp
 
 import os
@@ -45,6 +45,7 @@ app.register_blueprint(lighting_bp)
 app.register_blueprint(sun_bp)
 app.register_blueprint(meals_bp)
 app.register_blueprint(recipes_bp)
+app.register_blueprint(mealslot_bp)
 app.register_blueprint(worldclock_bp)
 
 

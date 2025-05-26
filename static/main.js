@@ -5,7 +5,7 @@ const defaultPrefs = {
   startWeekOn: "sunday",
   showHolidays: false,
   palette: "Classic",
-  calendarColors: {}
+  calendarColors: {},
 };
 
 let prefs = loadPrefs();
@@ -17,9 +17,9 @@ const calendarsData = [
   { name: "School" },
   { name: "Family" },
   { name: "Events" },
-  { name: "Birthdays" }
+  { name: "Birthdays" },
 ];
-let calendars = calendarsData.map(c => {
+let calendars = calendarsData.map((c) => {
   const color = prefs.calendarColors[c.name] || null;
   return { name: c.name, color, manual: !!prefs.calendarColors[c.name] };
 });
@@ -27,12 +27,47 @@ window.calendars = calendars;
 window.prefs = prefs;
 
 const colorPalettes = {
-  "Classic": ["#3B82F6", "#10B981", "#8B5CF6", "#F97316", "#EF4444", "#FACC15"],
-  "Modern Pastels": ["#6EE7B7", "#C4B5FD", "#FDBA74", "#7DD3FC", "#FCA5A5", "#FDE68A"],
-  "Muted Earth": ["#A3A380", "#D97B66", "#F2E2C6", "#64748B", "#7C3AED", "#D1D5DB"],
-  "Serene Ocean": ["#1E6091", "#37A0A3", "#F08A5D", "#EAD2AC", "#907F9F", "#CCD6DD"],
-  "Jewel Tones": ["#2D5D7B", "#3E8E7E", "#C44900", "#9D4EDD", "#FFB703", "#465362"],
-  "Soft Neutrals": ["#8D99AE", "#A3B18A", "#D4A5A5", "#BFC0C0", "#C9ADA7", "#344A53"]
+  Classic: ["#3B82F6", "#10B981", "#8B5CF6", "#F97316", "#EF4444", "#FACC15"],
+  "Modern Pastels": [
+    "#6EE7B7",
+    "#C4B5FD",
+    "#FDBA74",
+    "#7DD3FC",
+    "#FCA5A5",
+    "#FDE68A",
+  ],
+  "Muted Earth": [
+    "#A3A380",
+    "#D97B66",
+    "#F2E2C6",
+    "#64748B",
+    "#7C3AED",
+    "#D1D5DB",
+  ],
+  "Serene Ocean": [
+    "#1E6091",
+    "#37A0A3",
+    "#F08A5D",
+    "#EAD2AC",
+    "#907F9F",
+    "#CCD6DD",
+  ],
+  "Jewel Tones": [
+    "#2D5D7B",
+    "#3E8E7E",
+    "#C44900",
+    "#9D4EDD",
+    "#FFB703",
+    "#465362",
+  ],
+  "Soft Neutrals": [
+    "#8D99AE",
+    "#A3B18A",
+    "#D4A5A5",
+    "#BFC0C0",
+    "#C9ADA7",
+    "#344A53",
+  ],
 };
 
 let checklistData = { today: [], tasks: [], shopping: [], chores: [] };
@@ -88,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
   fetch("/api/sun/data")
     .then((r) => r.json())
     .then((r) => updateSunTheme(r.data));
-    fetch("/api/icloud/data")
+  fetch("/api/icloud/data")
     .then((r) => r.json())
     .then((r) => {
       lastIcloudData = r.data;
@@ -97,7 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
       updateChecklists(r.data);
       // updateIcloudPhotos(r.data);
     });
-    fetchAndRenderMealsMonthView();
+  fetchAndRenderMealsMonthView();
 
   addTouchHandlers();
   // setupCalendarTabs();
@@ -107,7 +142,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Move widgets to footer after DOM is loaded
   moveWidgetsToFooter();
-
 });
 
 // Helper: format unix timestamp to local time
@@ -116,7 +150,6 @@ function formatTime(ts) {
   const d = new Date(ts * 1000);
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
-
 
 function moveWidgetsToFooter() {
   let footer = document.querySelector(".footer");
@@ -244,30 +277,32 @@ function getContrastColor(hexColor) {
 
 // Sidebar Navigation System
 function initializeSidebarNavigation() {
-  const navButtons = document.querySelectorAll('.nav-button');
-  const sectionContents = document.querySelectorAll('.section-content');
-  
-  navButtons.forEach(button => {
-    button.addEventListener('click', () => {
+  const navButtons = document.querySelectorAll(".nav-button");
+  const sectionContents = document.querySelectorAll(".section-content");
+
+  navButtons.forEach((button) => {
+    button.addEventListener("click", () => {
       const targetSection = button.dataset.section;
-      
+
       // Remove active class from all buttons
-      navButtons.forEach(btn => btn.classList.remove('active'));
-      
+      navButtons.forEach((btn) => btn.classList.remove("active"));
+
       // Add active class to clicked button
-      button.classList.add('active');
-      
+      button.classList.add("active");
+
       // Hide all section contents
-      sectionContents.forEach(section => {
-        section.classList.remove('active');
+      sectionContents.forEach((section) => {
+        section.classList.remove("active");
       });
-      
+
       // Show target section content
-      const targetElement = document.querySelector(`[data-section="${targetSection}"]`);
+      const targetElement = document.querySelector(
+        `[data-section="${targetSection}"]`
+      );
       if (targetElement) {
-        targetElement.classList.add('active');
+        targetElement.classList.add("active");
       }
-      
+
       // Handle specific section logic
       handleSectionChange(targetSection);
     });
@@ -471,6 +506,27 @@ function renderChores(id) {
   });
 }
 
+// --- Snackbar utility ---
+let snackbarTimer = null;
+function showSnackbar(message, undoCallback) {
+  const sb = document.getElementById("snackbar");
+  if (!sb) return;
+  sb.querySelector(".snackbar-message").textContent = message + " –";
+  const btn = sb.querySelector(".snackbar-undo");
+  btn.onclick = () => {
+    clearTimeout(snackbarTimer);
+    sb.classList.remove("show");
+    if (undoCallback) undoCallback();
+  };
+  if (snackbarTimer) clearTimeout(snackbarTimer);
+  sb.classList.add("show");
+  snackbarTimer = setTimeout(() => {
+    sb.classList.remove("show");
+    snackbarTimer = null;
+  }, 5000);
+}
+window.showSnackbar = showSnackbar;
+
 // --- Preferences Logic ---
 function loadPrefs() {
   try {
@@ -645,33 +701,62 @@ function setupSettingsModal() {
   };
   const hide = () => {
     modal.classList.remove("open");
-    setTimeout(() => { modal.style.display = "none"; }, 200);
+    setTimeout(() => {
+      modal.style.display = "none";
+    }, 200);
   };
 
   openBtn.addEventListener("click", show);
   closeBtn.addEventListener("click", hide);
-  modal.addEventListener("click", e => { if (e.target === modal) hide(); });
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) hide();
+  });
 
   const tabs = modal.querySelectorAll(".settings-tab");
   const sections = modal.querySelectorAll(".settings-section");
-  tabs.forEach(tab => {
+  tabs.forEach((tab) => {
     tab.addEventListener("click", () => {
-      tabs.forEach(t => t.classList.remove("active"));
-      sections.forEach(s => s.classList.remove("active"));
+      tabs.forEach((t) => t.classList.remove("active"));
+      sections.forEach((s) => s.classList.remove("active"));
       tab.classList.add("active");
-      modal.querySelector(`.settings-section[data-section="${tab.dataset.section}"]`).classList.add("active");
+      modal
+        .querySelector(
+          `.settings-section[data-section="${tab.dataset.section}"]`
+        )
+        .classList.add("active");
     });
   });
 
-  themeSelect.addEventListener("change", e => { prefs.theme = e.target.value; savePrefs(); applyTheme(); });
-  screenSelect.addEventListener("change", e => { prefs.screensaver = e.target.value; savePrefs(); });
-  delayInput.addEventListener("input", e => { delayLabel.textContent = e.target.value; });
-  delayInput.addEventListener("change", e => { prefs.screensaverDelay = parseInt(e.target.value,10); savePrefs(); });
-  startWeek.addEventListener("change", e => { prefs.startWeekOn = e.target.value; savePrefs(); });
-  showHolidays.addEventListener("change", e => { prefs.showHolidays = e.target.checked; savePrefs(); updateIcloudMonthView(lastIcloudData || {}); });
+  themeSelect.addEventListener("change", (e) => {
+    prefs.theme = e.target.value;
+    savePrefs();
+    applyTheme();
+  });
+  screenSelect.addEventListener("change", (e) => {
+    prefs.screensaver = e.target.value;
+    savePrefs();
+  });
+  delayInput.addEventListener("input", (e) => {
+    delayLabel.textContent = e.target.value;
+  });
+  delayInput.addEventListener("change", (e) => {
+    prefs.screensaverDelay = parseInt(e.target.value, 10);
+    savePrefs();
+  });
+  startWeek.addEventListener("change", (e) => {
+    prefs.startWeekOn = e.target.value;
+    savePrefs();
+  });
+  showHolidays.addEventListener("change", (e) => {
+    prefs.showHolidays = e.target.checked;
+    savePrefs();
+    updateIcloudMonthView(lastIcloudData || {});
+  });
   if (reassign) {
     reassign.addEventListener("click", () => {
-      calendars.forEach(c => { if (!c.manual) c.color = null; });
+      calendars.forEach((c) => {
+        if (!c.manual) c.color = null;
+      });
       assignAutoColors();
       renderCalendarColorControls();
     });
@@ -684,5 +769,3 @@ function applyTheme() {
 }
 
 assignAutoColors();
-
-

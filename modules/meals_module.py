@@ -12,6 +12,7 @@ SPOONACULAR_API_KEY = os.getenv("SPOONACULAR_API_KEY")
 
 meals_bp = Blueprint("meals", __name__, url_prefix="/api/meals")
 recipes_bp = Blueprint("recipes", __name__, url_prefix="/api/recipes")
+mealslot_bp = Blueprint("mealslot", __name__, url_prefix="/api/mealslot")
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 DATA_DIR.mkdir(exist_ok=True)
@@ -305,4 +306,41 @@ def delete_recipe():
     if r_uuid in recipes:
         recipes.pop(r_uuid)
         save_recipes(recipes)
+    return jsonify({"status": "ok"})
+
+
+@mealslot_bp.route("/<slot_id>", methods=["DELETE"])
+def delete_meal_slot(slot_id):
+    """Remove the recipe from the specified meal slot."""
+    try:
+        date_str, meal_type = slot_id.split("|", 1)
+    except ValueError:
+        return jsonify({"error": "invalid slot id"}), 400
+    month_key = date_str[:7]
+    data = load_meals()
+    day = data.get(month_key, {}).get(date_str, {})
+    if meal_type in day:
+        day.pop(meal_type)
+        if not day:
+            data.get(month_key, {}).pop(date_str, None)
+        save_meals(data)
+    return jsonify({"status": "ok"})
+
+
+@mealslot_bp.route("/restore", methods=["POST"])
+def restore_meal_slot():
+    """Restore a previously removed recipe to a meal slot."""
+    req = request.get_json() or {}
+    slot_id = req.get("slot_id")
+    recipe = req.get("recipe")
+    if not slot_id or not isinstance(recipe, dict):
+        return jsonify({"error": "missing fields"}), 400
+    try:
+        date_str, meal_type = slot_id.split("|", 1)
+    except ValueError:
+        return jsonify({"error": "invalid slot id"}), 400
+    month_key = date_str[:7]
+    data = load_meals()
+    data.setdefault(month_key, {}).setdefault(date_str, {})[meal_type] = recipe
+    save_meals(data)
     return jsonify({"status": "ok"})
