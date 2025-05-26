@@ -5080,3 +5080,30 @@ body.dark-mode .wordclock-wrapper {
   background: #F9FAFB;
 }
 
+/* World Map Clock Styles */
+.world-map-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  gap: var(--space-sm);
+}
+#world-map {
+  width: min(90vw, 90vh, 100%);
+  height: auto;
+  background: #ddd;
+  border-radius: var(--border-radius-card);
+}
+.world-map-time-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 1.2em;
+}
+.add-location-btn {
+  margin-top: 8px;
+  padding: 4px 8px;
+  font-size: 1em;
+}

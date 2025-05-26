@@ -106,6 +106,7 @@ function closeClockModal() {
   overlay.classList.remove('open');
   stopAnalogClock();
   stopDigitalClock();
+  stopWorldClock();
   const editor = overlay.querySelector('.schedule-editor');
   if (editor) editor.remove();
 }
@@ -189,6 +190,7 @@ function renderClockModal() {
   const option = type.options[clockOptionIndex];
   stopAnalogClock();
   stopDigitalClock();
+  stopWorldClock();
   if (type.id === "analog") {
     display.innerHTML = getAnalogClockHtml(option);
     startAnalogClock();
@@ -197,6 +199,9 @@ function renderClockModal() {
   } else if (type.id === "digital") {
     display.innerHTML = getDigitalClockHtml(option);
     startDigitalClock(option);
+  } else if (type.id === "world") {
+    display.innerHTML = getWorldClockHtml(option);
+    startWorldClock();
   } else {
     display.innerHTML = `<div class="clock-placeholder">${type.id} - ${option}</div>`;
   }
@@ -624,6 +629,128 @@ function updateWordClock() {
     if (i < extra) d.classList.add("lit");
     else d.classList.remove("lit");
   });
+}
+
+// ----- World Map Clock -----
+let worldClockInterval = null;
+let worldLocations = [];
+let homeLocation = { lat: 0, lon: 0 };
+let addingLocation = false;
+
+function getWorldClockHtml(style) {
+  return `
+  <div class="world-map-wrapper">
+    <canvas id="world-map" width="800" height="400"></canvas>
+    <div class="world-map-time-list"></div>
+    <button class="add-location-btn" type="button">Add Location</button>
+  </div>`;
+}
+
+function startWorldClock() {
+  fetch('/api/worldclock/locations')
+    .then(r => r.json())
+    .then(d => {
+      homeLocation = d.data.home;
+      worldLocations = d.data.places || [];
+      drawWorldMap();
+      updateWorldTimes();
+    });
+
+  const overlay = document.getElementById('clock-modal-overlay');
+  const canvas = overlay.querySelector('#world-map');
+  const addBtn = overlay.querySelector('.add-location-btn');
+  addBtn.addEventListener('click', () => {
+    addingLocation = true;
+    addBtn.textContent = 'Click map...';
+  });
+  canvas.addEventListener('click', (e) => {
+    if (!addingLocation) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const lon = (x / canvas.width) * 360 - 180;
+    const lat = 90 - (y / canvas.height) * 180;
+    fetch('/api/worldclock/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lat, lon })
+    }).then(() => {
+      worldLocations.push({ lat, lon });
+      drawWorldMap();
+      updateWorldTimes();
+    });
+    addingLocation = false;
+    addBtn.textContent = 'Add Location';
+  });
+  worldClockInterval = setInterval(() => {
+    drawWorldMap();
+    updateWorldTimes();
+  }, 60000);
+  drawWorldMap();
+  updateWorldTimes();
+}
+
+function stopWorldClock() {
+  if (worldClockInterval) {
+    clearInterval(worldClockInterval);
+    worldClockInterval = null;
+  }
+}
+
+function timeAtLocation(lat, lon) {
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  const offsetMs = (lon / 15) * 3600000;
+  return new Date(utc + offsetMs);
+}
+
+function updateWorldTimes() {
+  const list = document.querySelector('.world-map-time-list');
+  if (!list) return;
+  let html = '';
+  const homeTime = timeAtLocation(homeLocation.lat, homeLocation.lon);
+  html += `<div class="world-time-item">You: ${homeTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>`;
+  worldLocations.forEach((loc, idx) => {
+    const t = timeAtLocation(loc.lat, loc.lon);
+    html += `<div class="world-time-item">${loc.lat.toFixed(1)}, ${loc.lon.toFixed(1)}: ${t.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>`;
+  });
+  list.innerHTML = html;
+}
+
+function drawWorldMap() {
+  const canvas = document.getElementById('world-map');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  // simple timezone background
+  for(let i=0;i<24;i++){
+    ctx.fillStyle = i%2 ? '#eee' : '#ddd';
+    ctx.fillRect((i/24)*w,0,w/24,h);
+  }
+  // day/night overlay
+  const now = new Date();
+  const sunLon = ((now.getUTCHours() + now.getUTCMinutes()/60)/24)*360 - 180;
+  for(let x=0;x<w;x++){
+    const lon = (x/w)*360 - 180;
+    let diff = Math.abs(lon - sunLon);
+    if (diff>180) diff = 360-diff;
+    const darkness = Math.min(1, Math.max(0, (diff-90)/90));
+    ctx.fillStyle = `rgba(0,0,0,${darkness})`;
+    ctx.fillRect(x,0,1,h);
+  }
+  drawPoint(ctx, homeLocation.lat, homeLocation.lon, true);
+  worldLocations.forEach(loc => drawPoint(ctx, loc.lat, loc.lon, false));
+}
+
+function drawPoint(ctx, lat, lon, isHome){
+  const x = ((lon+180)/360)*ctx.canvas.width;
+  const y = ((90-lat)/180)*ctx.canvas.height;
+  ctx.fillStyle = isHome ? '#ff5722' : '#2196f3';
+  ctx.beginPath();
+  ctx.arc(x, y, isHome?5:4, 0, Math.PI*2);
+  ctx.fill();
 }
 
 function openScheduleEditor() {
