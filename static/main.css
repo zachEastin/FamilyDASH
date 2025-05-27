@@ -2945,7 +2945,7 @@ body.dark-mode .meals-grid {
 
 .meals-day-cell {
   background: var(--color-bg-card);
-  padding: var(--space-xs);
+  padding: var(--space-md);
   position: relative;
   overflow: hidden;
   display: flex;
@@ -2968,7 +2968,7 @@ body.dark-mode .meals-day-cell {
 .meals-zones {
   display: flex;
   flex-direction: column;
-  gap: var(--space-xs);
+  gap: var(--space-sm);
   flex: 1 1 auto;
   justify-content: space-between;
 }
@@ -3484,6 +3484,7 @@ body.dark-mode .side-panel-tab.active {
   border-radius: var(--border-radius-card);
   background: var(--color-bg-card);
   box-shadow: var(--elevation-1);
+  transition: opacity 0.2s ease, background-color 0.2s ease;
 }
 .meal-slot .delete-bg {
   position: absolute;
@@ -3514,6 +3515,22 @@ body.dark-mode .side-panel-tab.active {
 .meal-slot.snack { border-left: 4px solid var(--color-snack); }
 .empty-meal-slot {
   align-items: center;
+  display: none;
+}
+
+.meal-slot.empty-meal-slot .meal-slot-title {
+  color: var(--color-gray);
+}
+
+.meals-day-cell.show-slots .meal-slot.empty-meal-slot {
+  display: flex;
+  border: 2px dashed var(--color-gray);
+  background: transparent;
+}
+
+.meals-day-cell.show-slots .meal-slot.empty-meal-slot:hover,
+.meals-day-cell.show-slots .meal-slot.empty-meal-slot.slot-hover {
+  background: rgba(107, 114, 128, 0.06);
 }
 .meal-lock-icon {
   position: absolute;

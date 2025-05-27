@@ -178,6 +178,7 @@ function shuffleMealPlan() {
 // --- Meals Side Panel Logic (Tabbed) ---
 (function setupMealsSidePanel() {
   const mealsPanelWrapper = document.querySelector(".meals-panel-wrapper");
+  window.draggingRecipe = false;
   // const mealsViewContainer = document.getElementById('meals-view-container');
   const sidePanel = document.getElementById("meals-side-panel");
   const favoritesTab = document.getElementById("favorites-tab");
@@ -307,12 +308,19 @@ function shuffleMealPlan() {
     }
 
     e.dataTransfer.effectAllowed = "copy";
+    window.draggingRecipe = true;
+  }
+  function handleDragEnd() {
+    window.draggingRecipe = false;
+    document.querySelectorAll('.meals-day-cell.show-slots').forEach(c => c.classList.remove('show-slots'));
   }
   function makeRecipeItemsDraggable() {
     const items = document.querySelectorAll(".recipe-item");
     items.forEach((item) => {
       item.removeEventListener("dragstart", handleDragStart); // Avoid duplicate listeners
       item.addEventListener("dragstart", handleDragStart);
+      item.removeEventListener("dragend", handleDragEnd);
+      item.addEventListener("dragend", handleDragEnd);
     });
   }
   function handleMealSlotDrop(e) {
@@ -384,17 +392,25 @@ function shuffleMealPlan() {
 
     grid.addEventListener("dragover", function (e) {
       const slot = e.target.closest(".meal-slot");
+      const cell = e.target.closest(".meals-day-cell");
+      if (cell && window.draggingRecipe) {
+        cell.classList.add("show-slots");
+      }
       if (slot) {
         e.preventDefault();
         e.dataTransfer.dropEffect = "copy";
-        slot.classList.add("dragover-debug");
+        slot.classList.add("slot-hover");
       }
     });
 
     grid.addEventListener("dragleave", function (e) {
       const slot = e.target.closest(".meal-slot");
+      const cell = e.target.closest(".meals-day-cell");
       if (slot) {
-        slot.classList.remove("dragover-debug");
+        slot.classList.remove("slot-hover");
+      }
+      if (cell && !cell.contains(e.relatedTarget)) {
+        cell.classList.remove("show-slots");
       }
     });
 
@@ -404,7 +420,9 @@ function shuffleMealPlan() {
         return;
       }
       e.preventDefault();
-      slot.classList.remove("dragover-debug");
+      slot.classList.remove("slot-hover");
+      const cell = slot.closest(".meals-day-cell");
+      if (cell) cell.classList.remove("show-slots");
       handleMealSlotDrop.call(slot, e);
     });
   }
@@ -506,13 +524,6 @@ function shuffleMealPlan() {
   }
   window.removeMealSlot = removeMealSlot;
   window.undoLastRemoval = undoLastRemoval;
-  // Add debug CSS for dragover
-  if (!document.getElementById("dragover-debug-style")) {
-    const style = document.createElement("style");
-    style.id = "dragover-debug-style";
-    style.textContent = `.dragover-debug { outline: 2px dashed red !important; background: #ff000033 !important; }`;
-    document.head.appendChild(style);
-  }
 
   // --- Logic to run after meals view is rendered ---
   window.onMealsGridRendered = function (data, recipeMap) {
@@ -819,6 +830,7 @@ function renderMealsMonthView(data) {
           }
         } else {
           slotClasses += " empty-meal-slot";
+          slotContent = mealType.charAt(0).toUpperCase() + mealType.slice(1);
         }
         const lockIcon = `<span class="meal-lock-icon material-symbols-outlined" data-locked="${locked}" title="${locked ? 'Unlock' : 'Lock'}">${locked ? 'lock' : 'lock_open'}</span>`;
         const deleteBg = `<div class="delete-bg"><span class="material-symbols-outlined">delete</span></div>`;
