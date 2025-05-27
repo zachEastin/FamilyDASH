@@ -3320,7 +3320,7 @@ body.dark-mode .meals-day-cell {
   display: flex;
   gap: var(--space-sm);
   justify-content: space-between;
-  /* padding: var(--space-sm); */
+  margin-top: auto;
 }
 .side-panel-header {
   display: flex;
