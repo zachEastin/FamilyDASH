@@ -931,7 +931,7 @@ body.dark-mode .week-calendar .no-events {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  /* gap: var(--space-sm); */
   overflow-y: auto;
 }
 
@@ -960,6 +960,7 @@ body.dark-mode .week-calendar .no-events {
   transition: background-color 0.3s ease, box-shadow 0.2s ease;
   margin: 4px 0;
   font-family: var(--font-family);
+  height: 3em;
 }
 
 .reminder-item:hover,
@@ -994,7 +995,7 @@ body.dark-mode .reminder-item {
 
 .reminder-title {
   flex-grow: 1;
-  font-size: 0.95em;
+  font-size: 1.3em;
 }
 
 .reminder-item.done .reminder-title {
