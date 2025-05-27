@@ -6,6 +6,8 @@
   <title>FamilyVista Dashboard</title>
   <link rel="stylesheet" href="/static/main.css">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+  <!-- Playful script font for meal titles -->
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
   <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
 </head>
 <body>
@@ -63,6 +65,9 @@
                     <button id="favorites-tab" class="side-panel-tab active">Favorites</button>
                     <button id="history-tab" class="side-panel-tab">History</button>
                   </div>
+                  <button id="add-favorite-button" class="add-favorite-btn" title="Add Favorite">
+                    <span class="material-symbols-outlined">add</span>
+                  </button>
                   <span class="side-panel-toggle" title="Collapse">&laquo;</span>
                 </div>
                 <div class="side-panel-content">
@@ -74,7 +79,39 @@
                   </div>
                 </div>
               </div>
-              <div id="meals-view-container" class="calendar-view"></div>
+              <div id="meals-view-container" class="calendar-view">
+                <!-- Sample meal slots shown before data loads -->
+                <div class="meals-grid sample-grid">
+                  <div class="meal-slot breakfast" data-date="sample" data-meal-type="breakfast">
+                    <div class="meal-slot-inner">
+                      <span class="meal-lock-icon material-symbols-outlined" data-locked="false">lock_open</span>
+                      <span class="meal-icon">🥞</span>
+                      <span class="meal-slot-title">Pancakes</span>
+                    </div>
+                  </div>
+                  <div class="meal-slot lunch" data-date="sample" data-meal-type="lunch">
+                    <div class="meal-slot-inner">
+                      <span class="meal-lock-icon material-symbols-outlined" data-locked="false">lock_open</span>
+                      <span class="meal-icon">🥪</span>
+                      <span class="meal-slot-title">Sandwich</span>
+                    </div>
+                  </div>
+                  <div class="meal-slot dinner" data-date="sample" data-meal-type="dinner">
+                    <div class="meal-slot-inner">
+                      <span class="meal-lock-icon material-symbols-outlined" data-locked="false">lock_open</span>
+                      <span class="meal-icon">🍝</span>
+                      <span class="meal-slot-title">Pasta</span>
+                    </div>
+                  </div>
+                  <div class="meal-slot snack" data-date="sample" data-meal-type="snack">
+                    <div class="meal-slot-inner">
+                      <span class="meal-lock-icon material-symbols-outlined" data-locked="false">lock_open</span>
+                      <span class="meal-icon">🍪</span>
+                      <span class="meal-slot-title">Cookie</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

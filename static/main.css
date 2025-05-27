@@ -16,6 +16,10 @@
   --color-lunch: #10B981;
   --color-dinner: #F97316;
   --color-snack: #8B5CF6;
+  --color-breakfast-bg: #eaf4fd;
+  --color-lunch-bg: #e7f9f2;
+  --color-dinner-bg: #fff3e5;
+  --color-snack-bg: #f3e8fd;
   /* Shadows and borders */
   --elevation-1: 0 2px 8px rgba(0,0,0,0.10);
   --border-radius-card: 12px;
@@ -70,6 +74,10 @@ body.dark-mode {
   --color-lunch: #10B981;
   --color-dinner: #F97316;
   --color-snack: #8B5CF6;
+  --color-breakfast-bg: #1a2a43;
+  --color-lunch-bg: #163027;
+  --color-dinner-bg: #402a19;
+  --color-snack-bg: #2b2145;
   --elevation-1: 0 2px 8px rgba(0,0,0,0.30);
   --border-radius-card: 12px;
   --border-radius-btn: 8px;
@@ -2932,6 +2940,8 @@ body.dark-mode .meals-grid-header {
   grid-auto-rows: minmax(110px, auto);
   gap: 1px;
   background-color: var(--color-gray);
+  background-image: radial-gradient(rgba(255,255,255,0.4) 1px, transparent 1px);
+  background-size: 16px 16px;
   border: 1px solid var(--color-gray);
   flex-grow: 1;
   overflow: auto;
@@ -2939,6 +2949,8 @@ body.dark-mode .meals-grid-header {
 }
 body.dark-mode .meals-grid {
   background-color: var(--color-gray);
+  background-image: radial-gradient(rgba(255,255,255,0.15) 1px, transparent 1px);
+  background-size: 16px 16px;
   border: 1px solid var(--color-gray);
 }
 
@@ -3258,14 +3270,21 @@ body.dark-mode .meals-day-cell {
   height: 100%;
   min-height: 0;
   min-width: 0;
-  background: none;
+  background: linear-gradient(135deg, #eaf4fd 0%, #fffbe6 100%);
+  background-size: cover;
+  background-image: linear-gradient(45deg, rgba(255,255,255,0.2) 25%, transparent 25%), linear-gradient(-45deg, rgba(255,255,255,0.2) 25%, transparent 25%);
+  background-size: 20px 20px;
+  background-position: 0 0,10px 10px;
+  padding: var(--space-md);
+  border-radius: var(--border-radius-card);
+  position: relative;
 }
 
 .side-panel {
   width: 240px;
   min-width: 180px;
   max-width: 280px;
-  background: var(--color-bg-card);
+  background: linear-gradient(180deg, var(--color-bg-card), #ffffff);
   border-radius: var(--border-radius-card);
   box-shadow: var(--elevation-1);
   display: flex;
@@ -3332,6 +3351,27 @@ body.dark-mode .meals-day-cell {
   border-bottom: 1px solid var(--color-gray);
   user-select: none;
   justify-content: space-between;
+  position: relative;
+}
+.add-favorite-btn {
+  position: absolute;
+  right: var(--space-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--elevation-1);
+  cursor: pointer;
+}
+.add-favorite-btn span {
+  font-size: 20px;
 }
 .side-panel-tabs {
   display: flex;
@@ -3396,21 +3436,29 @@ body.dark-mode .meals-day-cell {
   cursor: grab;
   transition: background 0.15s, box-shadow 0.15s;
 }
+.recipe-item .star-icon,
+.recipe-item .history-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 16px;
+  margin-right: var(--space-xs);
+}
 .recipe-item:active {
   background: var(--color-accent-yellow);
   box-shadow: var(--elevation-1);
 }
 .recipe-item .star-icon {
-  color: var(--color-accent-yellow);
-  margin-right: var(--space-xs);
-}
-.recipe-item .history-icon {
-  color: var(--color-primary);
-  margin-right: var(--space-xs);
+  background: var(--color-accent-yellow);
 }
 
 body.dark-mode .side-panel {
-  background: var(--color-bg-card);
+  background: linear-gradient(180deg, var(--color-bg-card), #2a2a2a);
   border: 1px solid var(--color-gray);
 }
 body.dark-mode .side-panel-header {
@@ -3483,6 +3531,7 @@ body.dark-mode .side-panel-tab.active {
   border-radius: var(--border-radius-card);
   background: var(--color-bg-card);
   box-shadow: var(--elevation-1);
+  cursor: pointer;
 }
 .meal-slot .delete-bg {
   position: absolute;
@@ -3504,15 +3553,38 @@ body.dark-mode .side-panel-tab.active {
   height: 100%;
   transition: transform 0.2s ease;
   z-index: 2;
-  background-color: var(--bg-color);
-  padding-left: var(--space-lg);
+  background-color: transparent;
+  padding: 0 var(--space-sm);
+  transition: transform 0.2s ease;
 }
-.meal-slot.breakfast { border-left: 4px solid var(--color-breakfast); }
-.meal-slot.lunch { border-left: 4px solid var(--color-lunch); }
-.meal-slot.dinner { border-left: 4px solid var(--color-dinner); }
-.meal-slot.snack { border-left: 4px solid var(--color-snack); }
+
+.meal-slot:hover .meal-slot-inner {
+  transform: scale(1.03);
+}
+.meal-slot.breakfast {
+  border-left: 4px solid var(--color-breakfast);
+  background: var(--color-breakfast-bg);
+}
+.meal-slot.lunch {
+  border-left: 4px solid var(--color-lunch);
+  background: var(--color-lunch-bg);
+}
+.meal-slot.dinner {
+  border-left: 4px solid var(--color-dinner);
+  background: var(--color-dinner-bg);
+}
+.meal-slot.snack {
+  border-left: 4px solid var(--color-snack);
+  background: var(--color-snack-bg);
+}
+
+body.dark-mode .meal-slot.breakfast { background: rgba(59,130,246,0.2); }
+body.dark-mode .meal-slot.lunch { background: rgba(16,185,129,0.2); }
+body.dark-mode .meal-slot.dinner { background: rgba(249,115,22,0.2); }
+body.dark-mode .meal-slot.snack { background: rgba(139,92,246,0.2); }
 .empty-meal-slot {
   align-items: center;
+  opacity: 0.8;
 }
 .meal-lock-icon {
   position: absolute;
@@ -3532,7 +3604,22 @@ body.dark-mode .side-panel-tab.active {
 }
 .meal-slot-title {
   margin-left: var(--space-xs);
-  font-size: var(--font-small);
+  font-size: var(--font-body);
+  font-family: var(--font-family), "Pacifico", cursive;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.1);
+}
+
+.meal-icon {
+  font-size: 1.4em;
+  margin-right: var(--space-xs);
+}
+
+.empty-meal-slot .meal-slot-title {
+  opacity: 0.6;
+  font-style: italic;
+}
+.empty-meal-slot .meal-icon {
+  opacity: 0.5;
 }
 
 #shopping-list-modal.modal {

@@ -808,8 +808,8 @@ function renderMealsMonthView(data) {
       ["breakfast", "lunch", "dinner"].forEach((mealType, idx) => {
         let slotClasses = "meal-slot " + mealType + [" top", " mid", " bottom"][idx];
         const meal = dayMeals[mealType];
-        // const slotClass = ["top", "mid", "bottom"][idx];
         let slotContent = "+";
+        const icons = { breakfast: "🥞", lunch: "🥪", dinner: "🍝", snack: "🍪" };
         let locked = false;
         let recipe_uuid = meal && meal.recipe_uuid;
         if (meal) {
@@ -820,9 +820,11 @@ function renderMealsMonthView(data) {
         } else {
           slotClasses += " empty-meal-slot";
         }
+        const displayTitle = slotContent === "+" ? "Tap to plan!" : slotContent;
+        const icon = icons[mealType] || "";
         const lockIcon = `<span class="meal-lock-icon material-symbols-outlined" data-locked="${locked}" title="${locked ? 'Unlock' : 'Lock'}">${locked ? 'lock' : 'lock_open'}</span>`;
         const deleteBg = `<div class="delete-bg"><span class="material-symbols-outlined">delete</span></div>`;
-        const inner = `<div class="meal-slot-inner">${lockIcon}<span class="meal-slot-title">${slotContent}</span></div>`;
+        const inner = `<div class="meal-slot-inner">${lockIcon}<span class="meal-icon">${icon}</span><span class="meal-slot-title">${displayTitle}</span></div>`;
         mealsGridHtml += `<div class="${slotClasses}" data-date="${dateStr}" data-meal-type="${mealType}" data-locked="${locked}" data-recipe-uuid="${recipe_uuid}">${deleteBg}${inner}</div>`;
       });
       if (otherMonth) {
